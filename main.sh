@@ -27,6 +27,8 @@ check_so_far # checks progress
 
 #get_disks
 
+#get_ram_size # only needs to run if a swap is being created
+
 ################################
 # Post-chroot
 ################################

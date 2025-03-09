@@ -4,6 +4,31 @@
 # VARIABLES
 ################################
 
+# HARDCODED, BUT SHOULDN'T BE
+
+lvm_name="cryptlvm"
+release=""
+release_debian="bookworm"
+release_ubuntu="noble"
+
+# HARDCODED, LEGIT
+
+## PATHS
+path_dev="/dev"
+path_dev_mapper="/dev/mapper"
+
+## LISTS
+
+list_release_debian=(
+    "bookworm"  # Debian 12
+    "bullseye"  # Debian 11
+)
+
+list_release_ubuntu=(
+    "noble"     # Ubuntu 24
+    "jammy"     # Ubuntu 22
+)
+
 os_supported=(
     "arch"
     "artix"
@@ -81,4 +106,13 @@ check_so_far() {
     echo "UEFI? = $uefi"
     echo "Partition 4 = $partition_boot_sda4"
     echo "RAM: $ram_size"
+    echo "PATH_DEV: $path_dev"
+    echo "PATH_DEV_MAPPER: $path_dev_mapper"
+    echo "LVM NAME: $lvm_name"
+
+    echo -e "\nTHE OTHER OTHER:"
+    echo "SUPPORTED DEBIAN RELEASES: ${list_release_debian[@]}"
+    echo "SUPPORTED UBUNTU RELEASES: ${list_release_ubuntu[@]}"
+    echo "SELECTED DEBIAN RELEASE: $release_debian"
+    echo "SELECTED UBUNTU RELEASE: $release_ubuntu"
 }
