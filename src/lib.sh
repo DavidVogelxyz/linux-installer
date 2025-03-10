@@ -93,6 +93,54 @@ get_ram_size() {
     ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
 }
 
+#format_disk() {
+#    devsel="/dev/${disk_selected}"
+#
+#    # a check for root user
+#    sgdisk --print $devsel > /dev/null 2>&1 \
+#        || echo "Are you sure you're running this as the root user?"
+#
+#    # wipe and puts on GPT signatures
+#    sgdisk --zap-all $devsel
+#
+#    # PARTITIONS
+#    sgdisk --new=1:0:+768M $devsel      # this is the boot partition (`/boot`)
+#    sgdisk --new=2:0:+2M $devsel        # this is a GRUB partition
+#    sgdisk --new=3:0:+128M $devsel      # this is an EFI partition
+#    sgdisk --new=4:0:0 $devsel          # this creates a rootfs until the end of the drive
+#
+#    # TYPECODES
+#    sgdisk \
+#        --typecode=1:8301 \
+#        --typecode=2:ef02 \
+#        --typecode=3:ef00 \
+#        --typecode=4:8301 \
+#        $devsel
+#
+#    # LABELS
+#    sgdisk \
+#        --change-name=1:/boot \
+#        --change-name=2:GRUB \
+#        --change-name=3:EFI-SP \
+#        --change-name=4:rootfs \
+#        $devsel
+#
+#    # SET HYBRID SINCE BOTH BIOS AND UEFI
+#    sgdisk --hybrid 1:2:3 $devsel
+#}
+
+format_disk() {
+    devsel="/dev/${disk_selected}"
+
+    # a check for root user
+    sfdisk -d $devsel > /dev/null 2>&1 \
+        || echo "Are you sure you're running this as the root user?"
+
+    # lots of good new stuff to try with the sfdisk commands
+    #sfdisk $devsel < templates/format_disk_*                   # to take a file as a "state"
+    #sfdisk -d $devsel                                          # to view
+}
+
 check_so_far() {
     echo -e "\nSTATUS:"
     echo "OS = $setup_os"

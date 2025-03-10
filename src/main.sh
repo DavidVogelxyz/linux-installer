@@ -17,6 +17,8 @@ get_ram_size # set `ram_size` in the format of `xyGB`
 
 check_so_far # checks progress
 
+format_disk
+
 ################################
 # Pre-chroot
 ################################
