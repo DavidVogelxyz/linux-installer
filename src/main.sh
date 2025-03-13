@@ -9,7 +9,7 @@ get_os # sets `setup_os`
 
 get_uefi # sets `uefi` (0 is "legacy BIOS")
 
-get_disks # sets `disk_count`, returns a selected disk only if `disk_count` is 1
+get_disks || error # sets `disk_count` and `disk_selected`
 
 set_partition_names
 

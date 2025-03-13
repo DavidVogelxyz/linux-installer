@@ -40,9 +40,9 @@ os_supported=(
 # FUNCTIONS
 ################################
 
-#error() {
-#
-#}
+error() {
+    echo "fail!" && exit 1
+}
 
 get_os() {
     for os in "${os_supported[@]}"; do
@@ -65,32 +65,70 @@ get_uefi() {
 }
 
 get_disks() {
-    # store the `lsblk` output into an array
-    mapfile -t list_disks < <(lsblk | grep disk | awk '{print $1}')
+    # store disk names in an array
+    mapfile -t list_disk_paths < <(lsblk | grep disk | awk '{print $1}')
+    #list_disk_paths=$(lsblk | grep disk | awk '{print $1}')
+
+    # store disk sizes in an array
+    mapfile -t list_disk_sizes < <(lsblk | grep disk | awk '{print $4}')
 
     # how many disks?
-    disk_count=${#list_disks[@]}
+    disk_count=${#list_disk_paths[@]}
 
     # instantiate `disk_selected`
-    disk_selected="not selected yet"
+    ask_for_disk_selected
 
     # if `disk_count` is 1, set it as the disk selected without asking the user
-    [[ $disk_count == "1" ]] \
-        && disk_selected="${list_disks[0]}"
+    #[[ $disk_count == "1" ]] \
+    #    && disk_selected="${list_disk_paths[0]}"
+}
+
+ask_for_disk_selected() {
+    disk_selected=$(whiptail \
+        --title "Format Disk" \
+        --menu "\\nPlease select the disk to format:" \
+        25 78 16 \
+        "$list_disk_paths" "| $list_disk_sizes" \
+        3>&1 1>&2 2>&3 3>&1
+    )
 }
 
 set_partition_names() {
     # could turn this into a loop...
-    partition_boot_sda1="${disk_selected}1"
-    partition_boot_sda2="${disk_selected}2"
-    partition_boot_sda3="${disk_selected}3"
-    partition_boot_sda4="${disk_selected}4"
-    partition_boot_sda5="${disk_selected}5"
+    partition_boot_1="${disk_selected}1"
+    partition_boot_2="${disk_selected}2"
+    partition_boot_3="${disk_selected}3"
+    partition_boot_4="${disk_selected}4"
+    partition_boot_5="${disk_selected}5"
 }
 
 get_ram_size() {
     # `--si` gets the human readable `-h` in units of "GB"
     ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
+}
+
+check_so_far() {
+    echo -e "\nSTATUS:"
+    echo "OS = $setup_os"
+
+    echo -e "\nDISKS:"
+    echo "DISK COUNT = $disk_count"
+    echo "DISKS = ${list_disk_paths[@]}"
+    echo "DISK SELECTED = $disk_selected"
+
+    echo -e "\nOTHER:"
+    echo "UEFI? = $uefi"
+    echo "Partition 4 = $partition_boot_4"
+    echo "RAM: $ram_size"
+    echo "PATH_DEV: $path_dev"
+    echo "PATH_DEV_MAPPER: $path_dev_mapper"
+    echo "LVM NAME: $lvm_name"
+
+    echo -e "\nTHE OTHER OTHER:"
+    echo "SUPPORTED DEBIAN RELEASES: ${list_release_debian[@]}"
+    echo "SUPPORTED UBUNTU RELEASES: ${list_release_ubuntu[@]}"
+    echo "SELECTED DEBIAN RELEASE: $release_debian"
+    echo "SELECTED UBUNTU RELEASE: $release_ubuntu"
 }
 
 #format_disk() {
@@ -133,34 +171,11 @@ format_disk() {
     devsel="/dev/${disk_selected}"
 
     # a check for root user
-    sfdisk -d $devsel > /dev/null 2>&1 \
+    # > /dev/null 2>&1
+    sfdisk -d $devsel \
         || echo "Are you sure you're running this as the root user?"
 
     # lots of good new stuff to try with the sfdisk commands
     #sfdisk $devsel < templates/format_disk_*                   # to take a file as a "state"
     #sfdisk -d $devsel                                          # to view
-}
-
-check_so_far() {
-    echo -e "\nSTATUS:"
-    echo "OS = $setup_os"
-
-    echo -e "\nDISKS:"
-    echo "DISK COUNT = $disk_count"
-    echo "DISKS = ${list_disks[@]}"
-    echo "DISK SELECTED = $disk_selected"
-
-    echo -e "\nOTHER:"
-    echo "UEFI? = $uefi"
-    echo "Partition 4 = $partition_boot_sda4"
-    echo "RAM: $ram_size"
-    echo "PATH_DEV: $path_dev"
-    echo "PATH_DEV_MAPPER: $path_dev_mapper"
-    echo "LVM NAME: $lvm_name"
-
-    echo -e "\nTHE OTHER OTHER:"
-    echo "SUPPORTED DEBIAN RELEASES: ${list_release_debian[@]}"
-    echo "SUPPORTED UBUNTU RELEASES: ${list_release_ubuntu[@]}"
-    echo "SELECTED DEBIAN RELEASE: $release_debian"
-    echo "SELECTED UBUNTU RELEASE: $release_ubuntu"
 }
