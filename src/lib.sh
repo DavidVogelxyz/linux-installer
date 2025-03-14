@@ -19,16 +19,6 @@ path_dev_mapper="/dev/mapper"
 
 ## LISTS
 
-list_release_debian=(
-    "bookworm"  # Debian 12
-    "bullseye"  # Debian 11
-)
-
-list_release_ubuntu=(
-    "noble"     # Ubuntu 24
-    "jammy"     # Ubuntu 22
-)
-
 os_supported=(
     "arch"
     "artix"
@@ -44,7 +34,7 @@ error() {
     echo "fail!" && exit 1
 }
 
-get_os() {
+get_setup_os() {
     for os in "${os_supported[@]}"; do
         grep "ID=$os" /etc/os-release > /dev/null 2>&1 \
             && export setup_os="$os" \
@@ -84,11 +74,19 @@ get_disks() {
 }
 
 ask_for_disk_selected() {
+    choices=()
+    n=0
+
+    while [ $n -lt $disk_count ]; do
+        choices+=("${list_disk_paths[$n]}" "| ${list_disk_sizes[$n]}")
+        ((n+=1))
+    done
+
     disk_selected=$(whiptail \
         --title "Format Disk" \
         --menu "\\nPlease select the disk to format:" \
         25 78 16 \
-        "$list_disk_paths" "| $list_disk_sizes" \
+        "${choices[@]}" \
         3>&1 1>&2 2>&3 3>&1
     )
 }
@@ -108,12 +106,13 @@ get_ram_size() {
 }
 
 check_so_far() {
+    [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
+    [ -z "$release_selected" ] && release_selected="rolling"
+
     echo -e "\nSTATUS:"
-    echo "OS = $setup_os"
+    echo "IMAGE OS = $setup_os"
 
     echo -e "\nDISKS:"
-    echo "DISK COUNT = $disk_count"
-    echo "DISKS = ${list_disk_paths[@]}"
     echo "DISK SELECTED = $disk_selected"
 
     echo -e "\nOTHER:"
@@ -124,11 +123,9 @@ check_so_far() {
     echo "PATH_DEV_MAPPER: $path_dev_mapper"
     echo "LVM NAME: $lvm_name"
 
-    echo -e "\nTHE OTHER OTHER:"
-    echo "SUPPORTED DEBIAN RELEASES: ${list_release_debian[@]}"
-    echo "SUPPORTED UBUNTU RELEASES: ${list_release_ubuntu[@]}"
-    echo "SELECTED DEBIAN RELEASE: $release_debian"
-    echo "SELECTED UBUNTU RELEASE: $release_ubuntu"
+    echo -e "\nINSTALLING:"
+    echo "OS VERSION: $install_os_selected"
+    echo "RELEASE: $release_selected"
 }
 
 #format_disk() {
@@ -178,4 +175,50 @@ format_disk() {
     # lots of good new stuff to try with the sfdisk commands
     #sfdisk $devsel < templates/format_disk_*                   # to take a file as a "state"
     #sfdisk -d $devsel                                          # to view
+}
+
+ask_debootstrap() {
+    ask_debootstrap_install_os
+
+    ask_debootstrap_release_version
+}
+
+ask_debootstrap_install_os() {
+    # Debootstrap OS options
+    debootstrap_os_installable=(
+        "Debian" "| Options include Debian 12 and Debian 11"
+        "Ubuntu" "| Options include Ubuntu 24 and Ubuntu 22"
+    )
+
+    install_os_selected=$(whiptail \
+        --title "Install OS" \
+        --menu "\\nPlease select the OS to install:" \
+        25 78 16 \
+        "${debootstrap_os_installable[@]} " \
+        3>&1 1>&2 2>&3 3>&1
+    )
+}
+
+ask_debootstrap_release_version() {
+    # Debian options
+    [ "$install_os_selected" == "Debian" ] \
+        && releases=( \
+        "bookworm" "| Debian 12" \
+        "bullseye" "| Debian 11" \
+        )
+
+    # Ubuntu options
+    [ "$install_os_selected" == "Ubuntu" ] \
+        && releases=( \
+        "noble" "| Ubuntu 24" \
+        "jammy" "| Ubuntu 22" \
+        )
+
+    release_selected=$(whiptail \
+        --title "Release Version" \
+        --menu "\\nPlease select the release version install:" \
+        25 78 16 \
+        "${releases[@]}" \
+        3>&1 1>&2 2>&3 3>&1
+    )
 }

@@ -3,9 +3,10 @@
 #set -x
 
 # source the commands
-source lib.sh
+[ -f lib.sh ] && source lib.sh
+[ -f src/lib.sh ] && source src/lib.sh
 
-get_os # sets `setup_os`
+get_setup_os # sets `setup_os`
 
 get_uefi # sets `uefi` (0 is "legacy BIOS")
 
@@ -15,9 +16,16 @@ set_partition_names
 
 get_ram_size # set `ram_size` in the format of `xyGB`
 
+# set options for `debootstrap`
+[ "$setup_os" == "ubuntu" ] \
+    && {
+        ask_debootstrap \
+            || error
+    }
+
 check_so_far # checks progress
 
-format_disk
+#format_disk
 
 ################################
 # Pre-chroot
