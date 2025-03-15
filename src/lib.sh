@@ -54,10 +54,19 @@ get_setup_os() {
 }
 
 ask_uefi() {
-    choices=(
-        "false" "| No, I only want compatibility with legacy BIOS."
-        "true" "| Yes, I want to use UEFI (including hybrid configuration)."
-    )
+    # `whiptail --default-item` wasn't working; so, alternative way to set default
+    [ $uefi = false ] \
+        && choices=(
+            "bios" "| No, I only want compatibility with legacy BIOS."
+            "uefi" "| Yes, I want to use UEFI (including hybrid configuration)."
+        )
+
+    # `whiptail --default-item` wasn't working; so, alternative way to set default
+    [ $uefi = true ] \
+        && choices=(
+            "uefi" "| Yes, I want to use UEFI (including hybrid configuration)."
+            "bios" "| No, I only want compatibility with legacy BIOS."
+        )
 
     uefi=$(whiptail \
         --title "UEFI configuration" \
@@ -132,22 +141,26 @@ get_ram_size() {
     ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
 }
 
-ask_partition_scheme() {
-    choices=(
-        "1" "| basic partitioning"
-        "2" "| hybrid partitioning"
-    )
-
-    partition_scheme_selected=$(whiptail \
-        --title "Format Disk - Partition Scheme" \
-        --menu "\\nFor the next section:
-            \\n - \"basic\" is a 1GB \`/boot\` partition, with the remainder for the rootfs.\\n - \"hybrid\" has both BIOS and UEFI capabilities.
-            \\nPlease select the partition scheme you would like to deploy:" \
-        25 78 10 \
-        "${choices[@]}" \
-        3>&1 1>&2 2>&3 3>&1
-    )
-}
+#ask_partition_scheme() {
+#    choices=(
+#        "standard" "| The default partition table."
+#    )
+#
+#    [ $uefi = true ] \
+#        && choices+=(
+#            "hybrid" "| Adds partitions for both UEFI and BIOS compatibility."
+#        )
+#
+#    partition_scheme_selected=$(whiptail \
+#        --title "Format Disk - Partition Scheme" \
+#        --menu "\\nFor the next section:
+#            \\n - \"standard\" is a 1GB \`/boot\` partition, with the remainder for the rootfs.\\n - \"hybrid\" has both BIOS and UEFI capabilities, but is only an option when UEFI is set to true.
+#            \\nPlease select the partition scheme you would like to deploy:" \
+#        25 78 4 \
+#        "${choices[@]}" \
+#        3>&1 1>&2 2>&3 3>&1
+#    )
+#}
 
 ask_to_encrypt() {
     choices=(
@@ -164,20 +177,20 @@ ask_to_encrypt() {
     )
 }
 
-ask_encryption_type() {
-    choices=(
-        "hello" ""
-        "hi" ""
-    )
-
-    encryption_type=$(whiptail \
-        --title "Encryption" \
-        --menu "\\nWhich type of encryption?" \
-        25 78 10 \
-        "${choices[@]}" \
-        3>&1 1>&2 2>&3 3>&1
-    )
-}
+#ask_encryption_type() {
+#    choices=(
+#        "example1" ""
+#        "example2" ""
+#    )
+#
+#    encryption_type=$(whiptail \
+#        --title "Encryption" \
+#        --menu "\\nWhich type of encryption?" \
+#        25 78 10 \
+#        "${choices[@]}" \
+#        3>&1 1>&2 2>&3 3>&1
+#    )
+#}
 
 get_encryption_pass() {
      pass1=$(whiptail \
@@ -199,8 +212,8 @@ get_encryption_pass() {
     while ! [ "$pass1" = "$pass2" ] || [ -z "$pass1"]; do
         pass1=$(whiptail \
             --title "Encryption Password" \
-            --passwordbox "\\nThe passwords entered do not match each other.
-                \\nPlease enter again the encrypted drive's password." \
+            --passwordbox "\\nThe passwords entered do not match each other, or were left blank.
+                \\nPlease enter a password to unlock the encrypted drive." \
             --nocancel \
             25 78 \
             3>&1 1>&2 2>&3 3>&1
@@ -221,18 +234,15 @@ get_encryption_pass() {
 }
 
 run_partition_setup() {
-    ask_partition_scheme || error
+    #ask_partition_scheme || error
 
     ask_to_encrypt || error
 
     # if Ubuntu image, run `debootstrap`
     # if `debootstrap` fails, error
     [ "$encryption" = true ] \
-        && {
-            ask_encryption_type \
-                && get_encryption_pass \
-                || error
-    }
+        && get_encryption_pass \
+            || error
 }
 
 get_setup_info() {
@@ -255,7 +265,7 @@ ask_confirm_inputs() {
         --title "Confirm Inputs" \
         --yesno "\\nHere's what we have:
             \\n     Image OS                        =   $setup_os
-            \\n     UEFI                            =   $uefi
+            \\n     Partitioning to deploy          =   $uefi $partition_scheme_selected
             \\n     Disk selected                   =   $path_dev/$disk_selected
             \\n     Encryption                      =   $encryption
             \\n     LVM name                        =   $path_dev_mapper/$lvm_name
