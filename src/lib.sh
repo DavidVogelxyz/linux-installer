@@ -5,11 +5,7 @@
 ################################
 
 # HARDCODED, BUT SHOULDN'T BE
-
 lvm_name="cryptlvm"
-release=""
-release_debian="bookworm"
-release_ubuntu="noble"
 
 # HARDCODED, LEGIT
 
@@ -34,7 +30,22 @@ error() {
     echo "fail!" && exit 1
 }
 
+welcome_screen() {
+    whiptail \
+        --title "Welcome!" \
+        --yesno "On the next few screens, you will be asked some questions.
+            \\nThe script will configure and install Linux based on the provided answers.
+            \\nYou will have a chance to exit out of the script before any changes are made." \
+        --yes-button "Let's go!" \
+        --no-button "No thanks." \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+}
+
 get_setup_os() {
+    # don't like that the grep is O(n)
+    # would it be faster to search once, grab `ID`, and then check against supported OS?
+    # probably
     for os in "${os_supported[@]}"; do
         grep "ID=$os" /etc/os-release > /dev/null 2>&1 \
             && export setup_os="$os" \
@@ -42,22 +53,41 @@ get_setup_os() {
     done
 }
 
+ask_uefi() {
+    choices=(
+        "false" "| No, I only want compatibility with legacy BIOS."
+        "true" "| Yes, I want to use UEFI (including hybrid configuration)."
+    )
+
+    uefi=$(whiptail \
+        --title "UEFI configuration" \
+        --menu "\\nThis script noticed the following about your system:
+            \\n    UEFI is currently set to ${uefi}.
+            \\nIf you are unsure about the answer to the following question, keep the response the same as the above line.
+            \\nDo you want to set this computer up with UEFI?" \
+        25 78 2 \
+        "${choices[@]}" \
+        3>&1 1>&2 2>&3 3>&1
+    )
+}
+
 get_uefi() {
-    uefi="0"
+    uefi=false
 
     # UEFI check #1
     mount | grep efi > /dev/null 2>&1 \
-        && uefi="1"
+        && uefi=true
 
     # UEFI check #2
     ls /sys/firmware/efi > /dev/null 2>&1 \
-        && uefi="1"
+        && uefi=true
+
+    ask_uefi
 }
 
 get_disks() {
     # store disk names in an array
     mapfile -t list_disk_paths < <(lsblk | grep disk | awk '{print $1}')
-    #list_disk_paths=$(lsblk | grep disk | awk '{print $1}')
 
     # store disk sizes in an array
     mapfile -t list_disk_sizes < <(lsblk | grep disk | awk '{print $4}')
@@ -65,27 +95,24 @@ get_disks() {
     # how many disks?
     disk_count=${#list_disk_paths[@]}
 
-    # instantiate `disk_selected`
+    # ask the user to select a disk
     ask_for_disk_selected
-
-    # if `disk_count` is 1, set it as the disk selected without asking the user
-    #[[ $disk_count == "1" ]] \
-    #    && disk_selected="${list_disk_paths[0]}"
 }
 
 ask_for_disk_selected() {
     choices=()
     n=0
 
+    # generate "correct" array for whiptail
     while [ $n -lt $disk_count ]; do
         choices+=("${list_disk_paths[$n]}" "| ${list_disk_sizes[$n]}")
         ((n+=1))
     done
 
     disk_selected=$(whiptail \
-        --title "Format Disk" \
+        --title "Format Disk - Select Disk" \
         --menu "\\nPlease select the disk to format:" \
-        25 78 16 \
+        25 78 10 \
         "${choices[@]}" \
         3>&1 1>&2 2>&3 3>&1
     )
@@ -105,64 +132,141 @@ get_ram_size() {
     ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
 }
 
-check_so_far() {
-    [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
-    [ -z "$release_selected" ] && release_selected="rolling"
+ask_partition_scheme() {
+    choices=(
+        "1" "| basic partitioning"
+        "2" "| hybrid partitioning"
+    )
 
-    echo -e "\nSTATUS:"
-    echo "IMAGE OS = $setup_os"
-
-    echo -e "\nDISKS:"
-    echo "DISK SELECTED = $disk_selected"
-
-    echo -e "\nOTHER:"
-    echo "UEFI? = $uefi"
-    echo "Partition 4 = $partition_boot_4"
-    echo "RAM: $ram_size"
-    echo "PATH_DEV: $path_dev"
-    echo "PATH_DEV_MAPPER: $path_dev_mapper"
-    echo "LVM NAME: $lvm_name"
-
-    echo -e "\nINSTALLING:"
-    echo "OS VERSION: $install_os_selected"
-    echo "RELEASE: $release_selected"
+    partition_scheme_selected=$(whiptail \
+        --title "Format Disk - Partition Scheme" \
+        --menu "\\nFor the next section:
+            \\n - \"basic\" is a 1GB \`/boot\` partition, with the remainder for the rootfs.\\n - \"hybrid\" has both BIOS and UEFI capabilities.
+            \\nPlease select the partition scheme you would like to deploy:" \
+        25 78 10 \
+        "${choices[@]}" \
+        3>&1 1>&2 2>&3 3>&1
+    )
 }
 
-#format_disk() {
-#    devsel="/dev/${disk_selected}"
-#
-#    # a check for root user
-#    sgdisk --print $devsel > /dev/null 2>&1 \
-#        || echo "Are you sure you're running this as the root user?"
-#
-#    # wipe and puts on GPT signatures
-#    sgdisk --zap-all $devsel
-#
-#    # PARTITIONS
-#    sgdisk --new=1:0:+768M $devsel      # this is the boot partition (`/boot`)
-#    sgdisk --new=2:0:+2M $devsel        # this is a GRUB partition
-#    sgdisk --new=3:0:+128M $devsel      # this is an EFI partition
-#    sgdisk --new=4:0:0 $devsel          # this creates a rootfs until the end of the drive
-#
-#    # TYPECODES
-#    sgdisk \
-#        --typecode=1:8301 \
-#        --typecode=2:ef02 \
-#        --typecode=3:ef00 \
-#        --typecode=4:8301 \
-#        $devsel
-#
-#    # LABELS
-#    sgdisk \
-#        --change-name=1:/boot \
-#        --change-name=2:GRUB \
-#        --change-name=3:EFI-SP \
-#        --change-name=4:rootfs \
-#        $devsel
-#
-#    # SET HYBRID SINCE BOTH BIOS AND UEFI
-#    sgdisk --hybrid 1:2:3 $devsel
-#}
+ask_to_encrypt() {
+    choices=(
+        "true" "| encrypt the root file system"
+        "false" "| do not encrypt the root file system"
+    )
+
+    encryption=$(whiptail \
+        --title "Encryption" \
+        --menu "\\nDo you want to encrypt the root file system?" \
+        25 78 2 \
+        "${choices[@]}" \
+        3>&1 1>&2 2>&3 3>&1
+    )
+}
+
+ask_encryption_type() {
+    choices=(
+        "hello" ""
+        "hi" ""
+    )
+
+    encryption_type=$(whiptail \
+        --title "Encryption" \
+        --menu "\\nWhich type of encryption?" \
+        25 78 10 \
+        "${choices[@]}" \
+        3>&1 1>&2 2>&3 3>&1
+    )
+}
+
+get_encryption_pass() {
+     pass1=$(whiptail \
+         --title "Encryption Password" \
+         --passwordbox "\\nPlease enter a password to unlock the encrypted drive." \
+        --nocancel \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    pass2=$(whiptail \
+        --title "Encryption Password" \
+        --passwordbox "\\nPlease retype the password to unlock the encrypted drive." \
+        --nocancel \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    while ! [ "$pass1" = "$pass2" ] || [ -z "$pass1"]; do
+        pass1=$(whiptail \
+            --title "Encryption Password" \
+            --passwordbox "\\nThe passwords entered do not match each other.
+                \\nPlease enter again the encrypted drive's password." \
+            --nocancel \
+            25 78 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+
+        pass2=$(whiptail \
+            --title "Encryption Password" \
+            --passwordbox "\\nPlease retype the password to unlock the encrypted drive." \
+            --nocancel \
+            25 78 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+
+    pass_encrypt="$pass1"
+    unset pass1
+    unset pass2
+}
+
+run_partition_setup() {
+    ask_partition_scheme || error
+
+    ask_to_encrypt || error
+
+    # if Ubuntu image, run `debootstrap`
+    # if `debootstrap` fails, error
+    [ "$encryption" = true ] \
+        && {
+            ask_encryption_type \
+                && get_encryption_pass \
+                || error
+    }
+}
+
+get_setup_info() {
+    get_setup_os # sets `setup_os`
+
+    get_uefi || error # sets `uefi` (0 is "legacy BIOS")
+
+    get_disks || error # sets `disk_count` and `disk_selected`
+
+    set_partition_names # sets variables for the different partitions
+
+    get_ram_size # set `ram_size` in the format of `xyGB`
+
+    [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
+    [ -z "$release_selected" ] && release_selected="rolling"
+}
+
+ask_confirm_inputs() {
+    whiptail \
+        --title "Confirm Inputs" \
+        --yesno "\\nHere's what we have:
+            \\n     Image OS                        =   $setup_os
+            \\n     UEFI                            =   $uefi
+            \\n     Disk selected                   =   $path_dev/$disk_selected
+            \\n     Encryption                      =   $encryption
+            \\n     LVM name                        =   $path_dev_mapper/$lvm_name
+            \\n     RAM                             =   $ram_size
+            \\n     Install OS                      =   $install_os_selected
+            \\n     Release version                 =   $release_selected" \
+        --yes-button "Let's go!" \
+        --no-button "Cancel" \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+}
 
 format_disk() {
     devsel="/dev/${disk_selected}"
@@ -177,12 +281,6 @@ format_disk() {
     #sfdisk -d $devsel                                          # to view
 }
 
-ask_debootstrap() {
-    ask_debootstrap_install_os
-
-    ask_debootstrap_release_version
-}
-
 ask_debootstrap_install_os() {
     # Debootstrap OS options
     debootstrap_os_installable=(
@@ -191,9 +289,10 @@ ask_debootstrap_install_os() {
     )
 
     install_os_selected=$(whiptail \
-        --title "Install OS" \
-        --menu "\\nPlease select the OS to install:" \
-        25 78 16 \
+        --title "Debootstrap - Install OS" \
+        --menu "\\nThe script noticed that you are using an Ubuntu image.
+            \\nPlease select the OS to install:" \
+        25 78 10 \
         "${debootstrap_os_installable[@]} " \
         3>&1 1>&2 2>&3 3>&1
     )
@@ -203,22 +302,38 @@ ask_debootstrap_release_version() {
     # Debian options
     [ "$install_os_selected" == "Debian" ] \
         && releases=( \
-        "bookworm" "| Debian 12" \
-        "bullseye" "| Debian 11" \
+        "bookworm" "| Debian 12"
+        "bullseye" "| Debian 11"
         )
 
     # Ubuntu options
     [ "$install_os_selected" == "Ubuntu" ] \
         && releases=( \
-        "noble" "| Ubuntu 24" \
-        "jammy" "| Ubuntu 22" \
+        "noble" "| Ubuntu 24"
+        "jammy" "| Ubuntu 22"
         )
 
     release_selected=$(whiptail \
-        --title "Release Version" \
-        --menu "\\nPlease select the release version install:" \
-        25 78 16 \
+        --title "Debootstrap - Release Version" \
+        --menu "\\nPlease select the $install_os_selected release version to install:" \
+        25 78 10 \
         "${releases[@]}" \
         3>&1 1>&2 2>&3 3>&1
     )
+}
+
+ask_debootstrap() {
+    ask_debootstrap_install_os
+
+    ask_debootstrap_release_version
+}
+
+run_debootstrap() {
+    # if Ubuntu image, run `debootstrap`
+    # if `debootstrap` fails, error
+    [ "$setup_os" == "ubuntu" ] \
+        && {
+            ask_debootstrap \
+                || error
+    }
 }
