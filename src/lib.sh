@@ -260,6 +260,14 @@ check_image_ubuntu() {
     [ "$setup_os" == "ubuntu" ]
 }
 
+check_install_debian() {
+    [ "$install_os_selected" == "debian" ]
+}
+
+check_install_ubuntu() {
+    [ "$install_os_selected" == "ubuntu" ]
+}
+
 ask_debootstrap_install_os() {
     # Debootstrap OS options
     debootstrap_os_installable=(
@@ -277,20 +285,13 @@ ask_debootstrap_install_os() {
     )
 }
 
-check_install_debian() {
-    [ "$setup_os" == "debian" ]
-}
-
-check_install_ubuntu() {
-    [ "$setup_os" == "ubuntu" ]
-}
-
 ask_debootstrap_release_version() {
     check_install_debian \
         && release_selected="bookworm"
 
     check_install_ubuntu \
-        && release_selected="noble"
+        && release_selected="noble" \
+        || echo > /dev/null
 }
 
 
@@ -456,7 +457,7 @@ debootstrap_sourceslist() {
     # just long enough for the screen to be read
     sleep 1
 
-    apt_sourceslist_src="src/templates/apt/${install_os_selected}_${release_selected}sources.list"
+    apt_sourceslist_src="src/templates/apt/${install_os_selected}_${release_selected}_sources.list"
     apt_sourceslist_dest="/mnt/etc/apt/sources.list"
 
     echo "changing:" \
@@ -485,14 +486,23 @@ chroot_debootstrap() {
         echo "failed to chroot!" && exit 1
     }
 
-    repodir=".local/src"
+    repodir="/root/.local/src"
     post_chroot_path="debian-setup"
+    post_chroot_script="${repodir}/${post_chroot_path}/${post_chroot_path}.sh"
 
-    mkdir -p "/mnt/root/$repodir"
+    mkdir -p "/mnt$repodir"
 
-    git clone "https://github.com/DavidVogelxyz/$post_chroot_path" "~/${repodir}/${post_chroot_path}"
+    # clone `debian-setup`
+    git clone "https://github.com/DavidVogelxyz/$post_chroot_path" "/mnt${repodir}/${post_chroot_path}"
 
-    chroot /mnt "/mnt/root/${repodir}/${post_chroot_path}/${post_chroot_path}.sh"
+    # exclusively for compatibilty with `debian-setup`
+    sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
+    sed -i '2 i \\' "/mnt${post_chroot_script}"
+    sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
+
+    # make executable and run
+    chmod +x "/mnt${post_chroot_script}"
+    chroot /mnt "${post_chroot_script}"
 }
 
 run_debootstrap() {
