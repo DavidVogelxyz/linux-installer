@@ -53,20 +53,29 @@ get_setup_os() {
     done
 }
 
-ask_uefi() {
-    # `whiptail --default-item` wasn't working; so, alternative way to set default
-    [ $uefi = false ] \
-        && choices=(
-            "bios" "| No, I only want compatibility with legacy BIOS."
-            "uefi" "| Yes, I want to use UEFI (including hybrid configuration)."
-        )
+check_uefi() {
+    uefi=false
 
+    # UEFI check #1
+    mount | grep efi > /dev/null 2>&1 \
+        && uefi=true
+
+    # UEFI check #2
+    ls /sys/firmware/efi > /dev/null 2>&1 \
+        && uefi=true
+}
+
+ask_uefi() {
     # `whiptail --default-item` wasn't working; so, alternative way to set default
     [ $uefi = true ] \
         && choices=(
             "uefi" "| Yes, I want to use UEFI (including hybrid configuration)."
             "bios" "| No, I only want compatibility with legacy BIOS."
-        )
+        ) \
+            || choices=(
+                "bios" "| No, I only want compatibility with legacy BIOS."
+                "uefi" "| Yes, I want to use UEFI (including hybrid configuration)."
+            )
 
     uefi=$(whiptail \
         --title "UEFI configuration" \
@@ -81,31 +90,9 @@ ask_uefi() {
 }
 
 get_uefi() {
-    uefi=false
+    check_uefi
 
-    # UEFI check #1
-    mount | grep efi > /dev/null 2>&1 \
-        && uefi=true
-
-    # UEFI check #2
-    ls /sys/firmware/efi > /dev/null 2>&1 \
-        && uefi=true
-
-    ask_uefi
-}
-
-get_disks() {
-    # store disk names in an array
-    mapfile -t list_disk_paths < <(lsblk | grep disk | awk '{print $1}')
-
-    # store disk sizes in an array
-    mapfile -t list_disk_sizes < <(lsblk | grep disk | awk '{print $4}')
-
-    # how many disks?
-    disk_count=${#list_disk_paths[@]}
-
-    # ask the user to select a disk
-    ask_for_disk_selected
+    ask_uefi || error
 }
 
 ask_for_disk_selected() {
@@ -127,18 +114,40 @@ ask_for_disk_selected() {
     )
 }
 
-set_partition_names() {
-    # could turn this into a loop...
-    partition_boot_1="${disk_selected}1"
-    partition_boot_2="${disk_selected}2"
-    partition_boot_3="${disk_selected}3"
-    partition_boot_4="${disk_selected}4"
-    partition_boot_5="${disk_selected}5"
+get_disks() {
+    # store disk names in an array
+    mapfile -t list_disk_paths < <(lsblk | grep disk | awk '{print $1}')
+
+    # store disk sizes in an array
+    mapfile -t list_disk_sizes < <(lsblk | grep disk | awk '{print $4}')
+
+    # how many disks?
+    disk_count=${#list_disk_paths[@]}
+
+    # ask the user to select a disk
+    ask_for_disk_selected
 }
 
 get_ram_size() {
     # `--si` gets the human readable `-h` in units of "GB"
     ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
+}
+
+get_setup_info() {
+    error() {
+        echo "failed to get setup info!" && exit 1
+    }
+
+    get_setup_os # sets `setup_os`
+
+    get_uefi || error # sets `uefi` (0 is "legacy BIOS")
+
+    get_disks || error # sets `disk_count` and `disk_selected`
+
+    get_ram_size # set `ram_size` in the format of `xyGB`
+
+    [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
+    [ -z "$release_selected" ] && release_selected="rolling"
 }
 
 #ask_partition_scheme() {
@@ -209,7 +218,7 @@ get_encryption_pass() {
         3>&1 1>&2 2>&3 3>&1
     )
 
-    while ! [ "$pass1" = "$pass2" ] || [ -z "$pass1"]; do
+    while ! [ "$pass1" = "$pass2" ] || [ -z "$pass1" ]; do
         pass1=$(whiptail \
             --title "Encryption Password" \
             --passwordbox "\\nThe passwords entered do not match each other, or were left blank.
@@ -233,69 +242,29 @@ get_encryption_pass() {
     unset pass2
 }
 
-run_partition_setup() {
+get_partition_info() {
     #ask_partition_scheme || error
 
     ask_to_encrypt || error
 
-    # if Ubuntu image, run `debootstrap`
-    # if `debootstrap` fails, error
+    # if `encryption` is `true`, run `get_encryption_pass`
+    # if `get_encryption_pass` fails, error
     [ "$encryption" = true ] \
-        && get_encryption_pass \
-            || error
+        && {
+            get_encryption_pass \
+                || error
+        }
 }
 
-get_setup_info() {
-    get_setup_os # sets `setup_os`
-
-    get_uefi || error # sets `uefi` (0 is "legacy BIOS")
-
-    get_disks || error # sets `disk_count` and `disk_selected`
-
-    set_partition_names # sets variables for the different partitions
-
-    get_ram_size # set `ram_size` in the format of `xyGB`
-
-    [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
-    [ -z "$release_selected" ] && release_selected="rolling"
-}
-
-ask_confirm_inputs() {
-    whiptail \
-        --title "Confirm Inputs" \
-        --yesno "\\nHere's what we have:
-            \\n     Image OS                        =   $setup_os
-            \\n     Partitioning to deploy          =   $uefi $partition_scheme_selected
-            \\n     Disk selected                   =   $path_dev/$disk_selected
-            \\n     Encryption                      =   $encryption
-            \\n     LVM name                        =   $path_dev_mapper/$lvm_name
-            \\n     RAM                             =   $ram_size
-            \\n     Install OS                      =   $install_os_selected
-            \\n     Release version                 =   $release_selected" \
-        --yes-button "Let's go!" \
-        --no-button "Cancel" \
-        25 78 \
-        3>&1 1>&2 2>&3 3>&1
-}
-
-format_disk() {
-    devsel="/dev/${disk_selected}"
-
-    # a check for root user
-    # > /dev/null 2>&1
-    sfdisk -d $devsel \
-        || echo "Are you sure you're running this as the root user?"
-
-    # lots of good new stuff to try with the sfdisk commands
-    #sfdisk $devsel < templates/format_disk_*                   # to take a file as a "state"
-    #sfdisk -d $devsel                                          # to view
+check_image_ubuntu() {
+    [ "$setup_os" == "ubuntu" ]
 }
 
 ask_debootstrap_install_os() {
     # Debootstrap OS options
     debootstrap_os_installable=(
-        "Debian" "| Options include Debian 12 and Debian 11"
-        "Ubuntu" "| Options include Ubuntu 24 and Ubuntu 22"
+        "debian" "| Options include Debian 12 and Debian 11"
+        "ubuntu" "| Options include Ubuntu 24 and Ubuntu 22"
     )
 
     install_os_selected=$(whiptail \
@@ -308,42 +277,238 @@ ask_debootstrap_install_os() {
     )
 }
 
-ask_debootstrap_release_version() {
-    # Debian options
-    [ "$install_os_selected" == "Debian" ] \
-        && releases=( \
-        "bookworm" "| Debian 12"
-        "bullseye" "| Debian 11"
-        )
-
-    # Ubuntu options
-    [ "$install_os_selected" == "Ubuntu" ] \
-        && releases=( \
-        "noble" "| Ubuntu 24"
-        "jammy" "| Ubuntu 22"
-        )
-
-    release_selected=$(whiptail \
-        --title "Debootstrap - Release Version" \
-        --menu "\\nPlease select the $install_os_selected release version to install:" \
-        25 78 10 \
-        "${releases[@]}" \
-        3>&1 1>&2 2>&3 3>&1
-    )
+check_install_debian() {
+    [ "$setup_os" == "debian" ]
 }
 
-ask_debootstrap() {
-    ask_debootstrap_install_os
+check_install_ubuntu() {
+    [ "$setup_os" == "ubuntu" ]
+}
 
-    ask_debootstrap_release_version
+ask_debootstrap_release_version() {
+    check_install_debian \
+        && release_selected="bookworm"
+
+    check_install_ubuntu \
+        && release_selected="noble"
+}
+
+
+ask_debootstrap() {
+    error() {
+        echo "failed to get debootstrap information!" && exit 1
+    }
+
+    ask_debootstrap_install_os || error
+
+    ask_debootstrap_release_version || error
+}
+
+ask_confirm_inputs() {
+    whiptail \
+        --title "Confirm Inputs" \
+        --yesno "\\nHere's what we have:
+            \\n     Image OS                        =   $setup_os
+            \\n     Partitioning to deploy          =   $uefi $partition_scheme_selected
+            \\n     Disk selected                   =   $path_dev/$disk_selected
+            \\n     Encryption                      =   $encryption
+            \\n     LVM name                        =   $path_dev_mapper/$lvm_name
+            \\n     RAM                             =   $ram_size
+            \\n     Install OS & release            =   $install_os_selected $release_selected" \
+        --yes-button "Let's go!" \
+        --no-button "Cancel" \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+}
+
+format_disk_warning_screen() {
+    whiptail \
+        --title "Format Disk - WARNING!" \
+        --yesno "\\nWARNING!
+            \\nThis script is about to format \"$path_dev/$disk_selected\".
+            \\nThis will irrevocably wipe the data on this disk.
+            \\nThe utility SHOULD be able to detect a \"disk in use\" and fail before wiping.
+            \\nBut, this is not a guarantee!
+            \\nAre you sure you want to do this?" \
+        --yes-button "Let's go!" \
+        --no-button "No thanks." \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+}
+
+format_disk_nonsense() {
+    #devsel="/dev/${disk_selected}"
+
+    # a check for root user
+    # > /dev/null 2>&1
+    sfdisk -d $devsel \
+        || echo "Are you sure you're running this as the root user?"
+
+    # lots of good new stuff to try with the sfdisk commands
+    #sfdisk $devsel < templates/format_disk_*                   # to take a file as a "state"
+    #sfdisk -d $devsel                                          # to view
+}
+
+format_disk() {
+    TERM=ansi whiptail \
+        --title "Format Disk" \
+        --infobox "Formatting disk..." \
+        8 78
+
+    # gives the feeling of starting up
+    sleep 0.5
+
+    # if successful, half second to read screen
+    # if not, fails immediately
+    sfdisk ${path_dev}/${disk_selected} < src/templates/format_disk/${uefi}_standard && sleep 0.5 || error
+}
+
+set_partition_names() {
+    # set the first partition as "/boot"
+    # may need to change in the future
+    partition_boot=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | head -1 | awk '{print $1}')
+
+    # set the last partition as "rootfs"
+    # may need to change in the future
+    partition_rootfs=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | tail -1 | awk '{print $1}')
+}
+
+run_format_disk() {
+    error() {
+        echo "failed to format disk!" && exit 1
+    }
+
+    format_disk_warning_screen || error
+
+    format_disk || error
+
+    set_partition_names || error
+}
+
+#run_cryptsetup() {}
+
+make_file_systems() {
+    error() {
+        echo "failed to make file systems!" && exit 1
+    }
+
+    TERM=ansi whiptail \
+        --title "File Systems" \
+        --infobox "Making file systems..." \
+        8 78
+
+    mkfs.fat -F32 "$partition_boot" > /dev/null 2>&1
+    mkfs.ext4 "$partition_rootfs" > /dev/null 2>&1
+
+    # just long enough for the screen to be read
+    sleep 1
+}
+
+mount_file_systems() {
+    error() {
+        echo "failed to mount file systems!" && exit 1
+    }
+
+    TERM=ansi whiptail \
+        --title "File Systems" \
+        --infobox "Mounting file systems..." \
+        8 78
+
+    mount "$partition_rootfs" /mnt
+    mkdir -p /mnt/boot
+    mount "$partition_boot" /mnt/boot
+
+    # just long enough for the screen to be read
+    sleep 1
+}
+
+run_pre_debootstrap() {
+    TERM=ansi whiptail \
+        --title "Pre-Debootstrap" \
+        --infobox "Installing \`debootstrap\` and \`vim\` to the install image environment." \
+        8 78
+
+    apt update > /dev/null \
+        && apt install -y debootstrap git vim > /dev/null 2>&1
+}
+
+bind_mounts() {
+    TERM=ansi whiptail \
+        --title "Bind Mounts" \
+        --infobox "Binding certain devices to the chroot environment..." \
+        8 78
+
+    for d in sys dev proc; do
+        mount --rbind /$d /mnt/$d \
+            && mount --make-rslave /mnt/$d
+    done
+
+    # just long enough for the screen to be read
+    sleep 1
+}
+
+debootstrap_sourceslist() {
+    TERM=ansi whiptail \
+        --title "Package Repositories" \
+        --infobox "Making sure that the \`/etc/apt/sources.list\` file is good..." \
+        8 78
+
+    # just long enough for the screen to be read
+    sleep 1
+
+    apt_sourceslist_src="src/templates/apt/${install_os_selected}_${release_selected}sources.list"
+    apt_sourceslist_dest="/mnt/etc/apt/sources.list"
+
+    echo "changing:" \
+        && [ -f "$apt_sourceslist_dest" ] \
+        && cat "$apt_sourceslist_dest" \
+        || error
+
+    echo -e "\nto:" \
+        && [ -f "$apt_sourceslist_src" ] \
+        && cat "$apt_sourceslist_src" \
+        && echo \
+        || error
+
+    # update `sources.list`
+    cp "$apt_sourceslist_src" "$apt_sourceslist_dest"
+
+    unset apt_sourceslist_src
+    unset apt_sourceslist_dest
+
+    # just long enough for the screen to be read
+    sleep 1
+}
+
+chroot_debootstrap() {
+    error() {
+        echo "failed to chroot!" && exit 1
+    }
+
+    repodir=".local/src"
+    post_chroot_path="debian-setup"
+
+    mkdir -p "/mnt/root/$repodir"
+
+    git clone "https://github.com/DavidVogelxyz/$post_chroot_path" "~/${repodir}/${post_chroot_path}"
+
+    chroot /mnt "/mnt/root/${repodir}/${post_chroot_path}/${post_chroot_path}.sh"
 }
 
 run_debootstrap() {
-    # if Ubuntu image, run `debootstrap`
-    # if `debootstrap` fails, error
-    [ "$setup_os" == "ubuntu" ] \
-        && {
-            ask_debootstrap \
-                || error
+    error() {
+        echo "failed to debootstrap!" && exit 1
     }
+
+    # make sure `debootstrap` and `vim` are installed
+    run_pre_debootstrap || error
+
+    # do the `debootstrap`
+    debootstrap $release_selected /mnt || error
+
+    bind_mounts || error
+
+    debootstrap_sourceslist || error
+
+    chroot_debootstrap || error
 }
