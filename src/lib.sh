@@ -53,6 +53,18 @@ get_setup_os() {
     done
 }
 
+check_image_arch() {
+    [ "$setup_os" == "arch" ]
+}
+
+check_image_artix() {
+    [ "$setup_os" == "artix" ]
+}
+
+check_image_ubuntu() {
+    [ "$setup_os" == "ubuntu" ]
+}
+
 check_uefi() {
     uefi=false
 
@@ -256,8 +268,12 @@ get_partition_info() {
         }
 }
 
-check_image_ubuntu() {
-    [ "$setup_os" == "ubuntu" ]
+check_install_arch() {
+    [ "$install_os_selected" == "arch" ]
+}
+
+check_install_artix() {
+    [ "$install_os_selected" == "artix" ]
 }
 
 check_install_debian() {
