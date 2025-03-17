@@ -1,21 +1,118 @@
 #!/bin/sh
 
-############################################
-# VARIABLES
-############################################
+####################################################################
+# NEW FUNCTIONS
+####################################################################
 
-localeconf=(
-'export LANG="en_US.UTF-8"
-export LC_COLLATE="C"'
-)
+# check if timezone is symlink
+check_path_link() {
+    [[ -L "$path_to_check" ]]
+}
+
+# check if timezone is file
+check_path_file() {
+    [[ -f "$path_to_check" ]]
+}
+
+set_timezone() {
+    path_to_check="/etc/localtime"
+
+    # remove timezone if link
+    check_path_link \
+        && unlink /etc/localtime
+
+    # remove timezone if file
+    check_path_file \
+        && rm /etc/localtime
+
+    # set timezone
+    ln -s "/usr/share/zoneinfo/$timezone" /etc/localtime
+
+    unset path_to_check
+}
+
+sync_clock() {
+    hwclock --systohc
+}
+
+set_datetime() {
+    set_timezone
+
+    sync_clock
+}
+
+set_locale_conf() {
+    template_replace src/templates/etc/locale.conf /etc/locale.conf
+}
+
+uncomment_locale_gen() {
+    [[ "$region" == "en_US" ]] \
+        && sed -i 's/^# en_US/en_US/g' /etc/locale.gen
+}
+
+run_locale_gen() {
+    locale-gen > /dev/null 2>&1
+}
+
+set_locales() {
+    set_locale_conf
+
+    uncomment_locale_gen
+
+    run_locale_gen
+}
+
+set_etc_hostname() {
+    echo "$hostname" > /etc/hostname
+}
+
+set_etc_hosts() {
+    echo "127.0.0.1       localhost" > /etc/hosts
+    echo "::1             localhost" >> /etc/hosts
+    echo "127.0.1.1       $hostname $hostname.$localdomain" >> /etc/hosts
+}
+
+set_hosts() {
+    set_etc_hostname
+
+    set_etc_hosts
+}
+
+enable_networkmanager() {
+    systemctl enable NetworkManager
+}
+
+template_replace() {
+    TERM=ansi whiptail \
+        --title "Config Update" \
+        --infobox "Updating the \`$2\` file..." \
+        8 78
+
+    # just long enough for the screen to be read
+    sleep 1
+
+    [ -f "$1"] \
+        && [ -f "$2"] \
+        && diff "$2" "$1"
+
+    # update file with template
+    cp "$1" "$2"
+
+    # just long enough for the screen to be read
+    sleep 1
+}
+
+####################################################################
+# VARIABLES - DEBIAN-SETUP
+####################################################################
 
 packfile="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/master/packages.csv"
 
 TERM=linux
 
-############################################
-# FUNCTIONS
-############################################
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP
+####################################################################
 
 error() {
     # Log to stderr and exit with failure.
@@ -23,198 +120,373 @@ error() {
     exit 1
 }
 
-getuserandpass() {
-    rootpass1=$(whiptail --title "Root Password" --passwordbox "\\nPlease enter a password for the root user." \
-        --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - GET_USER_AND_PASS
+####################################################################
+
+ask_root_pass() {
+    # get root pass
+    rootpass1=$(whiptail \
+        --title "Root Password" \
+        --passwordbox "\\nPlease enter a password for the root user." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
     )
 
-    rootpass2=$(whiptail --title "Root Password" --passwordbox "\\nPlease retype the password for the root user." \
-        --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
+    # get root pass confirmation
+    rootpass2=$(whiptail \
+        --title "Root Password" \
+        --passwordbox "\\nPlease retype the password for the root user." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
     )
 
+    # put user in loop until the two "root pass" entries agree
     while ! [ "$rootpass1" = "$rootpass2" ]; do
-        rootpass1=$(whiptail --title "Root Password" --passwordbox "\\nThe passwords entered do not match each other.\\n\\nPlease enter the root user's password again." \
-            --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
+        rootpass1=$(whiptail \
+            --title "Root Password" \
+            --passwordbox "\\nThe passwords entered do not match each other.
+                \\nPlease enter the root user's password again." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
         )
 
-        rootpass2=$(whiptail --title "Root Password" --passwordbox "\\nPlease retype the password for the root user." \
-            --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
-        )
-    done
-
-    username=$(whiptail --title "Username" --inputbox "\\nPlease enter a name for the new user that will be created by the script." \
-        10 60 3>&1 1>&2 2>&3 3>&1
-    ) || exit 1
-
-    while ! echo "$username" | grep -q "^[a-z][a-z0-9_-]*$"; do
-        username=$(whiptail --title "Username" --inputbox "\\nInvalid username. Please provide a username using lowercase letters; numbers, -, or _ can be used if not the first character." \
-            --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
-        )
-    done
-
-    userpass1=$(whiptail --title "User Password" --passwordbox "\\nPlease enter a password for $username." \
-        --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
-    )
-
-    userpass2=$(whiptail --title "User Password" --passwordbox "\\nPlease retype password for $username." \
-        --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
-    )
-
-    while ! [ "$userpass1" = "$userpass2" ]; do
-        userpass1=$(whiptail --title "User Password" --passwordbox "\\nThe passwords entered do not match each other.\\n\\nPlease enter $username's password again." \
-            --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
-        )
-
-        userpass2=$(whiptail --title "User Password" --passwordbox "\\nPlease retype password for $username." \
-            --nocancel 10 60 3>&1 1>&2 2>&3 3>&1
+        rootpass2=$(whiptail \
+            --title "Root Password" \
+            --passwordbox "\\nPlease retype the password for the root user." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
         )
     done
 }
 
-getnetworkinginfo() {
-    hostname=$(whiptail --title "Hostname" --inputbox "\\nPlease enter a hostname for the Debian computer." \
-        10 60 3>&1 1>&2 2>&3 3>&1
+ask_username() {
+    # get username
+    username=$(whiptail \
+        --title "Username" \
+        --inputbox "\\nPlease enter a name for the new user that will be created by the script." \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
     ) || exit 1
+
+    # put user in loop until "username":
+    # - true = starts with lowercase
+    # - true = is only lowercase, numbers, `_`, and `-`
+    while ! echo "$username" | grep -q "^[a-z][a-z0-9_-]*$"; do
+        username=$(whiptail \
+            --title "Username" \
+            --inputbox "\\nInvalid username.
+                \\nPlease provide a username using lowercase letters only.
+                \\nNumbers, \`-\`, or \`_\` can be used for any letter but the first." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+ask_user_pass() {
+    # get user pass
+    userpass1=$(whiptail \
+        --title "User Password" \
+        --passwordbox "\\nPlease enter a password for $username." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # get user pass confirmation
+    userpass2=$(whiptail \
+        --title "User Password" \
+        --passwordbox "\\nPlease retype password for $username." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # put user in loop until the two "user pass" entries agree
+    while ! [ "$userpass1" = "$userpass2" ]; do
+        userpass1=$(whiptail \
+            --title "User Password" \
+            --passwordbox "\\nThe passwords entered do not match each other.
+                \\nPlease enter $username's password again." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+
+        userpass2=$(whiptail \
+            --title "User Password" \
+            --passwordbox "\\nPlease retype password for $username." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+get_user_and_pass() {
+    ask_root_pass
+
+    ask_username
+
+    ask_user_pass
+}
+
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - GET_NETWORKING_INFO
+####################################################################
+
+ask_hostname() {
+    hostname=$(whiptail \
+        --title "Hostname" \
+        --inputbox "\\nPlease enter a hostname for the Debian computer." \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
 
     while ! echo "$hostname" | grep -q "^[a-z][a-z0-9_-]*$"; do
-        hostname=$(whiptail --title "Hostname" --inputbox "\\nInvalid hostname. Please provide a hostname using lowercase letters; numbers, -, or _ can be used if not the first character." \
-            10 60 3>&1 1>&2 2>&3 3>&1
+        hostname=$(whiptail \
+            --title "Hostname" \
+            --inputbox "\\nInvalid hostname.
+                \\nPlease provide a hostname using lowercase letters; numbers, -, or _ can be used if not the first character." \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
         )
     done
+}
 
-    localdomain=$(whiptail --title "Local Domain" --inputbox "\\nPlease enter the domain of the network. If unsure, just enter 'local'." \
-        10 60 3>&1 1>&2 2>&3 3>&1
-    ) || exit 1
+ask_local_domain() {
+    localdomain=$(whiptail \
+        --title "Local Domain" \
+        --inputbox "\\nPlease enter the domain of the network.
+            \\nIf unsure, just enter 'local'." \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
 
     while ! echo "$localdomain" | grep -q "^[a-z][a-z0-9_.-]*$"; do
-        localdomain=$(whiptail --title "Local Domain" --inputbox "\\nInvalid domain. Please provide a domain using lowercase letters; numbers, -, _, or . can be used if not the first character." \
-            10 60 3>&1 1>&2 2>&3 3>&1
+        localdomain=$(whiptail \
+            --title "Local Domain" \
+            --inputbox "\\nInvalid domain.
+                \\nPlease provide a domain using lowercase letters; numbers, -, _, or . can be used if not the first character." \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
         )
     done
 }
 
+get_networking_info() {
+    ask_hostname
+
+    ask_local_domain
+}
+
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - QUESTIONS
+####################################################################
+
 questions() {
-    timezone=$(whiptail --title "Timezone" --menu "\\nWhat timezone are you in?" \
+    # would still need to ask this question
+    timezone=$(whiptail \
+        --title "Timezone" \
+        --menu "\\nWhat timezone are you in?" \
         14 60 4 \
-        "US/Eastern" ""\
-        "US/Central" ""\
-        "US/Mountain" ""\
-        "US/Pacific" ""\
+        "US/Eastern" "" \
+        "US/Central" "" \
+        "US/Mountain" "" \
+        "US/Pacific" "" \
         3>&1 1>&2 2>&3 3>&1
     )
 
-    region=$(whiptail --title "Region" --menu "\\nWhat region are you in?" \
+    # would still need to ask this question
+    region=$(whiptail \
+        --title "Region" \
+        --menu "\\nWhat region are you in?" \
         14 60 4 \
-        "en_US" ""\
+        "en_US" "" \
         3>&1 1>&2 2>&3 3>&1
     )
 
-    firmwareanswer=$(whiptail --title "Firmware" --menu "\\nIs this computer running 'legacy BIOS' or 'UEFI'?" \
+    # this should NOT need to be asked at this point
+    # change variable!
+    firmwareanswer=$(whiptail \
+        --title "Firmware" \
+        --menu "\\nIs this computer running 'legacy BIOS' or 'UEFI'?" \
         14 80 4 \
-        "BIOS" ""\
-        "UEFI" ""\
+        "BIOS" "" \
+        "UEFI" "" \
         3>&1 1>&2 2>&3 3>&1
-    ) || exit 1
+    ) \
+        || exit 1
 
+    # this should be removed with the previous and following snippet re `firmwareanswer`
+    # change variable!
     sdx="Ignore since UEFI"
 
-    [[ $firmwareanswer == "BIOS" ]] && {
-        sdx=$(whiptail --title "Device Name" --inputbox "\\nWhat is the device name (ex. sda, sdb, nvme0n1)?" \
-            10 60 3>&1 1>&2 2>&3 3>&1
-        )
+    # this should NOT need to be asked at this point
+    # change variable!
+    [[ $firmwareanswer == "BIOS" ]] \
+        && {
+            sdx=$(whiptail \
+                --title "Device Name" \
+                --inputbox "\\nWhat is the device name (ex. sda, sdb, nvme0n1)?" \
+                10 60 \
+                3>&1 1>&2 2>&3 3>&1
+            )
     }
 
-    cryptanswer=$(whiptail --title "Encrypted System?" --menu "\\nIs this computer's root storage encrypted?" \
+    # this should essentially be answered sooner
+    # change variable!
+    cryptanswer=$(whiptail \
+        --title "Encrypted System?" \
+        --menu "\\nIs this computer's root storage encrypted?" \
+        14 80 4 \
+        "yes" "" \
+        "no" "" \
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
+
+    # this should be asked sooner
+    # change variable!
+    swapanswer=$(whiptail \
+        --title "Swap Partition?" \
+        --menu "\\nDoes this computer have a swap partition?" \
         14 80 4 \
         "yes" ""\
         "no" ""\
         3>&1 1>&2 2>&3 3>&1
-    ) || exit 1
+    ) \
+        || exit 1
+}
 
-    swapanswer=$(whiptail --title "Swap Partition?" --menu "\\nDoes this computer have a swap partition?" \
-        14 80 4 \
-        "yes" ""\
-        "no" ""\
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - CONFIRM_INPUTS
+####################################################################
+
+confirm_inputs() {
+    whiptail \
+        --title "Confirm Your Inputs" \
+        --yes-button "Let's go!" \
+        --no-button "Never mind..." \
+        --yesno "\\nYou gave the following inputs:
+            \\n    Username: $username\\n    Hostname: $hostname\\n    Local domain: $localdomain\\n    Full address: $hostname.$localdomain\\n    Timezone: $timezone\\n    Region: $region\\n    Firmware: $firmwareanswer\\n    Device name: $sdx\\n    Encryption: $cryptanswer\\n    Swap partition: $swapanswer
+            \\nContinue?" \
+        24 85 \
         3>&1 1>&2 2>&3 3>&1
-    ) || exit 1
 }
 
-confirminputs() {
-    whiptail --title "Confirm Your Inputs" --yes-button "Let's go!" --no-button "Never mind..." \
-        --yesno "\\nYou gave the following inputs:\\n\\n    Username: $username\\n    Hostname: $hostname\\n    Local domain: $localdomain\\n    Full address: $hostname.$localdomain\\n    Timezone: $timezone\\n    Region: $region\\n    Firmware: $firmwareanswer\\n    Device name: $sdx\\n    Encryption: $cryptanswer\\n    Swap partition: $swapanswer\\n\\nContinue?" \
-        24 85 3>&1 1>&2 2>&3 3>&1
-}
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - ADD_USER_AND_PASS
+####################################################################
 
-adduserandpass() {
-    whiptail --infobox "Creating new user: \"$username\"" \
+add_user_and_pass() {
+    whiptail \
+        --infobox "Creating new user: \"$username\"" \
         9 70
 
-    echo "root:$rootpass1" | chpasswd
-    unset rootpass1 rootpass2
+    # change root password; if successful, unset the password
+    echo "root:$rootpass1" | chpasswd \
+        && unset rootpass1 rootpass2
 
+    # create user
     useradd -G sudo -s /bin/bash -m "$username"
-    export repodir="/home/$username/.local/src"
-    mkdir -p "$repodir"
-    chown -R "$username": "$(dirname "$repodir")"
 
-    echo "$username:$userpass1" | chpasswd
-    unset userpass1 userpass2
+    # change user password; if successful, unset the password
+    echo "$username:$userpass1" | chpasswd \
+        && unset userpass1 userpass2
+
+    # export `repodir`
+    export repodir="/home/$username/.local/src"
+
+    # create `repodir`
+    mkdir -p "$repodir"
+
+    # change owner of `repodir`
+    chown -R "$username": "$(dirname "$repodir")"
 }
 
-dobasicadjustments() {
-    whiptail --infobox "Updating packages and installing \`nala\`, a wrapper for \`apt\`..." \
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - DO_BASIC_ADJUSTMENTS
+####################################################################
+
+prep_fstab_debootstrap() {
+    # see if this can't be piped through `grep`
+    # maybe the edit commands later on are no longer necessary
+    cat /proc/mounts >> /etc/fstab
+
+    # likewise, this should be handled with a variable whose value is the UUID
+    [[ $swapanswer = "yes" ]] \
+        && echo "UUID=<UUID_swap> none swap defaults 0 0" >> /etc/fstab
+
+    # pretty confident this is used to get the UUIDs
+    # possible to get the values from here?
+    blkid | grep UUID >> /etc/fstab
+}
+
+do_basic_adjustments() {
+    whiptail \
+        --infobox "Updating packages and installing \`nala\`, a wrapper for \`apt\`..." \
         9 70
 
-    cat /proc/mounts >> /etc/fstab
-    [[ $swapanswer = "yes" ]] && echo "UUID=<UUID_swap> none swap defaults 0 0" >> /etc/fstab
-    blkid | grep UUID >> /etc/fstab
+    # add relevant content to the `/etc/fstab` file
+    prep_fstab_debootstrap
 
-    echo "$hostname" > /etc/hostname
-    echo "127.0.0.1     localhost" > /etc/hosts
-    echo "::1           localhost" >> /etc/hosts
-    echo "127.0.1.1     $hostname $hostname.$localdomain" >> /etc/hosts
+    # set `/etc/hostname` file
+    set_etc_hostname
 
-    [[ -e /etc/localtime ]] && rm /etc/localtime
-    ln -s "/usr/share/zoneinfo/$timezone" /etc/localtime
+    # set `/etc/hosts` file
+    set_etc_hosts
 
+    # set the timezone
+    set_timezone
+
+    # sync system to hardware clock
     # Ubuntu doesn't have `hwclock`
-    [[ $setup_os != "ubuntu" ]] && hwclock --systohc
+    [ $install_os_selected != "ubuntu" ] \
+        && sync_clock
 
+    # Debian and Ubuntu should have `nala` installed at this point
     apt install nala -y > /dev/null 2>&1
 }
 
 setuplocale() {
-    whiptail --infobox "Adjusting \"/etc/locale.conf\" and \"/etc/locale.gen\"..." \
+    whiptail \
+        --infobox "Adjusting \"/etc/locale.conf\" and \"/etc/locale.gen\"..." \
         9 70
 
-    echo "$localeconf" > /etc/locale.conf
+    # set the `/etc/locale.conf` file
+    set_locale_conf
 
+    # Debian and Ubuntu need this package installed
     apt install -y locales > /dev/null 2>&1
-    [[ $region == "en_US" ]] && sed -i 's/^# en_US/en_US/g' /etc/locale.gen
-    locale-gen > /dev/null 2>&1
+
+    # uncomments language files in `/etc/locale.gen`
+    uncomment_locale_gen
+
+    # run `locale-gen`
+    run_locale_gen
 }
 
 setupubuntu() {
-    ubuntukernelconf=(
-'do_symlinks=no
-no_symlinks=yes'
-    )
+    template_replace src/templates/etc/kernel-img_ubuntu.conf /etc/kernel-img.conf
 
-    ubuntunetworkconf=(
-'network:
- version: 2
- renderer: NetworkManager'
-    )
-
-    echo "$ubuntukernelconf" > /etc/kernel-img.conf
-    echo "$ubuntunetworkconf" > /etc/netplan/networkmanager.yaml
+    template_replace src/templates/etc/netplan/networkmanager_ubuntu.yaml /etc/netplan/networkmanager.yaml
 }
 
 installloop() {
-	([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) && sed -i '/^#/d' /tmp/packages.csv ||
-		curl -Ls "$packfile" | sed '/^#/d' > /tmp/packages.csv
+	([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) \
+        && sed -i '/^#/d' /tmp/packages.csv \
+        || curl -Ls "$packfile" | sed '/^#/d' > /tmp/packages.csv
 
-	total=$(wc -l </tmp/packages.csv)
+	total=$(wc -l < /tmp/packages.csv)
     n="0"
 
 	while IFS="," read -r program comment; do
@@ -226,19 +498,20 @@ installloop() {
 }
 
 install() {
-	whiptail --title "Package Installation" --infobox "Installing \`$1\` ($n of $total). $1 $2" \
+	whiptail \
+        --title "Package Installation" \
+        --infobox "Installing \`$1\` ($n of $total). $1 $2" \
         9 70
+
 	installpkg "$1"
 }
 
 installpkg() {
-	apt install -y "$1" > /dev/null 2>&1
+	apt install -y "$1" \
+        > /dev/null 2>&1
 }
 
-doconfigs() {
-    whiptail --infobox "Performing some basic configurations. At some point, vim will open \"/etc/fstab\". You should know what to do here." \
-        9 70
-
+create_useful_directories() {
     # create directories that should exist before deploying dotfiles with stow
     mkdir -p \
         "/home/$username/.cache/bash" \
@@ -249,45 +522,117 @@ doconfigs() {
         /root/.config/lf \
         /root/.config/shell \
         /root/.local/bin
+}
 
-    # clone git repos into new user's repodir
-    git clone https://github.com/DavidVogelxyz/dotfiles "/home/$username/.dotfiles" > /dev/null 2>&1
-    ln -s "/home/$username/.dotfiles" "$repodir/dotfiles"
+git_dotfiles() {
+    # clone `dotfiles` into the homedir
+    # add some error correction:
+    # - what if the repo already exists?
+    # - possible to check the hashes and only clone if not a repo?
+    git clone \
+        https://github.com/DavidVogelxyz/dotfiles \
+        "/home/$username/.dotfiles" \
+        > /dev/null 2>&1
 
-    git clone https://github.com/DavidVogelxyz/vim "$repodir/vim" > /dev/null 2>&1
+    # symlink `dotfiles` to the repodir
+    ln -s \
+        "/home/$username/.dotfiles" \
+        "$repodir/dotfiles"
+}
+
+editfstab() {
+    sed -i '/^sysfs/,/^devpts/d' /etc/fstab
+    sed -i '/^hugetlbfs/,/^binfmt_misc/d' /etc/fstab
+    sed -i '/^mqueue/d' /etc/fstab
+    sed -i 's/dev\/shm/tmp/g' /etc/fstab
+    sed -i '/^\/dev\/sr0/d' /etc/fstab
+}
+
+doconfigs() {
+    whiptail \
+        --infobox "Performing some basic configurations. At some point, vim will open \"/etc/fstab\". You should know what to do here." \
+        9 70
+
+    # create directories that should exist before deploying dotfiles with stow
+    create_useful_directories
+
+    # clone dotfiles and symlink them
+    git_dotfiles
+
+    git clone \
+        https://github.com/DavidVogelxyz/vim \
+        "$repodir/vim" \
+        > /dev/null 2>&1
 
     # for root user
-    [ -e /root/.bashrc ] && rm -f /root/.bashrc
-    [ -e /root/.profile ] && rm -f /root/.profile
-    [ -e /root/.vim ] && rm -rf /root/.vim
+    [ -e /root/.bashrc ] \
+        && rm -f /root/.bashrc
+
+    [ -e /root/.profile ] \
+        && rm -f /root/.profile
+
+    [ -e /root/.vim ] \
+        && rm -rf /root/.vim
 
     # for new user
-    [ -e "/home/$username/.bashrc" ] && rm -f "/home/$username/.bashrc"
-    [ -e "/home/$username/.profile" ] && rm -f "/home/$username/.profile"
-    [ -e "/home/$username/.vim" ] && rm -rf "/home/$username/.vim"
+    [ -e "/home/$username/.bashrc" ] \
+        && rm -f "/home/$username/.bashrc"
+
+    [ -e "/home/$username/.profile" ] \
+        && rm -f "/home/$username/.profile"
+
+    [ -e "/home/$username/.vim" ] \
+        && rm -rf "/home/$username/.vim"
 
     # stow
-    cd "/home/$username/.dotfiles" && stow . && cd && unlink "/home/$username/.xprofile"
+    cd "/home/$username/.dotfiles" \
+        && stow . \
+        && cd \
+        && unlink "/home/$username/.xprofile"
 
     # for root user
-    ln -s "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
-    sed -i 's/^\[ "\$(tty)"/#[ "$(tty)"]/g' "/home/$username/.dotfiles/.config/shell/profile"
-    sed -i 's/^sudo -n loadkeys "$XDG_DATA_HOME/#sudo -n loadkeys "$XDG_DATA_HOME/g' "/home/$username/.dotfiles/.config/shell/profile"
-    echo -e "\nsource ~/.bashrc" >> "/home/$username/.dotfiles/.config/shell/profile"
-    ln -s "$repodir/vim" "/home/$username/.vim"
+    ln -s \
+        "/home/$username/.dotfiles/.config/shell/profile" \
+        "/home/$username/.profile"
+    sed -i \
+        's/^\[ "\$(tty)"/#[ "$(tty)"]/g' \
+        "/home/$username/.dotfiles/.config/shell/profile"
+    sed -i \
+        's/^sudo -n loadkeys "$XDG_DATA_HOME/#sudo -n loadkeys "$XDG_DATA_HOME/g' \
+        "/home/$username/.dotfiles/.config/shell/profile"
+    echo -e \
+        "\nsource ~/.bashrc" \
+        >> "/home/$username/.dotfiles/.config/shell/profile"
+    ln -s \
+        "$repodir/vim" \
+        "/home/$username/.vim"
 
     # for root user
-    ln -s "/home/$username/.dotfiles/.config/shell/aliasrc-debian" /root/.config/shell/aliasrc
-    ln -s "/home/$username/.dotfiles/.config/lf/scope-debian" /root/.config/lf/scope
+    ln -s \
+        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" \
+        /root/.config/shell/aliasrc
+    ln -s \
+        "/home/$username/.dotfiles/.config/lf/scope-debian" \
+        /root/.config/lf/scope
 
     # for new user
-    ln -s "/home/$username/.dotfiles/.bashrc" /root/.bashrc
-    ln -s "/home/$username/.dotfiles/.config/shell/profile" /root/.profile
-    ln -s "$repodir/vim" /root/.vim
+    ln -s \
+        "/home/$username/.dotfiles/.bashrc" \
+        /root/.bashrc
+    ln -s \
+        "/home/$username/.dotfiles/.config/shell/profile" \
+        /root/.profile
+    ln -s \
+        "$repodir/vim" \
+        /root/.vim
 
     # for new user
-    ln -s "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/home/$username/.config/shell/aliasrc"
-    ln -s "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
+    ln -s \
+        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" \
+        "/home/$username/.config/shell/aliasrc"
+    ln -s \
+        "/home/$username/.dotfiles/.config/lf/scope-debian" \
+        "/home/$username/.config/lf/scope"
 
     dozshsetup
 
@@ -295,19 +640,22 @@ doconfigs() {
 
     chown -R "$username": "/home/$username"
 
-    systemctl enable NetworkManager
+    # enable NetworkManager
+    enable_networkmanager
 
-    sed -i '/^sysfs/,/^devpts/d' /etc/fstab
-    sed -i '/^hugetlbfs/,/^binfmt_misc/d' /etc/fstab
-    sed -i '/^mqueue/d' /etc/fstab
-    sed -i 's/dev\/shm/tmp/g' /etc/fstab
-    sed -i '/^\/dev\/sr0/d' /etc/fstab
-
+    # if I change how the fstab is generated
+    # I can probably eliminate this entirely
+    editfstab
+    # and then no need to edit in Vim
     vim /etc/fstab
 }
 
 dozshsetup(){
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k "$repodir/powerlevel10k" > /dev/null 2>&1
+    git clone \
+        --depth=1 \
+        https://github.com/romkatv/powerlevel10k \
+        "$repodir/powerlevel10k" \
+        > /dev/null 2>&1
 
     fonts=(
         "MesloLGS_NF_Regular.ttf"
@@ -321,28 +669,41 @@ dozshsetup(){
     for font in "${fonts[@]}"; do
         webfont=$(echo $font | sed 's/_/%20/g')
         [ ! -e /usr/local/share/fonts/m/$font ] \
-            && sudo curl -L https://github.com/romkatv/powerlevel10k-media/raw/master/$webfont -o /usr/local/share/fonts/m/$font > /dev/null 2>&1
+            && sudo curl -L \
+                https://github.com/romkatv/powerlevel10k-media/raw/master/$webfont \
+                -o /usr/local/share/fonts/m/$font \
+                > /dev/null 2>&1
     done
 }
 
 docryptsetup() {
     [[ $cryptanswer = "yes" ]] && {
-        whiptail --infobox "Installing 'cryptsetup-initramfs'..." \
+        whiptail \
+            --infobox "Installing 'cryptsetup-initramfs'..." \
             9 70
-        apt install -y cryptsetup-initramfs
-        blkid | grep UUID | grep crypto >> /etc/crypttab
+
+        apt install -y \
+            cryptsetup-initramfs
+
+        blkid | grep UUID | grep crypto \
+            >> /etc/crypttab
+
         vim /etc/crypttab
     }
 }
 
 doinitramfsupdate() {
-    whiptail --infobox "Updating initramfs..." \
+    whiptail \
+        --infobox "Updating initramfs..." \
         9 70
-    update-initramfs -u -k all > /dev/null 2>&1
+
+    update-initramfs -u -k all \
+        > /dev/null 2>&1
 }
 
 dogrubinstall() {
-    whiptail --infobox "Installing and updating GRUB..." \
+    whiptail \
+        --infobox "Installing and updating GRUB..." \
         9 70
 
     [[ $firmwareanswer = "BIOS" ]] && {
@@ -364,7 +725,8 @@ dogrubinstall() {
             > /dev/null 2>&1
     }
 
-    update-grub > /dev/null 2>&1
+    update-grub \
+        > /dev/null 2>&1
 }
 
 finalmessage() {
@@ -376,9 +738,9 @@ finalmessage() {
     clear
 }
 
-############################################
-# ACTUAL SCRIPT
-############################################
+####################################################################
+# ACTUAL SCRIPT - DEBIAN-SETUP
+####################################################################
 
 chroot_from_debootstrap() {
     echo "Updating packages, one moment..." \
@@ -387,21 +749,21 @@ chroot_from_debootstrap() {
         && installpkg whiptail \
             > /dev/null 2>&1
 
-    getuserandpass
+    get_user_and_pass
 
-    getnetworkinginfo
+    get_networking_info
 
     questions
 
-    confirminputs
+    confirm_inputs
 
-    adduserandpass
+    add_user_and_pass
 
-    dobasicadjustments
+    do_basic_adjustments
 
     setuplocale
 
-    [[ $setup_os = "ubuntu" ]] && setupubuntu
+    [[ $install_os_selected = "ubuntu" ]] && setupubuntu
 
     installloop
 
@@ -414,4 +776,28 @@ chroot_from_debootstrap() {
     dogrubinstall
 
     finalmessage
+
+    exit 0
+}
+
+chroot_from_arch() {
+    set_datetime
+
+    set_locales
+
+    set_hosts
+
+    enable_networkmanager
+
+    exit 0
+}
+
+chroot_from_debian_ubuntu() {
+    set_datetime
+
+    set_locales
+
+    set_hosts
+
+    exit 0
 }
