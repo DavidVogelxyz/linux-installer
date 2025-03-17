@@ -1,8 +1,8 @@
 #!/bin/sh
 
-################################
+############################################
 # VARIABLES
-################################
+############################################
 
 # HARDCODED, BUT SHOULDN'T BE
 lvm_name="cryptlvm"
@@ -22,9 +22,9 @@ os_supported=(
     "ubuntu"
 )
 
-################################
-# FUNCTIONS
-################################
+############################################
+# FUNCTIONS - WELCOME
+############################################
 
 error() {
     echo "fail!" && exit 1
@@ -53,6 +53,10 @@ get_setup_os() {
     done
 }
 
+############################################
+# FUNCTIONS - CHECK_SETUP_OS
+############################################
+
 check_image_arch() {
     [ "$setup_os" == "arch" ]
 }
@@ -64,6 +68,10 @@ check_image_artix() {
 check_image_ubuntu() {
     [ "$setup_os" == "ubuntu" ]
 }
+
+############################################
+# FUNCTIONS - GET_UEFI
+############################################
 
 check_uefi() {
     uefi=false
@@ -107,6 +115,10 @@ get_uefi() {
     ask_uefi || error
 }
 
+############################################
+# FUNCTIONS - GET_DISKS
+############################################
+
 ask_for_disk_selected() {
     choices=()
     n=0
@@ -140,6 +152,10 @@ get_disks() {
     ask_for_disk_selected
 }
 
+############################################
+# FUNCTIONS - GET_SETUP_INFO
+############################################
+
 get_ram_size() {
     # `--si` gets the human readable `-h` in units of "GB"
     ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
@@ -161,6 +177,10 @@ get_setup_info() {
     [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
     [ -z "$release_selected" ] && release_selected="rolling"
 }
+
+############################################
+# FUNCTIONS - PARTITIONS AND ENCRYPTION
+############################################
 
 #ask_partition_scheme() {
 #    choices=(
@@ -268,6 +288,10 @@ get_partition_info() {
         }
 }
 
+############################################
+# FUNCTIONS - CHECK_INSTALL_OS
+############################################
+
 check_install_arch() {
     [ "$install_os_selected" == "arch" ]
 }
@@ -283,6 +307,10 @@ check_install_debian() {
 check_install_ubuntu() {
     [ "$install_os_selected" == "ubuntu" ]
 }
+
+############################################
+# FUNCTIONS - ASK_DEBOOTSTRAP
+############################################
 
 ask_debootstrap_install_os() {
     # Debootstrap OS options
@@ -301,13 +329,13 @@ ask_debootstrap_install_os() {
     )
 }
 
-ask_debootstrap_release_version() {
+debootstrap_release_version() {
     check_install_debian \
         && release_selected="bookworm"
 
     check_install_ubuntu \
         && release_selected="noble" \
-        || echo > /dev/null
+        || true
 }
 
 
@@ -318,8 +346,12 @@ ask_debootstrap() {
 
     ask_debootstrap_install_os || error
 
-    ask_debootstrap_release_version || error
+    debootstrap_release_version || error
 }
+
+############################################
+# FUNCTIONS - ASK_CONFIRM_INPUTS
+############################################
 
 ask_confirm_inputs() {
     whiptail \
@@ -337,6 +369,10 @@ ask_confirm_inputs() {
         25 78 \
         3>&1 1>&2 2>&3 3>&1
 }
+
+############################################
+# FUNCTIONS - FORMAT_DISK
+############################################
 
 format_disk_warning_screen() {
     whiptail \
@@ -402,6 +438,10 @@ run_format_disk() {
     set_partition_names || error
 }
 
+############################################
+# FUNCTIONS - MAKE AND MOUNT FILE SYSTEMS
+############################################
+
 #run_cryptsetup() {}
 
 make_file_systems() {
@@ -439,16 +479,6 @@ mount_file_systems() {
     sleep 1
 }
 
-run_pre_debootstrap() {
-    TERM=ansi whiptail \
-        --title "Pre-Debootstrap" \
-        --infobox "Installing \`debootstrap\` and \`vim\` to the install image environment." \
-        8 78
-
-    apt update > /dev/null \
-        && apt install -y debootstrap git vim > /dev/null 2>&1
-}
-
 bind_mounts() {
     TERM=ansi whiptail \
         --title "Bind Mounts" \
@@ -464,40 +494,153 @@ bind_mounts() {
     sleep 1
 }
 
+############################################
+# FUNCTIONS - STRAP - MIRRORS
+############################################
+
+basestrap_mirrorlist() {
+    pacstrap_mirrorlist
+}
+
+pacstrap_mirrorlist() {
+    pkgmgr="pacman"
+    mirrorlist_src="src/templates/${pkgmgr}/${install_os_selected}_mirrorlist"
+    mirrorlist_dest="/etc/pacman.d/mirrorlist"
+
+    update_mirrors
+}
+
 debootstrap_sourceslist() {
+    pkgmgr="apt"
+    mirrorlist_src="src/templates/${pkgmgr}/${install_os_selected}_${release_selected}_sources.list"
+    mirrorlist_dest="/etc/apt/sources.list"
+
+    update_mirrors
+}
+
+update_mirrors() {
     TERM=ansi whiptail \
         --title "Package Repositories" \
-        --infobox "Making sure that the \`/etc/apt/sources.list\` file is good..." \
+        --infobox "Making sure that the \`${mirrorlist_dest}\` file is good..." \
         8 78
 
     # just long enough for the screen to be read
     sleep 1
 
-    apt_sourceslist_src="src/templates/apt/${install_os_selected}_${release_selected}_sources.list"
-    apt_sourceslist_dest="/mnt/etc/apt/sources.list"
-
     echo "changing:" \
-        && [ -f "$apt_sourceslist_dest" ] \
-        && cat "$apt_sourceslist_dest" \
+        && [ -f "/mnt$mirrorlist_dest" ] \
+        && cat "/mnt$mirrorlist_dest" \
         || error
 
     echo -e "\nto:" \
-        && [ -f "$apt_sourceslist_src" ] \
-        && cat "$apt_sourceslist_src" \
+        && [ -f "$mirrorlist_src" ] \
+        && cat "$mirrorlist_src" \
         && echo \
         || error
 
     # update `sources.list`
-    cp "$apt_sourceslist_src" "$apt_sourceslist_dest"
+    cp "$mirrorlist_src" "/mnt$mirrorlist_dest"
 
-    unset apt_sourceslist_src
-    unset apt_sourceslist_dest
+    unset mirrorlist_src
+    unset mirrorlist_dest
 
     # just long enough for the screen to be read
     sleep 1
 }
 
-chroot_debootstrap() {
+lsblk_to_grub() {
+    lsblk -f >> /mnt/etc/default/grub
+}
+
+lsblk_to_fstab() {
+    lsblk -f >> /mnt/etc/fstab
+}
+
+chroot_arch_prelude() {
+    error() {
+        echo "failed to chroot!" && exit 1
+    }
+
+    repodir="/root/.local/src"
+    post_chroot_path="linux-image-setup"
+    post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
+
+    mkdir -p "/mnt$repodir"
+
+    # clone `linux-image-setup`
+    git clone "https://github.com/DavidVogelxyz/$post_chroot_path" "/mnt${repodir}/${post_chroot_path}"
+
+    # exclusively for compatibilty with `linux-image-setup`
+    sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
+    sed -i '2 i \\' "/mnt${post_chroot_script}"
+    sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
+
+    # make executable
+    chmod +x "/mnt${post_chroot_script}"
+}
+
+chroot_artix_prelude() {
+    chroot_arch_prelude
+}
+
+chroot_arch() {
+    chroot_arch_prelude || error
+
+    arch-chroot /mnt "${post_chroot_script}"
+}
+
+chroot_artix() {
+    chroot_artix_prelude || error
+
+    artix-chroot /mnt "${post_chroot_script}"
+}
+
+############################################
+# FUNCTIONS - BASESTRAP - (Artix image)
+############################################
+
+run_basestrap() {
+    pkgs="base base-devel linux linux-firmware runit elogind-runit cryptsetup lvm2 lvm2-runit grub networkmanager networkmanager-runit neovim vim"
+
+    [ "$uefi" = "uefi" ] \
+        && pkgs+=" efibootmgr"
+
+    generate_fstab() {
+        fstabgen -U /mnt >> /mnt/etc/fstab
+    }
+
+    # set mirrors
+    basestrap_mirrorlist
+
+    # do the `basestrap`
+    basestrap -i /mnt "$pkgs"
+
+    unset pkgs
+
+    lsblk_to_grub
+
+    #lsblk_to_fstab
+
+    generate_fstab
+
+    chroot_artix
+}
+
+############################################
+# FUNCTIONS - DEBOOTSTRAP (Ubuntu image)
+############################################
+
+run_pre_debootstrap() {
+    TERM=ansi whiptail \
+        --title "Pre-Debootstrap" \
+        --infobox "Installing \`debootstrap\` and \`vim\` to the install image environment." \
+        8 78
+
+    apt update > /dev/null \
+        && apt install -y debootstrap git vim > /dev/null 2>&1
+}
+
+chroot_debootstrap_prelude() {
     error() {
         echo "failed to chroot!" && exit 1
     }
@@ -516,8 +659,13 @@ chroot_debootstrap() {
     sed -i '2 i \\' "/mnt${post_chroot_script}"
     sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
 
-    # make executable and run
+    # make executable
     chmod +x "/mnt${post_chroot_script}"
+}
+
+chroot_debootstrap() {
+    chroot_debootstrap_prelude || error
+
     chroot /mnt "${post_chroot_script}"
 }
 
@@ -537,4 +685,35 @@ run_debootstrap() {
     debootstrap_sourceslist || error
 
     chroot_debootstrap || error
+}
+
+############################################
+# FUNCTIONS - PACSTRAP - (Arch image)
+############################################
+
+run_pacstrap() {
+    pkgs="base base-devel linux linux-firmware cryptsetup lvm2 grub networkmanager dhcpcd openssh neovim vim"
+
+    [ "$uefi" = "uefi" ] \
+        && pkgs+=" efibootmgr"
+
+    generate_fstab() {
+        genfstab -U /mnt >> /mnt/etc/fstab
+    }
+
+    # set mirrors
+    pacstrap_mirrorlist
+
+    # do the `pacstrap`
+    pacstrap -K -i /mnt "$pkgs"
+
+    unset pkgs
+
+    lsblk_to_grub
+
+    #lsblk_to_fstab
+
+    generate_fstab
+
+    chroot_arch
 }
