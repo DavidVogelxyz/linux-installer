@@ -103,6 +103,26 @@ template_replace() {
 }
 
 ####################################################################
+# FUNCTIONS - CHECK_INSTALL_OS
+####################################################################
+
+check_install_arch() {
+    [ "$install_os_selected" == "arch" ]
+}
+
+check_install_artix() {
+    [ "$install_os_selected" == "artix" ]
+}
+
+check_install_debian() {
+    [ "$install_os_selected" == "debian" ]
+}
+
+check_install_ubuntu() {
+    [ "$install_os_selected" == "ubuntu" ]
+}
+
+####################################################################
 # VARIABLES - DEBIAN-SETUP
 ####################################################################
 
@@ -314,34 +334,6 @@ questions() {
         3>&1 1>&2 2>&3 3>&1
     )
 
-    # this should NOT need to be asked at this point
-    # change variable!
-    firmwareanswer=$(whiptail \
-        --title "Firmware" \
-        --menu "\\nIs this computer running 'legacy BIOS' or 'UEFI'?" \
-        14 80 4 \
-        "BIOS" "" \
-        "UEFI" "" \
-        3>&1 1>&2 2>&3 3>&1
-    ) \
-        || exit 1
-
-    # this should be removed with the previous and following snippet re `firmwareanswer`
-    # change variable!
-    sdx="Ignore since UEFI"
-
-    # this should NOT need to be asked at this point
-    # change variable!
-    [[ $firmwareanswer == "BIOS" ]] \
-        && {
-            sdx=$(whiptail \
-                --title "Device Name" \
-                --inputbox "\\nWhat is the device name (ex. sda, sdb, nvme0n1)?" \
-                10 60 \
-                3>&1 1>&2 2>&3 3>&1
-            )
-    }
-
     # this should essentially be answered sooner
     # change variable!
     cryptanswer=$(whiptail \
@@ -377,7 +369,7 @@ confirm_inputs() {
         --yes-button "Let's go!" \
         --no-button "Never mind..." \
         --yesno "\\nYou gave the following inputs:
-            \\n    Username: $username\\n    Hostname: $hostname\\n    Local domain: $localdomain\\n    Full address: $hostname.$localdomain\\n    Timezone: $timezone\\n    Region: $region\\n    Firmware: $firmwareanswer\\n    Device name: $sdx\\n    Encryption: $cryptanswer\\n    Swap partition: $swapanswer
+            \\n    Username: $username\\n    Hostname: $hostname\\n    Local domain: $localdomain\\n    Full address: $hostname.$localdomain\\n    Timezone: $timezone\\n    Region: $region\\n    Firmware: $uefi\\n    Device name: $disk_selected\\n    Encryption: $cryptanswer\\n    Swap partition: $swapanswer
             \\nContinue?" \
         24 85 \
         3>&1 1>&2 2>&3 3>&1
@@ -454,7 +446,8 @@ do_basic_adjustments() {
         && sync_clock
 
     # Debian and Ubuntu should have `nala` installed at this point
-    apt install nala -y > /dev/null 2>&1
+    # curl was added so that the script can pull the file while it's reworked
+    apt install -y nala curl > /dev/null 2>&1
 }
 
 setuplocale() {
@@ -706,16 +699,16 @@ dogrubinstall() {
         --infobox "Installing and updating GRUB..." \
         9 70
 
-    [[ $firmwareanswer = "BIOS" ]] && {
+    [[ $uefi = "bios" ]] && {
         apt install -y grub-pc \
             > /dev/null 2>&1
         grub-install \
             --target=i386-pc \
-            "/dev/$sdx" \
+            "/dev/$disk_selected" \
             > /dev/null 2>&1
     }
 
-    [[ $firmwareanswer = "UEFI" ]] && {
+    [[ $uefi = "uefi" ]] && {
         apt install -y grub-efi \
             > /dev/null 2>&1
         grub-install \

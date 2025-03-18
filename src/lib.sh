@@ -5,13 +5,13 @@
 ####################################################################
 
 # HARDCODED, BUT SHOULDN'T BE
-lvm_name="cryptlvm"
+export lvm_name="cryptlvm"
 
 # HARDCODED, LEGIT
 
 ## PATHS
-path_dev="/dev"
-path_dev_mapper="/dev/mapper"
+export path_dev="/dev"
+export path_dev_mapper="/dev/mapper"
 
 ## LISTS
 
@@ -74,7 +74,7 @@ check_image_ubuntu() {
 ####################################################################
 
 check_uefi() {
-    uefi=false
+    export uefi=false
 
     # UEFI check #1
     mount | grep efi > /dev/null 2>&1 \
@@ -129,7 +129,7 @@ ask_for_disk_selected() {
         ((n+=1))
     done
 
-    disk_selected=$(whiptail \
+    export disk_selected=$(whiptail \
         --title "Format Disk - Select Disk" \
         --menu "\\nPlease select the disk to format:" \
         25 78 10 \
@@ -174,7 +174,7 @@ get_setup_info() {
 
     get_ram_size # set `ram_size` in the format of `xyGB`
 
-    [ -z "$install_os_selected" ] && install_os_selected="$setup_os"
+    [ -z "$install_os_selected" ] && export install_os_selected="$setup_os"
     [ -z "$release_selected" ] && release_selected="rolling"
 }
 
@@ -209,7 +209,7 @@ ask_to_encrypt() {
         "false" "| do not encrypt the root file system"
     )
 
-    encryption=$(whiptail \
+    export encryption=$(whiptail \
         --title "Encryption" \
         --menu "\\nDo you want to encrypt the root file system?" \
         25 78 2 \
@@ -633,6 +633,17 @@ run_pre_debootstrap() {
         && apt install -y debootstrap git vim > /dev/null 2>&1
 }
 
+chroot_vars() {
+    chroot_vars_dest=/mnt/root/.local/src/linux-image-setup/vars.txt
+
+    echo "path_dev=${path_dev}" >> "${chroot_vars_dest}"
+    echo "path_dev_mapper=${path_dev_mapper}" >> "${chroot_vars_dest}"
+    echo "lvm_name=${lvm_name}" >> "${chroot_vars_dest}"
+    echo "uefi=${uefi}" >> "${chroot_vars_dest}"
+    echo "disk_selected=${disk_selected}" >> "${chroot_vars_dest}"
+    echo "install_os_selected=${install_os_selected}" >> "${chroot_vars_dest}"
+}
+
 chroot_debootstrap_prelude() {
     error() {
         echo "failed to chroot!" && exit 1
@@ -658,6 +669,8 @@ chroot_debootstrap_prelude() {
 
 chroot_debootstrap() {
     chroot_debootstrap_prelude || error
+
+    #chroot_vars
 
     chroot /mnt "${post_chroot_script}"
 }
