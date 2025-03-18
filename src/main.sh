@@ -22,6 +22,7 @@ welcome_screen || error # informs the user of how the script works, or error
 get_setup_info || error # gets info about system, with little user input, or error
 get_partition_info # ask about partition scheme, encryption, etc
 check_image_ubuntu && ask_debootstrap # if Ubuntu image, configures and runs `debootstrap`
+get_other_setup_info || error # gets other user info for setting up new user
 ask_confirm_inputs || error # asks the users to confirm everything before running, or error
 
 # perform chores

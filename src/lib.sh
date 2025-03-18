@@ -315,8 +315,8 @@ check_install_ubuntu() {
 ask_debootstrap_install_os() {
     # Debootstrap OS options
     debootstrap_os_installable=(
-        "debian" "| Options include Debian 12 and Debian 11"
-        "ubuntu" "| Options include Ubuntu 24 and Ubuntu 22"
+        "debian" "| Debian 12 - Bookworm"
+        "ubuntu" "| Ubuntu 24 - Noble"
     )
 
     install_os_selected=$(whiptail \
@@ -350,6 +350,237 @@ ask_debootstrap() {
 }
 
 ####################################################################
+# FUNCTIONS - DEBIAN-SETUP - GET_USER_AND_PASS
+####################################################################
+
+ask_root_pass() {
+    # get root pass
+    export rootpass1=$(whiptail \
+        --title "Root Password" \
+        --passwordbox "\\nPlease enter a password for the root user." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # get root pass confirmation
+    rootpass2=$(whiptail \
+        --title "Root Password" \
+        --passwordbox "\\nPlease retype the password for the root user." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # put user in loop until the two "root pass" entries agree
+    while ! [ "$rootpass1" = "$rootpass2" ]; do
+        rootpass1=$(whiptail \
+            --title "Root Password" \
+            --passwordbox "\\nThe passwords entered do not match each other.
+                \\nPlease enter the root user's password again." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+
+        rootpass2=$(whiptail \
+            --title "Root Password" \
+            --passwordbox "\\nPlease retype the password for the root user." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+ask_username() {
+    # get username
+    export username=$(whiptail \
+        --title "Username" \
+        --inputbox "\\nPlease enter a name for the new user that will be created by the script." \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    ) || exit 1
+
+    # put user in loop until "username":
+    # - true = starts with lowercase
+    # - true = is only lowercase, numbers, `_`, and `-`
+    while ! echo "$username" | grep -q "^[a-z][a-z0-9_-]*$"; do
+        username=$(whiptail \
+            --title "Username" \
+            --inputbox "\\nInvalid username.
+                \\nPlease provide a username using lowercase letters only.
+                \\nNumbers, \`-\`, or \`_\` can be used for any letter but the first." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+ask_user_pass() {
+    # get user pass
+    export userpass1=$(whiptail \
+        --title "User Password" \
+        --passwordbox "\\nPlease enter a password for $username." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # get user pass confirmation
+    userpass2=$(whiptail \
+        --title "User Password" \
+        --passwordbox "\\nPlease retype password for $username." \
+        --nocancel \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # put user in loop until the two "user pass" entries agree
+    while ! [ "$userpass1" = "$userpass2" ]; do
+        userpass1=$(whiptail \
+            --title "User Password" \
+            --passwordbox "\\nThe passwords entered do not match each other.
+                \\nPlease enter $username's password again." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+
+        userpass2=$(whiptail \
+            --title "User Password" \
+            --passwordbox "\\nPlease retype password for $username." \
+            --nocancel \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+get_user_and_pass() {
+    ask_root_pass
+
+    ask_username
+
+    ask_user_pass
+}
+
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - GET_NETWORKING_INFO
+####################################################################
+
+ask_hostname() {
+    export hostname=$(whiptail \
+        --title "Hostname" \
+        --inputbox "\\nPlease enter a hostname for the Debian computer." \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
+
+    while ! echo "$hostname" | grep -q "^[a-z][a-z0-9_-]*$"; do
+        hostname=$(whiptail \
+            --title "Hostname" \
+            --inputbox "\\nInvalid hostname.
+                \\nPlease provide a hostname using lowercase letters; numbers, -, or _ can be used if not the first character." \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+ask_local_domain() {
+    export localdomain=$(whiptail \
+        --title "Local Domain" \
+        --inputbox "\\nPlease enter the domain of the network.
+            \\nIf unsure, just enter 'local'." \
+        10 60 \
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
+
+    while ! echo "$localdomain" | grep -q "^[a-z][a-z0-9_.-]*$"; do
+        localdomain=$(whiptail \
+            --title "Local Domain" \
+            --inputbox "\\nInvalid domain.
+                \\nPlease provide a domain using lowercase letters; numbers, -, _, or . can be used if not the first character." \
+            10 60 \
+            3>&1 1>&2 2>&3 3>&1
+        )
+    done
+}
+
+get_networking_info() {
+    ask_hostname
+
+    ask_local_domain
+}
+
+####################################################################
+# FUNCTIONS - DEBIAN-SETUP - QUESTIONS
+####################################################################
+
+questions() {
+    # would still need to ask this question
+    export timezone=$(whiptail \
+        --title "Timezone" \
+        --menu "\\nWhat timezone are you in?" \
+        14 60 4 \
+        "US/Eastern" "" \
+        "US/Central" "" \
+        "US/Mountain" "" \
+        "US/Pacific" "" \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # would still need to ask this question
+    export region=$(whiptail \
+        --title "Region" \
+        --menu "\\nWhat region are you in?" \
+        14 60 4 \
+        "en_US" "" \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    # this should essentially be answered sooner
+    # change variable!
+    export cryptanswer=$(whiptail \
+        --title "Encrypted System?" \
+        --menu "\\nIs this computer's root storage encrypted?" \
+        14 80 4 \
+        "yes" "" \
+        "no" "" \
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
+
+    # this should be asked sooner
+    # change variable!
+    export swapanswer=$(whiptail \
+        --title "Swap Partition?" \
+        --menu "\\nDoes this computer have a swap partition?" \
+        14 80 4 \
+        "yes" ""\
+        "no" ""\
+        3>&1 1>&2 2>&3 3>&1
+    ) \
+        || exit 1
+}
+
+####################################################################
+# FUNCTIONS - GET_OTHER_SETUP_INFO
+####################################################################
+
+get_other_setup_info() {
+    get_user_and_pass || error # gets user and pass info
+
+    get_networking_info || error # gets networking info
+
+    questions || error
+}
+
+####################################################################
 # FUNCTIONS - ASK_CONFIRM_INPUTS
 ####################################################################
 
@@ -359,14 +590,19 @@ ask_confirm_inputs() {
         --yesno "\\nHere's what we have:
             \\n     Image OS                        =   $setup_os
             \\n     Partitioning to deploy          =   $uefi $partition_scheme_selected
-            \\n     Disk selected                   =   $path_dev/$disk_selected
+            \\n     Disk selected                   =   ${path_dev}/${disk_selected}
             \\n     Encryption                      =   $encryption
-            \\n     LVM name                        =   $path_dev_mapper/$lvm_name
+            \\n     LVM name                        =   ${path_dev_mapper}/${lvm_name}
             \\n     RAM                             =   $ram_size
-            \\n     Install OS & release            =   $install_os_selected $release_selected" \
+            \\n     Install OS & release            =   $install_os_selected $release_selected
+            \\n     user@hostname.domain            =   ${username}@${hostname}.${localdomain}
+            \\n     Timezone                        =   $timezone
+            \\n     Region                          =   $region
+            \\n     cryptanswer                     =   $cryptanswer
+            \\n     swapanswer                      =   $swapanswer" \
         --yes-button "Let's go!" \
         --no-button "Cancel" \
-        25 78 \
+        34 78 \
         3>&1 1>&2 2>&3 3>&1
 }
 
