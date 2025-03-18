@@ -527,8 +527,8 @@ update_mirrors() {
     # just long enough for the screen to be read
     sleep 1
 
-    [ -f "$mirrorlist_src"] \
-        && [ -f "$mirrorlist_dest"] \
+    [ -f "$mirrorlist_src" ] \
+        && [ -f "$mirrorlist_dest" ] \
         && diff "$mirrorlist_dest" "$mirrorlist_src"
 
     # update `sources.list`

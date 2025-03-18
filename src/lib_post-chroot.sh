@@ -91,8 +91,8 @@ template_replace() {
     # just long enough for the screen to be read
     sleep 1
 
-    [ -f "$1"] \
-        && [ -f "$2"] \
+    [ -f "$1" ] \
+        && [ -f "$2" ] \
         && diff "$2" "$1"
 
     # update file with template
