@@ -193,7 +193,9 @@ add_user_and_pass() {
 prep_fstab_debootstrap() {
     # see if this can't be piped through `grep`
     # maybe the edit commands later on are no longer necessary
-    cat /proc/mounts >> /etc/fstab
+    #cat /proc/mounts >> /etc/fstab
+    grep "^/dev" /proc/mounts >> /etc/fstab
+    grep "^tmp" /proc/mounts | sed 's/dev\/shm/tmp/g' >> /etc/fstab
 
     # likewise, this should be handled with a variable whose value is the UUID
     [[ $swapanswer = "yes" ]] \
@@ -201,7 +203,7 @@ prep_fstab_debootstrap() {
 
     # pretty confident this is used to get the UUIDs
     # possible to get the values from here?
-    blkid | grep UUID >> /etc/fstab
+    blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /etc/fstab
 }
 
 do_basic_adjustments() {
@@ -314,13 +316,13 @@ git_dotfiles() {
         "$repodir/dotfiles"
 }
 
-editfstab() {
-    sed -i '/^sysfs/,/^devpts/d' /etc/fstab
-    sed -i '/^hugetlbfs/,/^binfmt_misc/d' /etc/fstab
-    sed -i '/^mqueue/d' /etc/fstab
-    sed -i 's/dev\/shm/tmp/g' /etc/fstab
-    sed -i '/^\/dev\/sr0/d' /etc/fstab
-}
+#editfstab() {
+    #sed -i '/^sysfs/,/^devpts/d' /etc/fstab
+    #sed -i '/^hugetlbfs/,/^binfmt_misc/d' /etc/fstab
+    #sed -i '/^mqueue/d' /etc/fstab
+    #sed -i 's/dev\/shm/tmp/g' /etc/fstab
+    #sed -i '/^\/dev\/sr0/d' /etc/fstab
+#}
 
 doconfigs() {
     whiptail \
