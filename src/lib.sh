@@ -269,9 +269,9 @@ get_encryption_pass() {
         )
     done
 
+    unset pass2
     pass_encrypt="$pass1"
     unset pass1
-    unset pass2
 }
 
 get_partition_info() {
@@ -373,10 +373,10 @@ ask_root_pass() {
     )
 
     # put user in loop until the two "root pass" entries agree
-    while ! [ "$rootpass1" = "$rootpass2" ]; do
+    while ! [ "$rootpass1" = "$rootpass2" ] || [ -z "$rootpass1" ]; do
         rootpass1=$(whiptail \
             --title "Root Password" \
-            --passwordbox "\\nThe passwords entered do not match each other.
+            --passwordbox "\\nThe passwords entered do not match each other, or were left blank.
                 \\nPlease enter the root user's password again." \
             --nocancel \
             10 60 \
@@ -438,10 +438,10 @@ ask_user_pass() {
     )
 
     # put user in loop until the two "user pass" entries agree
-    while ! [ "$userpass1" = "$userpass2" ]; do
+    while ! [ "$userpass1" = "$userpass2" ] || [ -z "$userpass1" ]; do
         userpass1=$(whiptail \
             --title "User Password" \
-            --passwordbox "\\nThe passwords entered do not match each other.
+            --passwordbox "\\nThe passwords entered do not match each other, or were left blank.
                 \\nPlease enter $username's password again." \
             --nocancel \
             10 60 \
@@ -543,26 +543,14 @@ questions() {
         3>&1 1>&2 2>&3 3>&1
     )
 
-    # this should essentially be answered sooner
-    # change variable!
-    export cryptanswer=$(whiptail \
-        --title "Encrypted System?" \
-        --menu "\\nIs this computer's root storage encrypted?" \
-        14 80 4 \
-        "yes" "" \
-        "no" "" \
-        3>&1 1>&2 2>&3 3>&1
-    ) \
-        || exit 1
-
     # this should be asked sooner
     # change variable!
     export swapanswer=$(whiptail \
         --title "Swap Partition?" \
         --menu "\\nDoes this computer have a swap partition?" \
         14 80 4 \
-        "yes" ""\
         "no" ""\
+        "yes" ""\
         3>&1 1>&2 2>&3 3>&1
     ) \
         || exit 1
@@ -598,11 +586,10 @@ ask_confirm_inputs() {
             \\n     user@hostname.domain            =   ${username}@${hostname}.${localdomain}
             \\n     Timezone                        =   $timezone
             \\n     Region                          =   $region
-            \\n     cryptanswer                     =   $cryptanswer
             \\n     swapanswer                      =   $swapanswer" \
         --yes-button "Let's go!" \
         --no-button "Cancel" \
-        34 78 \
+        32 78 \
         3>&1 1>&2 2>&3 3>&1
 }
 
@@ -660,6 +647,27 @@ set_partition_names() {
     # set the last partition as "rootfs"
     # may need to change in the future
     export partition_rootfs=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | tail -1 | awk '{print $1}')
+
+    # set the encryption partition
+    [ "$encryption" = true ] \
+        && {
+            export partition_crypt="${path_dev_mapper}/${lvm_name}"
+        }
+}
+
+encrypt_drive() {
+    TERM=ansi whiptail \
+        --title "Encrypt Disk" \
+        --infobox "Encrypting disk..." \
+        8 78
+
+    [ "$encryption" = true ] \
+        && {
+            echo "${pass_encrypt}" | cryptsetup -q luksFormat "$partition_rootfs" \
+                && echo "${pass_encrypt}" | cryptsetup open "$partition_rootfs" "$lvm_name" \
+                && unset pass_encrypt \
+                || error
+        }
 }
 
 run_format_disk() {
@@ -672,6 +680,8 @@ run_format_disk() {
     format_disk || error
 
     set_partition_names || error
+
+    encrypt_drive || error
 }
 
 ####################################################################
@@ -691,7 +701,12 @@ make_file_systems() {
         8 78
 
     mkfs.fat -F32 "$partition_boot" > /dev/null 2>&1
-    mkfs.ext4 "$partition_rootfs" > /dev/null 2>&1
+
+    [ "$encryption" = false ] \
+        && mkfs.ext4 "$partition_rootfs" > /dev/null 2>&1
+
+    [ "$encryption" = true ] \
+        && mkfs.ext4 "$partition_crypt" > /dev/null 2>&1
 
     # just long enough for the screen to be read
     sleep 1
@@ -707,7 +722,12 @@ mount_file_systems() {
         --infobox "Mounting file systems..." \
         8 78
 
-    mount "$partition_rootfs" /mnt
+    [ "$encryption" = false ] \
+        && mount "$partition_rootfs" /mnt
+
+    [ "$encryption" = true ] \
+        && mount "$partition_crypt" /mnt
+
     mkdir -p /mnt/boot
     mount "$partition_boot" /mnt/boot
 

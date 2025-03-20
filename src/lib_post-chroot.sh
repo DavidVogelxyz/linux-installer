@@ -452,19 +452,22 @@ dozshsetup(){
     done
 }
 
-docryptsetup() {
-    [[ $cryptanswer = "yes" ]] && {
+do_cryptsetup() {
+    [ $encryption = true ] && {
         whiptail \
-            --infobox "Installing 'cryptsetup-initramfs'..." \
+            --infobox "Configuring the system to request a password on startup to unlock the encrypted disk." \
             9 70
 
-        apt install -y \
-            cryptsetup-initramfs
+        DEBIAN_FRONTEND=noninteractive \
+            apt install -q -y \
+                cryptsetup-initramfs \
+                > /dev/null 2>&1
 
-        blkid | grep UUID | grep crypto \
-            >> /etc/crypttab
+        while read -r blkid_dev blkid_uuid other ; do
+            uuid_crypt="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+        done< <(blkid | grep UUID | grep crypto)
 
-        vim /etc/crypttab
+        echo "${lvm_name} ${uuid_crypt} none luks" >> /etc/crypttab
     }
 }
 
@@ -537,7 +540,7 @@ chroot_from_debootstrap() {
 
     doconfigs
 
-    docryptsetup
+    do_cryptsetup
 
     doinitramfsupdate
 
