@@ -141,22 +141,6 @@ error() {
 }
 
 ####################################################################
-# FUNCTIONS - DEBIAN-SETUP - CONFIRM_INPUTS
-####################################################################
-
-confirm_inputs() {
-    whiptail \
-        --title "Confirm Your Inputs" \
-        --yes-button "Let's go!" \
-        --no-button "Never mind..." \
-        --yesno "\\nYou gave the following inputs:
-            \\n    Username: $username\\n    Hostname: $hostname\\n    Local domain: $localdomain\\n    Full address: $hostname.$localdomain\\n    Timezone: $timezone\\n    Region: $region\\n    Firmware: $uefi\\n    Device name: $disk_selected\\n    Encryption: $cryptanswer\\n    Swap partition: $swapanswer
-            \\nContinue?" \
-        24 85 \
-        3>&1 1>&2 2>&3 3>&1
-}
-
-####################################################################
 # FUNCTIONS - DEBIAN-SETUP - ADD_USER_AND_PASS
 ####################################################################
 
@@ -203,7 +187,23 @@ prep_fstab_debootstrap() {
 
     # pretty confident this is used to get the UUIDs
     # possible to get the values from here?
-    blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /etc/fstab
+    #blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /etc/fstab
+    blkid_partitions=(
+        "${partition_rootfs}"
+        "${partition_boot}"
+    )
+
+    while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
+        for object in "${blkid_partitions[@]}"; do
+            grep "$object" <<< "$blkid_dev" > /dev/null \
+                && {
+                    grep_result=$?
+                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    sed -i "s|$object|$uuid_item|g" /etc/fstab
+                }
+        done
+    done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
+
 }
 
 do_basic_adjustments() {
@@ -258,32 +258,32 @@ setupubuntu() {
 }
 
 installloop() {
-	([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) \
+    ([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) \
         && sed -i '/^#/d' /tmp/packages.csv \
         || curl -Ls "$packfile" | sed '/^#/d' > /tmp/packages.csv
 
-	total=$(wc -l < /tmp/packages.csv)
+    total=$(wc -l < /tmp/packages.csv)
     n="0"
 
-	while IFS="," read -r program comment; do
-		n=$((n + 1))
-		echo "$comment" | grep -q "^\".*\"$" &&
-			comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
+    while IFS="," read -r program comment; do
+        n=$((n + 1))
+        echo "$comment" | grep -q "^\".*\"$" &&
+            comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
         install "$program" "$comment"
-	done </tmp/packages.csv
+    done </tmp/packages.csv
 }
 
 install() {
-	whiptail \
+    whiptail \
         --title "Package Installation" \
         --infobox "Installing \`$1\` ($n of $total). $1 $2" \
         9 70
 
-	installpkg "$1"
+    installpkg "$1"
 }
 
 installpkg() {
-	apt install -y "$1" \
+    apt install -y "$1" \
         > /dev/null 2>&1
 }
 
@@ -326,7 +326,7 @@ git_dotfiles() {
 
 doconfigs() {
     whiptail \
-        --infobox "Performing some basic configurations. At some point, vim will open \"/etc/fstab\". You should know what to do here." \
+        --infobox "Performing some basic configurations..." \
         9 70
 
     # create directories that should exist before deploying dotfiles with stow
@@ -421,9 +421,9 @@ doconfigs() {
 
     # if I change how the fstab is generated
     # I can probably eliminate this entirely
-    editfstab
+    #editfstab
     # and then no need to edit in Vim
-    vim /etc/fstab
+    #vim /etc/fstab
 }
 
 dozshsetup(){
@@ -506,7 +506,7 @@ dogrubinstall() {
 }
 
 finalmessage() {
-	whiptail \
+    whiptail \
         --title "Congrats!" \
         --msgbox "Provided there were no hidden errors, \`debian-setup\` completed successfully and all packages and configurations are properly installed." \
         9 70
@@ -524,14 +524,6 @@ chroot_from_debootstrap() {
             > /dev/null 2>&1 \
         && installpkg whiptail \
             > /dev/null 2>&1
-
-    get_user_and_pass
-
-    get_networking_info
-
-    questions
-
-    #confirm_inputs
 
     add_user_and_pass
 

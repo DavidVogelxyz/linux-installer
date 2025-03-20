@@ -655,11 +655,11 @@ format_disk() {
 set_partition_names() {
     # set the first partition as "/boot"
     # may need to change in the future
-    partition_boot=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | head -1 | awk '{print $1}')
+    export partition_boot=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | head -1 | awk '{print $1}')
 
     # set the last partition as "rootfs"
     # may need to change in the future
-    partition_rootfs=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | tail -1 | awk '{print $1}')
+    export partition_rootfs=$(sfdisk -d ${path_dev}/${disk_selected} | grep start | tail -1 | awk '{print $1}')
 }
 
 run_format_disk() {
@@ -869,16 +869,16 @@ run_pre_debootstrap() {
         && apt install -y debootstrap git vim > /dev/null 2>&1
 }
 
-chroot_vars() {
-    chroot_vars_dest=/mnt/root/.local/src/linux-image-setup/vars.txt
+#chroot_vars() {
+    #chroot_vars_dest=/mnt/root/.local/src/linux-image-setup/vars.txt
 
-    echo "path_dev=${path_dev}" >> "${chroot_vars_dest}"
-    echo "path_dev_mapper=${path_dev_mapper}" >> "${chroot_vars_dest}"
-    echo "lvm_name=${lvm_name}" >> "${chroot_vars_dest}"
-    echo "uefi=${uefi}" >> "${chroot_vars_dest}"
-    echo "disk_selected=${disk_selected}" >> "${chroot_vars_dest}"
-    echo "install_os_selected=${install_os_selected}" >> "${chroot_vars_dest}"
-}
+    #echo "path_dev=${path_dev}" >> "${chroot_vars_dest}"
+    #echo "path_dev_mapper=${path_dev_mapper}" >> "${chroot_vars_dest}"
+    #echo "lvm_name=${lvm_name}" >> "${chroot_vars_dest}"
+    #echo "uefi=${uefi}" >> "${chroot_vars_dest}"
+    #echo "disk_selected=${disk_selected}" >> "${chroot_vars_dest}"
+    #echo "install_os_selected=${install_os_selected}" >> "${chroot_vars_dest}"
+#}
 
 chroot_debootstrap_prelude() {
     error() {
