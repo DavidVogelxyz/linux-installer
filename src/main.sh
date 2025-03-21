@@ -10,27 +10,27 @@ source_lib() {
 }
 
 error() {
-    echo -e "\nfailed to source the library file!" \
+    echo "$1" >&2 \
         && exit 1
 }
 
 # prelude
-source_lib || error # sources library file, or error
-welcome_screen || error # informs the user of how the script works, or error
+source_lib || error "Failed to source the library file." # sources library file, or error
+welcome_screen || error "Failed at the welcome screen." # informs the user of how the script works, or error
 
 # gather information
-get_setup_info || error # gets info about system, with little user input, or error
+get_setup_info || error "Failed to get setup info." # gets info about system, with little user input, or error
 get_partition_info # ask about partition scheme, encryption, etc
-check_image_ubuntu && ask_debootstrap # if Ubuntu image, configures and runs `debootstrap`
-get_other_setup_info || error # gets other user info for setting up new user
-ask_confirm_inputs || error # asks the users to confirm everything before running, or error
+check_setup_os "ubuntu" && ask_debootstrap # if Ubuntu image, configures and runs `debootstrap`
+get_other_setup_info || error "Failed to get other setup info." # gets other user info for setting up new user
+ask_confirm_inputs || error "Failed to confirm inputs." # asks the users to confirm everything before running, or error
 
 # perform chores
-run_format_disk || error # formats the disk, or error
-make_file_systems || error # makes file systems, or error
-mount_file_systems || error # mounts the file systems, or error
+run_format_disk || error "Failed to format disk." # formats the disk, or error
+make_file_systems || error "Failed to make file systems." # makes file systems, or error
+mount_file_systems || error "Failed to mount file systems." # mounts the file systems, or error
 
 # begin install
-check_image_artix && run_basestrap # runs basestrap on Artix images
-check_image_arch && run_pacstrap # runs pacstrap on Arch images
-check_image_ubuntu && run_debootstrap # runs debootstrap on Ubuntu images
+check_setup_os "artix" && run_basestrap # runs basestrap on Artix images
+check_setup_os "arch" && run_pacstrap # runs pacstrap on Arch images
+check_setup_os "ubuntu" && run_debootstrap # runs debootstrap on Ubuntu images

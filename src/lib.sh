@@ -27,7 +27,8 @@ os_supported=(
 ####################################################################
 
 error() {
-    echo "fail!" && exit 1
+    echo "$1" >&2 \
+        && exit 1
 }
 
 welcome_screen() {
@@ -57,16 +58,8 @@ get_setup_os() {
 # FUNCTIONS - CHECK_SETUP_OS
 ####################################################################
 
-check_image_arch() {
-    [ "$setup_os" == "arch" ]
-}
-
-check_image_artix() {
-    [ "$setup_os" == "artix" ]
-}
-
-check_image_ubuntu() {
-    [ "$setup_os" == "ubuntu" ]
+check_setup_os() {
+    [ "$setup_os" == "$1" ]
 }
 
 ####################################################################
@@ -112,7 +105,7 @@ ask_uefi() {
 get_uefi() {
     check_uefi
 
-    ask_uefi || error
+    ask_uefi || error "Failed when asking about UEFI."
 }
 
 ####################################################################
@@ -162,15 +155,11 @@ get_ram_size() {
 }
 
 get_setup_info() {
-    error() {
-        echo "failed to get setup info!" && exit 1
-    }
-
     get_setup_os # sets `setup_os`
 
-    get_uefi || error # sets `uefi` (0 is "legacy BIOS")
+    get_uefi || error "Failed to set UEFI." # sets `uefi` (0 is "legacy BIOS")
 
-    get_disks || error # sets `disk_count` and `disk_selected`
+    get_disks || error "Failed to set \`disk_selected\`." # sets `disk_count` and `disk_selected`
 
     get_ram_size # set `ram_size` in the format of `xyGB`
 
@@ -277,14 +266,14 @@ get_encryption_pass() {
 get_partition_info() {
     #ask_partition_scheme || error
 
-    ask_to_encrypt || error
+    ask_to_encrypt || error "Failed to get answer about encryption."
 
     # if `encryption` is `true`, run `get_encryption_pass`
     # if `get_encryption_pass` fails, error
     [ "$encryption" = true ] \
         && {
             get_encryption_pass \
-                || error
+                || error "Failed to get an encryption password."
         }
 }
 
@@ -292,20 +281,8 @@ get_partition_info() {
 # FUNCTIONS - CHECK_INSTALL_OS
 ####################################################################
 
-check_install_arch() {
-    [ "$install_os_selected" == "arch" ]
-}
-
-check_install_artix() {
-    [ "$install_os_selected" == "artix" ]
-}
-
-check_install_debian() {
-    [ "$install_os_selected" == "debian" ]
-}
-
-check_install_ubuntu() {
-    [ "$install_os_selected" == "ubuntu" ]
+check_install_os() {
+    [ "$install_os_selected" == "$1" ]
 }
 
 ####################################################################
@@ -330,23 +307,19 @@ ask_debootstrap_install_os() {
 }
 
 debootstrap_release_version() {
-    check_install_debian \
-        && release_selected="bookworm"
+    check_install_os "debian" \
+        && release_selected="bookworm" \
+        && return 0
 
-    check_install_ubuntu \
+    check_install_os "ubuntu" \
         && release_selected="noble" \
-        || true
+        && return 0
 }
 
-
 ask_debootstrap() {
-    error() {
-        echo "failed to get debootstrap information!" && exit 1
-    }
+    ask_debootstrap_install_os || error "Failed to get \`debootstrap\` install OS."
 
-    ask_debootstrap_install_os || error
-
-    debootstrap_release_version || error
+    debootstrap_release_version || error "Failed to get \`debootstrap\` release version."
 }
 
 ####################################################################
@@ -473,7 +446,7 @@ get_user_and_pass() {
 ask_hostname() {
     export hostname=$(whiptail \
         --title "Hostname" \
-        --inputbox "\\nPlease enter a hostname for the Debian computer." \
+        --inputbox "\\nPlease enter a hostname for the machine." \
         10 60 \
         3>&1 1>&2 2>&3 3>&1
     ) \
@@ -549,8 +522,8 @@ questions() {
         --title "Swap Partition?" \
         --menu "\\nDoes this computer have a swap partition?" \
         14 80 4 \
-        "no" ""\
-        "yes" ""\
+        "false" "| No, do not create a swap partition."\
+        "true" "| Yes, create a swap partition."\
         3>&1 1>&2 2>&3 3>&1
     ) \
         || exit 1
@@ -561,11 +534,11 @@ questions() {
 ####################################################################
 
 get_other_setup_info() {
-    get_user_and_pass || error # gets user and pass info
+    get_user_and_pass || error "Failed to get a username and password." # gets user and pass info
 
-    get_networking_info || error # gets networking info
+    get_networking_info || error "Failed to get networking information." # gets networking info
 
-    questions || error
+    questions || error "Failed to answer all the questions."
 }
 
 ####################################################################
@@ -612,19 +585,6 @@ format_disk_warning_screen() {
         3>&1 1>&2 2>&3 3>&1
 }
 
-format_disk_nonsense() {
-    #devsel="/dev/${disk_selected}"
-
-    # a check for root user
-    # > /dev/null 2>&1
-    sfdisk -d $devsel \
-        || echo "Are you sure you're running this as the root user?"
-
-    # lots of good new stuff to try with the sfdisk commands
-    #sfdisk $devsel < templates/format_disk_*                   # to take a file as a "state"
-    #sfdisk -d $devsel                                          # to view
-}
-
 format_disk() {
     TERM=ansi whiptail \
         --title "Format Disk" \
@@ -636,7 +596,7 @@ format_disk() {
 
     # if successful, half second to read screen
     # if not, fails immediately
-    sfdisk ${path_dev}/${disk_selected} < src/templates/format_disk/${uefi}_standard && sleep 0.5 || error
+    sfdisk ${path_dev}/${disk_selected} < src/templates/format_disk/${uefi}_standard && sleep 0.5 || error "Failed to format disk! Is the disk currently in use?"
 }
 
 set_partition_names() {
@@ -666,22 +626,45 @@ encrypt_drive() {
             echo "${pass_encrypt}" | cryptsetup -q luksFormat "$partition_rootfs" \
                 && echo "${pass_encrypt}" | cryptsetup open "$partition_rootfs" "$lvm_name" \
                 && unset pass_encrypt \
-                || error
+                || error "Failed to set the encryption password."
         }
 }
 
+create_swap() {
+    [ "$swapanswer" = true ] \
+        || return 0
+
+    [ "$encryption" = false ] \
+        && {
+            export volume_physical="${partition_rootfs}"
+        }
+
+    [ "$encryption" = true ] \
+        && {
+            export volume_physical="${partition_crypt}"
+        }
+
+    export group_volume="vg${install_os_selected}"
+    export swap_name="swap_1"
+    export volume_logical_swap="${path_dev_mapper}/${group_volume}-${swap_name}"
+    export volume_logical_root="${path_dev_mapper}/${group_volume}-root"
+
+    pvcreate "${volume_physical}" > /dev/null 2>&1
+    vgcreate "${group_volume}" "${volume_physical}" > /dev/null 2>&1
+    lvcreate -L "${ram_size}" -n "${swap_name}" "${group_volume}" > /dev/null 2>&1
+    lvcreate -l 100%FREE -n root "${group_volume}" > /dev/null 2>&1
+}
+
 run_format_disk() {
-    error() {
-        echo "failed to format disk!" && exit 1
-    }
+    format_disk_warning_screen || error "Failed at the format disk warning screen."
 
-    format_disk_warning_screen || error
+    format_disk || error "Failed to format disk! Is the disk currently in use?"
 
-    format_disk || error
+    set_partition_names || error "Failed to set partition names."
 
-    set_partition_names || error
+    encrypt_drive || error "Failed to encrypt the drive."
 
-    encrypt_drive || error
+    create_swap || error "Failed to create swap partition."
 }
 
 ####################################################################
@@ -691,10 +674,6 @@ run_format_disk() {
 #run_cryptsetup() {}
 
 make_file_systems() {
-    error() {
-        echo "failed to make file systems!" && exit 1
-    }
-
     TERM=ansi whiptail \
         --title "File Systems" \
         --infobox "Making file systems..." \
@@ -702,14 +681,18 @@ make_file_systems() {
 
     mkfs.fat -F32 "$partition_boot" > /dev/null 2>&1
 
+    [ "$swapanswer" = true ] \
+        && mkfs.ext4 "$volume_logical_root" > /dev/null 2>&1 \
+        && mkswap "$volume_logical_swap" > /dev/null 2>&1 \
+        && return 0
+
     [ "$encryption" = false ] \
-        && mkfs.ext4 "$partition_rootfs" > /dev/null 2>&1
+        && mkfs.ext4 "$partition_rootfs" > /dev/null 2>&1 \
+        && return 0
 
     [ "$encryption" = true ] \
-        && mkfs.ext4 "$partition_crypt" > /dev/null 2>&1
-
-    # just long enough for the screen to be read
-    sleep 1
+        && mkfs.ext4 "$partition_crypt" > /dev/null 2>&1 \
+        && return 0
 }
 
 mount_file_systems() {
@@ -722,17 +705,19 @@ mount_file_systems() {
         --infobox "Mounting file systems..." \
         8 78
 
-    [ "$encryption" = false ] \
+    [ "$swapanswer" = false ] \
+        && [ "$encryption" = false ] \
         && mount "$partition_rootfs" /mnt
 
-    [ "$encryption" = true ] \
+    [ "$swapanswer" = false ] \
+        && [ "$encryption" = true ] \
         && mount "$partition_crypt" /mnt
+
+    [ "$swapanswer" = true ] \
+        && mount "$volume_logical_root" /mnt
 
     mkdir -p /mnt/boot
     mount "$partition_boot" /mnt/boot
-
-    # just long enough for the screen to be read
-    sleep 1
 }
 
 bind_mounts() {
@@ -745,9 +730,6 @@ bind_mounts() {
         mount --rbind /$d /mnt/$d \
             && mount --make-rslave /mnt/$d
     done
-
-    # just long enough for the screen to be read
-    sleep 1
 }
 
 ####################################################################
@@ -806,10 +788,6 @@ lsblk_to_fstab() {
 }
 
 chroot_arch_prelude() {
-    error() {
-        echo "failed to chroot!" && exit 1
-    }
-
     repodir="/root/.local/src"
     post_chroot_path="linux-image-setup"
     post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
@@ -833,13 +811,13 @@ chroot_artix_prelude() {
 }
 
 chroot_arch() {
-    chroot_arch_prelude || error
+    chroot_arch_prelude || error "Failed to configure the \`chroot\` environment."
 
     arch-chroot /mnt "${post_chroot_script}"
 }
 
 chroot_artix() {
-    chroot_artix_prelude || error
+    chroot_artix_prelude || error "Failed to configure the \`chroot\` environment."
 
     artix-chroot /mnt "${post_chroot_script}"
 }
@@ -889,22 +867,7 @@ run_pre_debootstrap() {
         && apt install -y debootstrap git vim > /dev/null 2>&1
 }
 
-#chroot_vars() {
-    #chroot_vars_dest=/mnt/root/.local/src/linux-image-setup/vars.txt
-
-    #echo "path_dev=${path_dev}" >> "${chroot_vars_dest}"
-    #echo "path_dev_mapper=${path_dev_mapper}" >> "${chroot_vars_dest}"
-    #echo "lvm_name=${lvm_name}" >> "${chroot_vars_dest}"
-    #echo "uefi=${uefi}" >> "${chroot_vars_dest}"
-    #echo "disk_selected=${disk_selected}" >> "${chroot_vars_dest}"
-    #echo "install_os_selected=${install_os_selected}" >> "${chroot_vars_dest}"
-#}
-
 chroot_debootstrap_prelude() {
-    error() {
-        echo "failed to chroot!" && exit 1
-    }
-
     repodir="/root/.local/src"
     post_chroot_path="debian-setup"
     post_chroot_script="${repodir}/${post_chroot_path}/${post_chroot_path}.sh"
@@ -924,29 +887,23 @@ chroot_debootstrap_prelude() {
 }
 
 chroot_debootstrap() {
-    chroot_debootstrap_prelude || error
-
-    #chroot_vars
+    chroot_debootstrap_prelude || error "Failed to configure the \`chroot\` environment."
 
     chroot /mnt "${post_chroot_script}"
 }
 
 run_debootstrap() {
-    error() {
-        echo "failed to debootstrap!" && exit 1
-    }
-
     # make sure `debootstrap` and `vim` are installed
-    run_pre_debootstrap || error
+    run_pre_debootstrap || error "Failed to set up for \`debootstrap\`."
 
     # do the `debootstrap`
-    debootstrap $release_selected /mnt || error
+    debootstrap $release_selected /mnt || error "Failed to run \`debootstrap\`."
 
-    bind_mounts || error
+    bind_mounts || error "Failed to bind mounts."
 
-    debootstrap_sourceslist || error
+    debootstrap_sourceslist || error "Failed to set up \`/etc/apt/sources.list\`."
 
-    chroot_debootstrap || error
+    chroot_debootstrap || error "Failed to \`chroot\`!"
 }
 
 ####################################################################

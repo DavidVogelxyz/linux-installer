@@ -179,19 +179,28 @@ prep_fstab_debootstrap() {
     # maybe the edit commands later on are no longer necessary
     #cat /proc/mounts >> /etc/fstab
     grep "^/dev" /proc/mounts >> /etc/fstab
-    grep "^tmp" /proc/mounts | sed 's/dev\/shm/tmp/g' >> /etc/fstab
 
     # likewise, this should be handled with a variable whose value is the UUID
-    [[ $swapanswer = "yes" ]] \
-        && echo "UUID=<UUID_swap> none swap defaults 0 0" >> /etc/fstab
+    [ "$swapanswer" = true ] \
+        && echo "${volume_logical_swap} none swap defaults 0 0" >> /etc/fstab
+
+    grep "^tmp" /proc/mounts | sed 's/dev\/shm/tmp/g' >> /etc/fstab
 
     # pretty confident this is used to get the UUIDs
     # possible to get the values from here?
     #blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /etc/fstab
     blkid_partitions=(
-        "${partition_rootfs}"
         "${partition_boot}"
     )
+
+    [ -z "$volume_logical_swap" ] \
+        && blkid_partitions+=(
+            "${partition_rootfs}"
+            ) \
+        || blkid_partitions+=(
+            "${volume_logical_swap}"
+            "${volume_logical_root}"
+            )
 
     while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
         for object in "${blkid_partitions[@]}"; do
@@ -203,7 +212,6 @@ prep_fstab_debootstrap() {
                 }
         done
     done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
-
 }
 
 do_basic_adjustments() {

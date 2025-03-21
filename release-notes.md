@@ -1,3 +1,11 @@
+## v0.0.6
+
+This project is now able to add swap partitions and work with logical volumes.
+
+Also, tons of "editing" occurred to clean up dead code and optimizing surviving code.
+
+Tested on Ubuntu image installing Debian Bookworm.
+
 ## v0.0.5
 
 This project is now able to do basic `rootfs` encryption and pass the necessary UUID to `/etc/crypttab` without user intervention.
