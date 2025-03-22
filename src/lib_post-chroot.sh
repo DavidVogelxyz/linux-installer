@@ -327,25 +327,21 @@ doconfigs() {
         "$repodir/vim" \
         > /dev/null 2>&1
 
-    # for root user
-    [ -e /root/.bashrc ] \
-        && rm -f /root/.bashrc
+    # files to be checked; will be removed if they exist
+    list_files=(
+        "/root/.bashrc"
+        "/root/.profile"
+        "/root/.vim"
+        "/home/$username/.bashrc"
+        "/home/$username/.profile"
+        "/home/$username/.vim"
+    )
 
-    [ -e /root/.profile ] \
-        && rm -f /root/.profile
-
-    [ -e /root/.vim ] \
-        && rm -rf /root/.vim
-
-    # for new user
-    [ -e "/home/$username/.bashrc" ] \
-        && rm -f "/home/$username/.bashrc"
-
-    [ -e "/home/$username/.profile" ] \
-        && rm -f "/home/$username/.profile"
-
-    [ -e "/home/$username/.vim" ] \
-        && rm -rf "/home/$username/.vim"
+    # check files; remove if they exist
+    for path in "${list_files[@]}"; do
+        [ -e "$path" ] \
+            && rm -rf "$path"
+    done
 
     # stow
     cd "/home/$username/.dotfiles" \
@@ -353,49 +349,41 @@ doconfigs() {
         && cd \
         && unlink "/home/$username/.xprofile"
 
-    # for root user
-    ln -s \
-        "/home/$username/.dotfiles/.config/shell/profile" \
-        "/home/$username/.profile"
+    links_to_sym(
+        "$repodir/vim" "/root/.vim"
+        "$repodir/vim" "/home/$username/.vim"
+        "/home/$username/.dotfiles/.bashrc" "/root/.bashrc"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/root/.config/shell/aliasrc"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/home/$username/.config/shell/aliasrc"
+        "/home/$username/.dotfiles/.config/lf/scope-debian" "/root/.config/lf/scope"
+        "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
+        "/home/$username/.dotfiles/.config/shell/profile" "/root/.profile"
+        "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
+    )
+
+    sym_link() {
+        ln -s "$1" "$2"
+    }
+
+    while read -r link_src link_dest ]; do
+        sym_link "$link_src" "$link_dest" \
+            || error "Failed to link \"$link_src\" to \"$link_dest\"." >> config_fail.txt \
+            && return 0
+    done <<< (echo "${links_to_sym[@]}")
+
+    # small edits to `~/.config/shell/profile` for SERVERS
+    # DWM and others will want these on
     sed -i \
         's/^\[ "\$(tty)"/#[ "$(tty)"]/g' \
         "/home/$username/.dotfiles/.config/shell/profile"
     sed -i \
         's/^sudo -n loadkeys "$XDG_DATA_HOME/#sudo -n loadkeys "$XDG_DATA_HOME/g' \
         "/home/$username/.dotfiles/.config/shell/profile"
+
+    # this can probably be deleted; only using zsh now
     echo -e \
         "\nsource ~/.bashrc" \
         >> "/home/$username/.dotfiles/.config/shell/profile"
-    ln -s \
-        "$repodir/vim" \
-        "/home/$username/.vim"
-
-    # for root user
-    ln -s \
-        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" \
-        /root/.config/shell/aliasrc
-    ln -s \
-        "/home/$username/.dotfiles/.config/lf/scope-debian" \
-        /root/.config/lf/scope
-
-    # for new user
-    ln -s \
-        "/home/$username/.dotfiles/.bashrc" \
-        /root/.bashrc
-    ln -s \
-        "/home/$username/.dotfiles/.config/shell/profile" \
-        /root/.profile
-    ln -s \
-        "$repodir/vim" \
-        /root/.vim
-
-    # for new user
-    ln -s \
-        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" \
-        "/home/$username/.config/shell/aliasrc"
-    ln -s \
-        "/home/$username/.dotfiles/.config/lf/scope-debian" \
-        "/home/$username/.config/lf/scope"
 
     dozshsetup
 
@@ -404,13 +392,8 @@ doconfigs() {
     chown -R "$username": "/home/$username"
 
     # enable NetworkManager
+    # this is true only for Arch, Debian, and Ubuntu
     enable_networkmanager
-
-    # if I change how the fstab is generated
-    # I can probably eliminate this entirely
-    #editfstab
-    # and then no need to edit in Vim
-    #vim /etc/fstab
 }
 
 dozshsetup(){
@@ -431,6 +414,7 @@ dozshsetup(){
 
     for font in "${fonts[@]}"; do
         webfont=$(echo $font | sed 's/_/%20/g')
+
         [ ! -e /usr/local/share/fonts/m/$font ] \
             && sudo curl -L \
                 https://github.com/romkatv/powerlevel10k-media/raw/master/$webfont \
