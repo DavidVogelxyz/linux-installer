@@ -6,12 +6,12 @@
 
 # check if timezone is symlink
 check_path_link() {
-    [[ -L "$path_to_check" ]]
+    [ -L "$path_to_check" ]
 }
 
 # check if timezone is file
 check_path_file() {
-    [[ -f "$path_to_check" ]]
+    [ -f "$path_to_check" ]
 }
 
 set_timezone() {
@@ -46,7 +46,7 @@ set_locale_conf() {
 }
 
 uncomment_locale_gen() {
-    [[ "$region" == "en_US" ]] \
+    [ "$region" == "en_US" ] \
         && sed -i 's/^# en_US/en_US/g' /etc/locale.gen
 }
 
@@ -106,20 +106,8 @@ template_replace() {
 # FUNCTIONS - CHECK_INSTALL_OS
 ####################################################################
 
-check_install_arch() {
-    [ "$install_os_selected" == "arch" ]
-}
-
-check_install_artix() {
-    [ "$install_os_selected" == "artix" ]
-}
-
-check_install_debian() {
-    [ "$install_os_selected" == "debian" ]
-}
-
-check_install_ubuntu() {
-    [ "$install_os_selected" == "ubuntu" ]
+check_install_os() {
+    [ "$install_os_selected" == "$1" ]
 }
 
 ####################################################################
@@ -135,9 +123,8 @@ TERM=linux
 ####################################################################
 
 error() {
-    # Log to stderr and exit with failure.
-    printf "%s\n" "$1" >&2
-    exit 1
+    echo "$1" >&2 \
+        && exit 1
 }
 
 ####################################################################
@@ -323,14 +310,6 @@ git_dotfiles() {
         "/home/$username/.dotfiles" \
         "$repodir/dotfiles"
 }
-
-#editfstab() {
-    #sed -i '/^sysfs/,/^devpts/d' /etc/fstab
-    #sed -i '/^hugetlbfs/,/^binfmt_misc/d' /etc/fstab
-    #sed -i '/^mqueue/d' /etc/fstab
-    #sed -i 's/dev\/shm/tmp/g' /etc/fstab
-    #sed -i '/^\/dev\/sr0/d' /etc/fstab
-#}
 
 doconfigs() {
     whiptail \
@@ -542,7 +521,8 @@ chroot_from_debootstrap() {
 
     setuplocale
 
-    [[ $install_os_selected = "ubuntu" ]] && setupubuntu
+    check_install_os "ubuntu" \
+        && setupubuntu
 
     installloop
 
