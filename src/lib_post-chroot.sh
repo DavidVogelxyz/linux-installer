@@ -420,16 +420,33 @@ doconfigs() {
         && cd \
         && unlink "/home/$username/.xprofile" # this is true only for servers; should not be done on DWM machines
 
+    # all systems
     links_to_sym=(
         "$repodir/vim" "/root/.vim"
         "$repodir/vim" "/home/$username/.vim"
         "/home/$username/.dotfiles/.bashrc" "/root/.bashrc"
+        "/home/$username/.dotfiles/.config/shell/profile" "/root/.profile"
+        "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
+    )
+
+    # specific to Debian and Ubuntu
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && links_to_sym+=(
         "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/root/.config/shell/aliasrc"
         "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/home/$username/.config/shell/aliasrc"
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/root/.config/lf/scope"
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
-        "/home/$username/.dotfiles/.config/shell/profile" "/root/.profile"
-        "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
+    )
+
+    # specific to Arch and Artix
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && links_to_sym+=(
+        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/root/.config/shell/aliasrc"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/home/$username/.config/shell/aliasrc"
+        "/home/$username/.dotfiles/.config/lf/scope-arch" "/root/.config/lf/scope"
+        "/home/$username/.dotfiles/.config/lf/scope-arch" "/home/$username/.config/lf/scope"
     )
 
     # loop through `links_to_sym` and creates the symlinks
@@ -459,6 +476,13 @@ doconfigs() {
     sed -i \
         's/^sudo -n loadkeys "$XDG_DATA_HOME/#sudo -n loadkeys "$XDG_DATA_HOME/g' \
         "/home/$username/.dotfiles/.config/shell/profile"
+
+    # on Arch and Artix, allow for members of `wheel` group to `sudo`, after providing a password
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && sed -i \
+            's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/g' \
+            '/etc/sudoers'
 
     # this can probably be deleted; only using zsh now
     echo -e \
