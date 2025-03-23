@@ -696,10 +696,6 @@ make_file_systems() {
 }
 
 mount_file_systems() {
-    error() {
-        echo "failed to mount file systems!" && exit 1
-    }
-
     TERM=ansi whiptail \
         --title "File Systems" \
         --infobox "Mounting file systems..." \
@@ -784,7 +780,7 @@ lsblk_to_grub() {
 }
 
 lsblk_to_fstab() {
-    lsblk -f >> /mnt/etc/fstab
+    lsblk -f >> /mnt/etc/fstab-helper
 }
 
 chroot_arch_prelude() {
@@ -846,7 +842,8 @@ run_basestrap() {
 
     lsblk_to_grub
 
-    #lsblk_to_fstab
+    [ "$swapanswer" = true ] \
+        && lsblk_to_fstab
 
     generate_fstab
 
@@ -930,7 +927,8 @@ run_pacstrap() {
 
     lsblk_to_grub
 
-    #lsblk_to_fstab
+    [ "$swapanswer" = true ] \
+        && lsblk_to_fstab
 
     generate_fstab
 

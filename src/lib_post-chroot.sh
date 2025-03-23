@@ -1,17 +1,19 @@
 #!/bin/sh
 
+aurhelper="yay"
+
 ####################################################################
 # NEW FUNCTIONS
 ####################################################################
 
 # check if timezone is symlink
 check_path_link() {
-    [ -L "$path_to_check" ]
+    [ -L "$1" ]
 }
 
 # check if timezone is file
 check_path_file() {
-    [ -f "$path_to_check" ]
+    [ -f "$1" ]
 }
 
 set_timezone() {
@@ -19,11 +21,11 @@ set_timezone() {
 
     # remove timezone if link
     check_path_link \
-        && unlink /etc/localtime
+        && unlink "${path_to_check}"
 
     # remove timezone if file
     check_path_file \
-        && rm /etc/localtime
+        && rm "${path_to_check}"
 
     # set timezone
     ln -s "/usr/share/zoneinfo/$timezone" /etc/localtime
@@ -36,30 +38,13 @@ sync_clock() {
 }
 
 set_datetime() {
+    # set the timezone
     set_timezone
 
-    sync_clock
-}
-
-set_locale_conf() {
-    template_replace src/templates/etc/locale.conf /etc/locale.conf
-}
-
-uncomment_locale_gen() {
-    [ "$region" == "en_US" ] \
-        && sed -i 's/^# en_US/en_US/g' /etc/locale.gen
-}
-
-run_locale_gen() {
-    locale-gen > /dev/null 2>&1
-}
-
-set_locales() {
-    set_locale_conf
-
-    uncomment_locale_gen
-
-    run_locale_gen
+    # sync system to hardware clock
+    # Ubuntu doesn't have `hwclock`
+    check_install_os "ubuntu" \
+        || sync_clock
 }
 
 set_etc_hostname() {
@@ -161,92 +146,50 @@ add_user_and_pass() {
 # FUNCTIONS - DEBIAN-SETUP - DO_BASIC_ADJUSTMENTS
 ####################################################################
 
-prep_fstab_debootstrap() {
-    # see if this can't be piped through `grep`
-    # maybe the edit commands later on are no longer necessary
-    #cat /proc/mounts >> /etc/fstab
-    grep "^/dev" /proc/mounts >> /etc/fstab
-
-    # likewise, this should be handled with a variable whose value is the UUID
-    [ "$swapanswer" = true ] \
-        && echo "${volume_logical_swap} none swap defaults 0 0" >> /etc/fstab
-
-    grep "^tmp" /proc/mounts | sed 's/dev\/shm/tmp/g' >> /etc/fstab
-
-    # pretty confident this is used to get the UUIDs
-    # possible to get the values from here?
-    #blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /etc/fstab
-    blkid_partitions=(
-        "${partition_boot}"
-    )
-
-    [ -z "$volume_logical_swap" ] \
-        && blkid_partitions+=(
-            "${partition_rootfs}"
-            ) \
-        || blkid_partitions+=(
-            "${volume_logical_swap}"
-            "${volume_logical_root}"
-            )
-
-    while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
-        for object in "${blkid_partitions[@]}"; do
-            grep "$object" <<< "$blkid_dev" > /dev/null \
-                && {
-                    grep_result=$?
-                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
-                    sed -i "s|$object|$uuid_item|g" /etc/fstab
-                }
-        done
-    done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
-}
-
 do_basic_adjustments() {
     whiptail \
-        --infobox "Updating packages and installing \`nala\`, a wrapper for \`apt\`..." \
+        --infobox "Updating packages and doing basic OS configuration..." \
         9 70
 
-    # add relevant content to the `/etc/fstab` file
-    prep_fstab_debootstrap
-
-    # set `/etc/hostname` file
-    set_etc_hostname
-
     # set `/etc/hosts` file
-    set_etc_hosts
+    set_hosts
 
-    # set the timezone
-    set_timezone
-
-    # sync system to hardware clock
-    # Ubuntu doesn't have `hwclock`
-    [ $install_os_selected != "ubuntu" ] \
-        && sync_clock
+    # set the datetime
+    set_datetime
 
     # Debian and Ubuntu should have `nala` installed at this point
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && apt install -y \
+            nala \
+            > /dev/null 2>&1
+
     # curl was added so that the script can pull the file while it's reworked
-    apt install -y nala curl > /dev/null 2>&1
+    install_pkg curl
 }
 
-setuplocale() {
+setup_locale() {
     whiptail \
         --infobox "Adjusting \"/etc/locale.conf\" and \"/etc/locale.gen\"..." \
         9 70
 
-    # set the `/etc/locale.conf` file
-    set_locale_conf
-
     # Debian and Ubuntu need this package installed
-    apt install -y locales > /dev/null 2>&1
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && install_pkg_apt "locales"
+
+    # set the `/etc/locale.conf` file
+    template_replace src/templates/etc/locale.conf /etc/locale.conf
 
     # uncomments language files in `/etc/locale.gen`
-    uncomment_locale_gen
+    [ "$region" == "en_US" ] \
+        && sed -i 's/^# en_US/en_US/g' /etc/locale.gen
 
     # run `locale-gen`
-    run_locale_gen
+    locale-gen > /dev/null 2>&1
 }
 
-setupubuntu() {
+setup_ubuntu() {
     template_replace src/templates/etc/kernel-img_ubuntu.conf /etc/kernel-img.conf
 
     template_replace src/templates/etc/netplan/networkmanager_ubuntu.yaml /etc/netplan/networkmanager.yaml
@@ -311,6 +254,81 @@ git_dotfiles() {
         "$repodir/dotfiles"
 }
 
+fstab_entry_add_swap() {
+    # if a swap partition was created, add a line to `/etc/fstab`
+    [ "$swapanswer" = true ] \
+        && echo "${volume_logical_swap} none swap defaults 0 0" >> /etc/fstab
+}
+
+fstab_entry_add_swap_uuid() {
+    blkid_partitions=(
+        "${volume_logical_swap}"
+    )
+
+    while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
+        for object in "${blkid_partitions[@]}"; do
+            grep "$object" <<< "$blkid_dev" > /dev/null \
+                && {
+                    grep_result=$?
+                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    sed -i "s|$object|$uuid_item|g" /etc/fstab
+                }
+        done
+    done < "/etc/fstab-helper"
+
+    rm "/etc/fstab-helper"
+}
+
+run_fstab_arch() {
+    fstab_entry_add_swap
+
+    fstab_entry_add_swap_uuid
+}
+
+run_fstab_debootstrap() {
+    # all Debian/Ubuntu machines have the same boot partition
+    blkid_partitions=(
+        "${partition_boot}"
+    )
+
+    # if no swap partition, add default `rootfs` to array
+    # if swap partition, add `swap` and `root` LVs to array
+    [ -z "$volume_logical_swap" ] \
+        && blkid_partitions+=(
+            "${partition_rootfs}"
+            ) \
+        || blkid_partitions+=(
+            "${volume_logical_swap}"
+            "${volume_logical_root}"
+            )
+
+    # loop through each line of `blkid | grep UUID`
+    # within loop, loop through each `object` in the array `blkid_partitions`
+    # when match, swap UUID for path in `/etc/fstab`
+    while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
+        for object in "${blkid_partitions[@]}"; do
+            grep "$object" <<< "$blkid_dev" > /dev/null \
+                && {
+                    grep_result=$?
+                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    sed -i "s|$object|$uuid_item|g" /etc/fstab
+                }
+        done
+    done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
+}
+
+fstab_debootstrap_prep() {
+    # append to `/etc/fstab` any line from `/proc/mounts` beginning with `/dev`
+    grep "^/dev" /proc/mounts >> /etc/fstab
+
+    fstab_entry_add_swap
+
+    # append to `/etc/fstab` any line from `/proc/mounts` beginning with `tmp`
+    grep "^tmp" /proc/mounts | sed 's/dev\/shm/tmp/g' >> /etc/fstab
+
+    run_fstab_debootstrap
+}
+
 doconfigs() {
     whiptail \
         --infobox "Performing some basic configurations..." \
@@ -347,9 +365,9 @@ doconfigs() {
     cd "/home/$username/.dotfiles" \
         && stow . \
         && cd \
-        && unlink "/home/$username/.xprofile"
+        && unlink "/home/$username/.xprofile" # this is true only for servers; should not be done on DWM machines
 
-    links_to_sym(
+    links_to_sym=(
         "$repodir/vim" "/root/.vim"
         "$repodir/vim" "/home/$username/.vim"
         "/home/$username/.dotfiles/.bashrc" "/root/.bashrc"
@@ -361,15 +379,12 @@ doconfigs() {
         "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
     )
 
-    sym_link() {
-        ln -s "$1" "$2"
-    }
-
+    # loop through `links_to_sym` and do the symlinks
     while read -r link_src link_dest ]; do
-        sym_link "$link_src" "$link_dest" \
+        ln -s "$link_src" "$link_dest" \
             || error "Failed to link \"$link_src\" to \"$link_dest\"." >> config_fail.txt \
             && return 0
-    done <<< (echo "${links_to_sym[@]}")
+    done <<< "${links_to_sym[@]}"
 
     # small edits to `~/.config/shell/profile` for SERVERS
     # DWM and others will want these on
@@ -394,6 +409,11 @@ doconfigs() {
     # enable NetworkManager
     # this is true only for Arch, Debian, and Ubuntu
     enable_networkmanager
+
+    # add relevant content to the `/etc/fstab` file
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && fstab_debootstrap_prep
 }
 
 dozshsetup(){
@@ -424,22 +444,22 @@ dozshsetup(){
 }
 
 do_cryptsetup() {
-    [ $encryption = true ] && {
-        whiptail \
-            --infobox "Configuring the system to request a password on startup to unlock the encrypted disk." \
-            9 70
+    whiptail \
+        --infobox "Configuring the system to request a password on startup to unlock the encrypted disk." \
+        9 70
 
-        DEBIAN_FRONTEND=noninteractive \
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && DEBIAN_FRONTEND=noninteractive \
             apt install -q -y \
                 cryptsetup-initramfs \
                 > /dev/null 2>&1
 
-        while read -r blkid_dev blkid_uuid other ; do
-            uuid_crypt="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
-        done< <(blkid | grep UUID | grep crypto)
+    while read -r blkid_dev blkid_uuid other ; do
+        uuid_crypt="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+    done< <(blkid | grep UUID | grep crypto)
 
-        echo "${lvm_name} ${uuid_crypt} none luks" >> /etc/crypttab
-    }
+    echo "${lvm_name} ${uuid_crypt} none luks" >> /etc/crypttab
 }
 
 doinitramfsupdate() {
@@ -482,7 +502,7 @@ dogrubinstall() {
 finalmessage() {
     whiptail \
         --title "Congrats!" \
-        --msgbox "Provided there were no hidden errors, \`debian-setup\` completed successfully and all packages and configurations are properly installed." \
+        --msgbox "Provided there were no hidden errors, \`linux-image-setup\` completed successfully and all packages and configurations are properly installed." \
         9 70
 
     clear
@@ -496,23 +516,29 @@ chroot_from_debootstrap() {
     echo "Updating packages, one moment..." \
         && apt update \
             > /dev/null 2>&1 \
-        && installpkg whiptail \
+        && install_pkg_apt whiptail \
             > /dev/null 2>&1
 
-    add_user_and_pass
+    add_user_and_pass \
+        || error "Failed to set root pass, username, or user pass."
 
-    do_basic_adjustments
+    do_basic_adjustments \
+        || error "Failed to do basic adjustments."
 
-    setuplocale
+    setup_locale \
+        || error "Failed to set up locale."
 
     check_install_os "ubuntu" \
-        && setupubuntu
+        && setup_ubuntu
 
     installloop
 
     doconfigs
 
-    do_cryptsetup
+    [ "$encryption" = true ] \
+        && check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && do_cryptsetup
 
     doinitramfsupdate
 
@@ -524,23 +550,16 @@ chroot_from_debootstrap() {
 }
 
 chroot_from_arch() {
-    set_datetime
+    add_user_and_pass \
+        || error "Failed to set root pass, username, or user pass."
 
-    set_locales
+    do_basic_adjustments \
+        || error "Failed to do basic adjustments."
 
-    set_hosts
+    setup_locale \
+        || error "Failed to set up locale."
 
     enable_networkmanager
-
-    exit 0
-}
-
-chroot_from_debian_ubuntu() {
-    set_datetime
-
-    set_locales
-
-    set_hosts
 
     exit 0
 }
