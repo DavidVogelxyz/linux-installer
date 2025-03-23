@@ -610,24 +610,23 @@ set_partition_names() {
 
     # set the encryption partition
     [ "$encryption" = true ] \
-        && {
-            export partition_crypt="${path_dev_mapper}/${lvm_name}"
-        }
+        && export partition_crypt="${path_dev_mapper}/${lvm_name}" \
+        || return 0
 }
 
 encrypt_drive() {
+    [ "$encryption" = true ] \
+        || return 0
+
     TERM=ansi whiptail \
         --title "Encrypt Disk" \
         --infobox "Encrypting disk..." \
         8 78
 
-    [ "$encryption" = true ] \
-        && {
-            echo "${pass_encrypt}" | cryptsetup -q luksFormat "$partition_rootfs" \
-                && echo "${pass_encrypt}" | cryptsetup open "$partition_rootfs" "$lvm_name" \
-                && unset pass_encrypt \
-                || error "Failed to set the encryption password."
-        }
+    echo "${pass_encrypt}" | cryptsetup -q luksFormat "$partition_rootfs" \
+        && echo "${pass_encrypt}" | cryptsetup open "$partition_rootfs" "$lvm_name" \
+        && unset pass_encrypt \
+        || error "Failed to set the encryption password."
 }
 
 create_swap() {
@@ -766,7 +765,13 @@ update_mirrors() {
         && diff "$mirrorlist_dest" "$mirrorlist_src"
 
     # update `sources.list`
-    cp "$mirrorlist_src" "/mnt$mirrorlist_dest"
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && cp "$mirrorlist_src" "/mnt$mirrorlist_dest"
+
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && cp "$mirrorlist_src" "$mirrorlist_dest"
 
     unset mirrorlist_src
     unset mirrorlist_dest
@@ -791,7 +796,8 @@ chroot_arch_prelude() {
     mkdir -p "/mnt$repodir"
 
     # clone `linux-image-setup`
-    git clone "https://github.com/DavidVogelxyz/$post_chroot_path" "/mnt${repodir}/${post_chroot_path}"
+    #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
+    cp -r /root/linux-image-setup "/mnt$repodir"
 
     # exclusively for compatibilty with `linux-image-setup`
     sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
@@ -825,7 +831,7 @@ chroot_artix() {
 run_basestrap() {
     pkgs="base base-devel linux linux-firmware runit elogind-runit cryptsetup lvm2 lvm2-runit grub networkmanager networkmanager-runit neovim vim"
 
-    [ "$uefi" = "uefi" ] \
+    [ "$uefi" = true ] \
         && pkgs+=" efibootmgr"
 
     generate_fstab() {
@@ -836,7 +842,8 @@ run_basestrap() {
     basestrap_mirrorlist
 
     # do the `basestrap`
-    basestrap -i /mnt "$pkgs"
+    # `-i` was removed, as that is for "interactive" mode
+    basestrap /mnt "$pkgs"
 
     unset pkgs
 
@@ -866,13 +873,14 @@ run_pre_debootstrap() {
 
 chroot_debootstrap_prelude() {
     repodir="/root/.local/src"
-    post_chroot_path="debian-setup"
-    post_chroot_script="${repodir}/${post_chroot_path}/${post_chroot_path}.sh"
+    post_chroot_path="linux-image-setup"
+    post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
 
     mkdir -p "/mnt$repodir"
 
     # clone `debian-setup`
-    git clone "https://github.com/DavidVogelxyz/$post_chroot_path" "/mnt${repodir}/${post_chroot_path}"
+    #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
+    cp -r /home/ubuntu/linux-image-setup "/mnt$repodir"
 
     # exclusively for compatibilty with `debian-setup`
     sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
@@ -910,7 +918,7 @@ run_debootstrap() {
 run_pacstrap() {
     pkgs="base base-devel linux linux-firmware cryptsetup lvm2 grub networkmanager dhcpcd openssh neovim vim"
 
-    [ "$uefi" = "uefi" ] \
+    [ "$uefi" = true ] \
         && pkgs+=" efibootmgr"
 
     generate_fstab() {
@@ -921,7 +929,8 @@ run_pacstrap() {
     pacstrap_mirrorlist
 
     # do the `pacstrap`
-    pacstrap -K -i /mnt "$pkgs"
+    # `-i` was removed, as that is for "interactive" mode
+    pacstrap -K /mnt "$pkgs"
 
     unset pkgs
 

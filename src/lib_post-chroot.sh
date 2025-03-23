@@ -20,12 +20,12 @@ set_timezone() {
     path_to_check="/etc/localtime"
 
     # remove timezone if link
-    check_path_link \
-        && unlink "${path_to_check}"
+    check_path_link "$path_to_check" \
+        && unlink "$path_to_check"
 
     # remove timezone if file
-    check_path_file \
-        && rm "${path_to_check}"
+    check_path_file "$path_to_check" \
+        && rm "$path_to_check"
 
     # set timezone
     ln -s "/usr/share/zoneinfo/$timezone" /etc/localtime
@@ -99,7 +99,7 @@ check_install_os() {
 # VARIABLES - DEBIAN-SETUP
 ####################################################################
 
-packfile="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/master/packages.csv"
+list_packages="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/master/packages.csv"
 
 TERM=linux
 
@@ -195,34 +195,78 @@ setup_ubuntu() {
     template_replace src/templates/etc/netplan/networkmanager_ubuntu.yaml /etc/netplan/networkmanager.yaml
 }
 
-installloop() {
-    ([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) \
-        && sed -i '/^#/d' /tmp/packages.csv \
-        || curl -Ls "$packfile" | sed '/^#/d' > /tmp/packages.csv
-
-    total=$(wc -l < /tmp/packages.csv)
-    n="0"
-
-    while IFS="," read -r program comment; do
-        n=$((n + 1))
-        echo "$comment" | grep -q "^\".*\"$" &&
-            comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
-        install "$program" "$comment"
-    done </tmp/packages.csv
+error_install() {
+    echo "Failed to install \`$1\`." >> pkg_fail.txt
 }
 
-install() {
+install_pkg_aur() {
+    sudo -u "$name" $aurhelper -S --noconfirm "$1" \
+        > /dev/null 2>&1
+}
+
+install_pkg_apt() {
+    apt install -y "$1" \
+        > /dev/null 2>&1
+}
+
+install_pkg_pacman() {
+    pacman --noconfirm --needed -S "$1" \
+        > /dev/null 2>&1
+}
+
+install_pkg() {
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && [ "$tag" = "A" ] \
+        && return 1
+        #&& install_pkg_aur "$1" \
+        #&& return 0
+
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && install_pkg_apt "$1" \
+        && return 0
+
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && install_pkg_pacman "$1" \
+        && return 0
+}
+
+install_loop_install_default() {
     whiptail \
         --title "Package Installation" \
         --infobox "Installing \`$1\` ($n of $total). $1 $2" \
         9 70
 
-    installpkg "$1"
+    install_pkg "$1" \
+        || error_install "$1"
 }
 
-installpkg() {
-    apt install -y "$1" \
-        > /dev/null 2>&1
+prep_packages_file() {
+    ([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) \
+        && sed -i '/^#/d' /tmp/packages.csv \
+        || curl -Ls "$list_packages" | sed '/^#/d' > /tmp/packages.csv
+}
+
+install_loop_read() {
+    total=$(wc -l < /tmp/packages.csv)
+    n="0"
+
+    while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
+        n=$((n + 1))
+
+        echo "$comment" | grep -q "^\".*\"$" \
+            && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
+
+        install_loop_install_default "$pkg" "$comment"
+    done < /tmp/packages.csv
+}
+
+install_loop() {
+    prep_packages_file
+
+    install_loop_read
 }
 
 create_useful_directories() {
@@ -379,11 +423,23 @@ doconfigs() {
         "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
     )
 
-    # loop through `links_to_sym` and do the symlinks
-    while read -r link_src link_dest ]; do
+    # loop through `links_to_sym` and creates the symlinks
+    number_of_links="$(( ${#links_to_sym[@]} / 2 ))"
+    n=0
+    nn=1
+
+    while [ "$((n / 2))" -lt "$number_of_links" ]; do
+        link_src="${links_to_sym["$n"]}"
+        link_dest="${links_to_sym["$nn"]}"
+
         ln -s "$link_src" "$link_dest" \
-            || error "Failed to link \"$link_src\" to \"$link_dest\"." >> config_fail.txt \
-            && return 0
+            || {
+                error "Failed to link \"$link_src\" to \"$link_dest\"." >> config_fail.txt \
+                && return 0
+            }
+
+        ((n+=2))
+        ((nn+=2))
     done <<< "${links_to_sym[@]}"
 
     # small edits to `~/.config/shell/profile` for SERVERS
@@ -407,8 +463,22 @@ doconfigs() {
     chown -R "$username": "/home/$username"
 
     # enable NetworkManager
-    # this is true only for Arch, Debian, and Ubuntu
-    enable_networkmanager
+    # this is true only for Debian and Ubuntu
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && enable_networkmanager
+
+    # enable networking on Arch
+    check_install_os "arch" \
+        && systemctl enable systemd-networkd && systemctl enable dhcpcd
+
+    # enable ssh on Arch
+    check_install_os "arch" \
+        && systemctl enable sshd
+
+    # enable networking on Artix
+    check_install_os "artix" \
+        && ln -s /etc/runit/sv/NetworkManager /etc/runit/runsvdir/current
 
     # add relevant content to the `/etc/fstab` file
     check_install_os "debian" \
@@ -471,35 +541,42 @@ doinitramfsupdate() {
         > /dev/null 2>&1
 }
 
-dogrubinstall() {
+run_grub-install() {
     whiptail \
         --infobox "Installing and updating GRUB..." \
         9 70
 
     [[ $uefi = "bios" ]] && {
-        apt install -y grub-pc \
-            > /dev/null 2>&1
-        grub-install \
-            --target=i386-pc \
-            "/dev/$disk_selected" \
-            > /dev/null 2>&1
+        check_install_os "debian" \
+            || check_install_os "ubuntu" \
+            && install_pkg grub-pc \
+            && grub-install \
+                --target=i386-pc \
+                "/dev/$disk_selected" \
+                > /dev/null 2>&1
     }
 
     [[ $uefi = "uefi" ]] && {
-        apt install -y grub-efi \
-            > /dev/null 2>&1
-        grub-install \
-            --target=x86_64-efi \
-            --efi-directory=/boot \
-            --bootloader-id=GRUB \
-            > /dev/null 2>&1
+        check_install_os "debian" \
+            || check_install_os "ubuntu" \
+            && install_pkg grub-efi \
+            && grub-install \
+                --target=x86_64-efi \
+                --efi-directory=/boot \
+                --bootloader-id=GRUB \
+                > /dev/null 2>&1
     }
 
-    update-grub \
-        > /dev/null 2>&1
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && update-grub > /dev/null 2>&1
+
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 }
 
-finalmessage() {
+final_message() {
     whiptail \
         --title "Congrats!" \
         --msgbox "Provided there were no hidden errors, \`linux-image-setup\` completed successfully and all packages and configurations are properly installed." \
@@ -531,7 +608,7 @@ chroot_from_debootstrap() {
     check_install_os "ubuntu" \
         && setup_ubuntu
 
-    installloop
+    install_loop
 
     doconfigs
 
@@ -540,11 +617,13 @@ chroot_from_debootstrap() {
         || check_install_os "ubuntu" \
         && do_cryptsetup
 
-    doinitramfsupdate
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && doinitramfsupdate
 
-    dogrubinstall
+    run_grub-install
 
-    finalmessage
+    final_message
 
     exit 0
 }
@@ -560,6 +639,10 @@ chroot_from_arch() {
         || error "Failed to set up locale."
 
     enable_networkmanager
+
+    run_grub-install
+
+    final_message
 
     exit 0
 }
