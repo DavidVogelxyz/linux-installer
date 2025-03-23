@@ -1,3 +1,11 @@
+## v0.0.7
+
+This project can now complete a basic Arch Linux install.
+
+Also, tons of "editing" occurred to clean up dead code and optimizing surviving code.
+
+Tested on an Arch Linux image, with no encryption or swap partition. Also tested using an Ubuntu image installing Debian Bookworm, with encryption and swap partition.
+
 ## v0.0.6
 
 This project is now able to add swap partitions and work with logical volumes.

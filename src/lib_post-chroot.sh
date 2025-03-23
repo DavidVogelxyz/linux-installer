@@ -126,7 +126,13 @@ add_user_and_pass() {
         && unset rootpass1 rootpass2
 
     # create user
-    useradd -G sudo -s /bin/bash -m "$username"
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && useradd -G sudo -s /bin/bash -m "$username"
+
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && useradd -G wheel -s /bin/bash -m "$username"
 
     # change user password; if successful, unset the password
     echo "$username:$userpass1" | chpasswd \
@@ -255,6 +261,9 @@ install_loop_read() {
 
     while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
         n=$((n + 1))
+
+        [ "$pkg_${install_os_selected}" == "null" ] \
+            && continue
 
         echo "$comment" | grep -q "^\".*\"$" \
             && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
@@ -456,9 +465,11 @@ doconfigs() {
         "\nsource ~/.bashrc" \
         >> "/home/$username/.dotfiles/.config/shell/profile"
 
-    dozshsetup
+    dozshsetup \
+        || error "Failed during \`zsh\` setup."
 
-    sudo chsh -s /bin/zsh "$username"
+    sudo chsh -s /bin/zsh "$username" \
+        || error "Failed when changing shell."
 
     chown -R "$username": "/home/$username"
 
@@ -466,15 +477,25 @@ doconfigs() {
     # this is true only for Debian and Ubuntu
     check_install_os "debian" \
         || check_install_os "ubuntu" \
-        && enable_networkmanager
+        && {
+            enable_networkmanager \
+                || error "Failed when enabling networking."
+        }
 
     # enable networking on Arch
     check_install_os "arch" \
-        && systemctl enable systemd-networkd && systemctl enable dhcpcd
+        && {
+            systemctl enable systemd-networkd > /dev/null 2>&1 \
+                && systemctl enable dhcpcd > /dev/null 2>&1 \
+                || error "Failed when enabling networking."
+        }
 
     # enable ssh on Arch
     check_install_os "arch" \
-        && systemctl enable sshd
+        && {
+            systemctl enable sshd > /dev/null 2>&1 \
+                || error "Failed when enabling SSH."
+        }
 
     # enable networking on Artix
     check_install_os "artix" \
@@ -483,7 +504,12 @@ doconfigs() {
     # add relevant content to the `/etc/fstab` file
     check_install_os "debian" \
         || check_install_os "ubuntu" \
-        && fstab_debootstrap_prep
+        && {
+            fstab_debootstrap_prep \
+                || error "Failed while prepping \`/etc/fstab\` file."
+        }
+
+        return 0
 }
 
 dozshsetup(){
@@ -532,13 +558,19 @@ do_cryptsetup() {
     echo "${lvm_name} ${uuid_crypt} none luks" >> /etc/crypttab
 }
 
-doinitramfsupdate() {
+do_initramfs_update() {
     whiptail \
         --infobox "Updating initramfs..." \
         9 70
 
-    update-initramfs -u -k all \
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && update-initramfs -u -k all \
         > /dev/null 2>&1
+
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && mkinitcpio -p linux
 }
 
 run_grub-install() {
@@ -546,30 +578,37 @@ run_grub-install() {
         --infobox "Installing and updating GRUB..." \
         9 70
 
-    [[ $uefi = "bios" ]] && {
-        check_install_os "debian" \
-            || check_install_os "ubuntu" \
-            && install_pkg grub-pc \
-            && grub-install \
-                --target=i386-pc \
-                "/dev/$disk_selected" \
-                > /dev/null 2>&1
-    }
+    [[ $uefi = "bios" ]] \
+        && {
+            check_install_os "debian" \
+                || check_install_os "ubuntu"
+        } \
+        && install_pkg grub-pc
 
-    [[ $uefi = "uefi" ]] && {
-        check_install_os "debian" \
-            || check_install_os "ubuntu" \
-            && install_pkg grub-efi \
-            && grub-install \
-                --target=x86_64-efi \
-                --efi-directory=/boot \
-                --bootloader-id=GRUB \
-                > /dev/null 2>&1
-    }
+    [[ $uefi = "bios" ]] \
+        && grub-install \
+            --target=i386-pc \
+            "/dev/$disk_selected" \
+            > /dev/null 2>&1
+
+    [[ $uefi = "uefi" ]] \
+        && {
+            check_install_os "debian" \
+                || check_install_os "ubuntu"
+        } \
+        && install_pkg grub-efi
+
+    [[ $uefi = "uefi" ]] \
+        && grub-install \
+            --target=x86_64-efi \
+            --efi-directory=/boot \
+            --bootloader-id=GRUB \
+            > /dev/null 2>&1
 
     check_install_os "debian" \
         || check_install_os "ubuntu" \
-        && update-grub > /dev/null 2>&1
+        && update-grub > /dev/null 2>&1 \
+        && return 0
 
     check_install_os "arch" \
         || check_install_os "artix" \
@@ -608,20 +647,22 @@ chroot_from_debootstrap() {
     check_install_os "ubuntu" \
         && setup_ubuntu
 
-    install_loop
+    install_loop \
+        || error "Failed during the install loop."
 
-    doconfigs
+    doconfigs \
+        || error "Failed during \`doconfigs\`."
 
     [ "$encryption" = true ] \
         && check_install_os "debian" \
         || check_install_os "ubuntu" \
         && do_cryptsetup
 
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
-        && doinitramfsupdate
+    do_initramfs_update \
+        || error "Failed during initramfs update."
 
-    run_grub-install
+    run_grub-install \
+        || error "Failed during GRUB install."
 
     final_message
 
@@ -638,9 +679,22 @@ chroot_from_arch() {
     setup_locale \
         || error "Failed to set up locale."
 
-    enable_networkmanager
+    install_loop \
+        || error "Failed during the install loop."
 
-    run_grub-install
+    doconfigs \
+        || error "Failed during \`doconfigs\`."
+
+    [ "$encryption" = true ] \
+        && check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && do_cryptsetup
+
+    do_initramfs_update \
+        || error "Failed when running \`mkinitcpio\`."
+
+    run_grub-install \
+        || error "Failed during GRUB install."
 
     final_message
 

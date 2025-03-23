@@ -31,6 +31,6 @@ make_file_systems || error "Failed to make file systems." # makes file systems, 
 mount_file_systems || error "Failed to mount file systems." # mounts the file systems, or error
 
 # begin install
-check_setup_os "artix" && run_basestrap # runs basestrap on Artix images
-check_setup_os "arch" && run_pacstrap # runs pacstrap on Arch images
-check_setup_os "ubuntu" && run_debootstrap # runs debootstrap on Ubuntu images
+check_setup_os "artix" && run_basestrap && exit 0 # runs basestrap on Artix images
+check_setup_os "arch" && run_pacstrap && exit 0 # runs pacstrap on Arch images
+check_setup_os "ubuntu" && run_debootstrap && exit 0 # runs debootstrap on Ubuntu images

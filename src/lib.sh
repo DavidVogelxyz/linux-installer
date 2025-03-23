@@ -843,11 +843,12 @@ run_basestrap() {
 
     # do the `basestrap`
     # `-i` was removed, as that is for "interactive" mode
-    basestrap /mnt "$pkgs"
+    basestrap /mnt pkgs --noconfirm --needed \
+        || error "Failed to basestrap."
 
     unset pkgs
 
-    lsblk_to_grub
+    #lsblk_to_grub
 
     [ "$swapanswer" = true ] \
         && lsblk_to_fstab
@@ -916,7 +917,8 @@ run_debootstrap() {
 ####################################################################
 
 run_pacstrap() {
-    pkgs="base base-devel linux linux-firmware cryptsetup lvm2 grub networkmanager dhcpcd openssh neovim vim"
+    # `iptables` and `mkinitcpio` were added explicitly to avoid user prompts
+    pkgs="base base-devel linux linux-firmware cryptsetup lvm2 grub networkmanager dhcpcd openssh neovim vim iptables mkinitcpio"
 
     [ "$uefi" = true ] \
         && pkgs+=" efibootmgr"
@@ -930,11 +932,12 @@ run_pacstrap() {
 
     # do the `pacstrap`
     # `-i` was removed, as that is for "interactive" mode
-    pacstrap -K /mnt "$pkgs"
+    pacstrap -K /mnt $pkgs --noconfirm --needed \
+        || error "Failed to pacstrap."
 
     unset pkgs
 
-    lsblk_to_grub
+    #lsblk_to_grub
 
     [ "$swapanswer" = true ] \
         && lsblk_to_fstab
