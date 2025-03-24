@@ -117,16 +117,16 @@ install_aur() {
     pacman -Qq "$1" \
         && return 0
 
-	whiptail \
+    whiptail \
         --infobox "Installing \"$1\" manually." \
         7 50
 
-	sudo -u "$username" mkdir -p "$repodir/$1"
+    sudo -u "$username" mkdir -p "$repodir/$1"
 
-	sudo -u "$username" git -C "$repodir" clone \
+    sudo -u "$username" git -C "$repodir" clone \
         --depth 1 \
         --single-branch \
-		--no-tags -q "https://aur.archlinux.org/$1.git" "$repodir/$1" \
+        --no-tags -q "https://aur.archlinux.org/$1.git" "$repodir/$1" \
         > /dev/null 2>&1 \
         || {
             cd "$repodir/$1" \
@@ -135,10 +135,10 @@ install_aur() {
                 > /dev/null 2>&1
         }
 
-	cd "$repodir/$1" \
+    cd "$repodir/$1" \
         || exit 1
 
-	sudo -u "$username" makepkg --noconfirm -si \
+    sudo -u "$username" makepkg --noconfirm -si \
         > /dev/null 2>&1 \
         || return 1
 
@@ -348,11 +348,12 @@ install_loop_read() {
         echo "$comment" | grep -q "^\".*\"$" \
             && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
 
-        [ -z "${!pkg_check_name}" ] \
-            && install_loop_install_default "$pkg" "$comment"
-
         [ ! -z "${!pkg_check_name}" ] \
-            && install_loop_install_aur "${!pkg_check_name}" "$comment"
+            && [ "$tag" == "A" ] \
+            && install_loop_install_aur "${!pkg_check_name}" "$comment" \
+            && continue
+
+        install_loop_install_default "$pkg" "$comment"
     done < /tmp/packages.csv
 }
 
@@ -375,22 +376,6 @@ create_useful_directories() {
         /root/.local/bin
 }
 
-git_dotfiles() {
-    # clone `dotfiles` into the homedir
-    # add some error correction:
-    # - what if the repo already exists?
-    # - possible to check the hashes and only clone if not a repo?
-    git clone \
-        https://github.com/DavidVogelxyz/dotfiles \
-        "/home/$username/.dotfiles" \
-        > /dev/null 2>&1
-
-    # symlink `dotfiles` to the repodir
-    ln -s \
-        "/home/$username/.dotfiles" \
-        "$repodir/dotfiles"
-}
-
 fstab_entry_add_swap() {
     # if a swap partition was created, add a line to `/etc/fstab`
     [ "$swapanswer" = true ] \
@@ -398,13 +383,16 @@ fstab_entry_add_swap() {
 }
 
 fstab_entry_add_swap_uuid() {
+    # this function is run only by Arch and Artix
+    # only Arch and Artix create the `/etc/fstab-helper` file
+
     blkid_partitions=(
         "${volume_logical_swap}"
     )
 
     while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
         for object in "${blkid_partitions[@]}"; do
-            grep "$object" <<< "$blkid_dev" > /dev/null \
+            grep -q "$object" <<< "$blkid_dev" \
                 && {
                     grep_result=$?
                     [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
@@ -444,7 +432,7 @@ run_fstab_debootstrap() {
     # when match, swap UUID for path in `/etc/fstab`
     while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
         for object in "${blkid_partitions[@]}"; do
-            grep "$object" <<< "$blkid_dev" > /dev/null \
+            grep -q "$object" <<< "$blkid_dev" \
                 && {
                     grep_result=$?
                     [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
@@ -466,6 +454,13 @@ fstab_debootstrap_prep() {
     run_fstab_debootstrap
 }
 
+run_git-clone() {
+    # add some error correction:
+    # - what if the repo already exists?
+    # - possible to check the hashes and only clone if not a repo?
+    git clone "$1" "$2" > /dev/null 2>&1
+}
+
 doconfigs() {
     whiptail \
         --infobox "Performing some basic configurations..." \
@@ -474,13 +469,16 @@ doconfigs() {
     # create directories that should exist before deploying dotfiles with stow
     create_useful_directories
 
-    # clone dotfiles and symlink them
-    git_dotfiles
+    # clone `dotfiles` into home dir for all
+    run_git-clone "https://github.com/DavidVogelxyz/dotfiles" "/home/$username/.dotfiles"
 
-    git clone \
-        https://github.com/DavidVogelxyz/vim \
-        "$repodir/vim" \
-        > /dev/null 2>&1
+    # clone `vim` configs for all
+    run_git-clone "https://github.com/DavidVogelxyz/vim" "$repodir/vim"
+
+    # clone `nvim` configs only on Arch and Artix (for now)
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && run_git-clone "https://github.com/DavidVogelxyz/nvim" "$repodir/nvim"
 
     # files to be checked; will be removed if they exist
     list_files=(
@@ -508,6 +506,7 @@ doconfigs() {
     links_to_sym=(
         "$repodir/vim" "/root/.vim"
         "$repodir/vim" "/home/$username/.vim"
+        "/home/$username/.dotfiles" "$repodir/dotfiles"
         "/home/$username/.dotfiles/.bashrc" "/root/.bashrc"
         "/home/$username/.dotfiles/.config/shell/profile" "/root/.profile"
         "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
@@ -517,20 +516,22 @@ doconfigs() {
     check_install_os "debian" \
         || check_install_os "ubuntu" \
         && links_to_sym+=(
-        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/root/.config/shell/aliasrc"
-        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/home/$username/.config/shell/aliasrc"
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/root/.config/lf/scope"
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/root/.config/shell/aliasrc"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/home/$username/.config/shell/aliasrc"
     )
 
     # specific to Arch and Artix
     check_install_os "arch" \
         || check_install_os "artix" \
         && links_to_sym+=(
-        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/root/.config/shell/aliasrc"
-        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/home/$username/.config/shell/aliasrc"
+        "$repodir/nvim" "/root/.config/"
+        "$repodir/nvim" "/home/$username/.config/"
         "/home/$username/.dotfiles/.config/lf/scope-arch" "/root/.config/lf/scope"
         "/home/$username/.dotfiles/.config/lf/scope-arch" "/home/$username/.config/lf/scope"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/root/.config/shell/aliasrc"
+        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/home/$username/.config/shell/aliasrc"
     )
 
     # loop through `links_to_sym` and creates the symlinks
@@ -579,6 +580,7 @@ doconfigs() {
     sudo chsh -s /bin/zsh "$username" \
         || error "Failed when changing shell."
 
+    # make sure all files in user's home dir are owned by them
     chown -R "$username": "/home/$username"
 
     # enable NetworkManager
@@ -617,7 +619,12 @@ doconfigs() {
                 || error "Failed while prepping \`/etc/fstab\` file."
         }
 
-        return 0
+    [ "$swapanswer" = true ] \
+        && check_install_os "arch" \
+        || check_install_os "artix" \
+        && run_fstab_arch
+
+    return 0
 }
 
 dozshsetup(){
@@ -647,17 +654,11 @@ dozshsetup(){
     done
 }
 
-do_cryptsetup() {
-    whiptail \
-        --infobox "Configuring the system to request a password on startup to unlock the encrypted disk." \
-        9 70
-
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
-        && DEBIAN_FRONTEND=noninteractive \
-            apt install -q -y \
-                cryptsetup-initramfs \
-                > /dev/null 2>&1
+cryptsetup_debootstrap() {
+    DEBIAN_FRONTEND=noninteractive \
+        apt install -q -y \
+            cryptsetup-initramfs \
+            > /dev/null 2>&1
 
     while read -r blkid_dev blkid_uuid other ; do
         uuid_crypt="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
@@ -666,9 +667,61 @@ do_cryptsetup() {
     echo "${lvm_name} ${uuid_crypt} none luks" >> /etc/crypttab
 }
 
+cryptsetup_arch() {
+    # adds `encrypt lvm2` to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
+    sed -i \
+        "s/^\(HOOKS.*block\) filesystems/\1 encrypt lvm2 filesystems/g" \
+        "/etc/mkinitcpio.conf"
+
+    # sets `volume_logical_root` to `partition_crypt`, if not already set
+    [ -z "$volume_logical_root" ] \
+        && volume_logical_root="$partition_crypt"
+
+    # lays down the foundation for the UUID substitution
+    sed -i \
+        "s/^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"/\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root}\"/g" \
+        "/etc/default/grub"
+
+    # all Arch and Artix have the same partitions
+    blkid_partitions=(
+        "${partition_rootfs}"
+        "${volume_logical_root}"
+    )
+
+    # loop through each line of `blkid | grep UUID`
+    # within loop, loop through each `object` in the array `blkid_partitions`
+    # when match, swap UUID for path in `/etc/default/grub`
+    while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
+        for object in "${blkid_partitions[@]}"; do
+            grep -q "$object" <<< "$blkid_dev" \
+                && {
+                    grep_result=$?
+                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    sed -i "s|$object|$uuid_item|g" /etc/default/grub
+                }
+        done
+    done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
+}
+
+run_cryptsetup() {
+    whiptail \
+        --infobox "Configuring the system to request a password on startup to unlock the encrypted disk." \
+        9 70
+
+    check_install_os "debian" \
+        || check_install_os "ubuntu" \
+        && cryptsetup_debootstrap \
+        && return 0
+
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && cryptsetup_arch \
+        && return 0
+}
+
 do_initramfs_update() {
     whiptail \
-        --infobox "Updating initramfs..." \
+        --infobox "Updating \`initramfs\` on Debian/Ubuntu, and \`mkinitcpio\` on Arch/Artix..." \
         9 70
 
     check_install_os "debian" \
@@ -762,9 +815,7 @@ chroot_from_debootstrap() {
         || error "Failed during \`doconfigs\`."
 
     [ "$encryption" = true ] \
-        && check_install_os "debian" \
-        || check_install_os "ubuntu" \
-        && do_cryptsetup
+        && run_cryptsetup
 
     do_initramfs_update \
         || error "Failed during initramfs update."
@@ -800,9 +851,7 @@ chroot_from_arch() {
         || error "Failed during \`doconfigs\`."
 
     [ "$encryption" = true ] \
-        && check_install_os "debian" \
-        || check_install_os "ubuntu" \
-        && do_cryptsetup
+        && run_cryptsetup
 
     do_initramfs_update \
         || error "Failed when running \`mkinitcpio\`."

@@ -16,6 +16,8 @@ error() {
 
 # prelude
 source_lib || error "Failed to source the library file." # sources library file, or error
+grep -q "artix" /etc/os-release \
+    && (pacman -S --noconfirm --needed libnewt || error "Are you sure you're running as root?")
 welcome_screen || error "Failed at the welcome screen." # informs the user of how the script works, or error
 
 # gather information

@@ -49,7 +49,7 @@ get_setup_os() {
     # would it be faster to search once, grab `ID`, and then check against supported OS?
     # probably
     for os in "${os_supported[@]}"; do
-        grep "ID=$os" /etc/os-release > /dev/null 2>&1 \
+        grep -q "ID=$os" /etc/os-release \
             && export setup_os="$os" \
             && break
     done
@@ -71,7 +71,7 @@ check_uefi() {
     export uefi=false
 
     # UEFI check #1
-    mount | grep efi > /dev/null 2>&1 \
+    mount | grep -q "efi" \
         && uefi=true
 
     # UEFI check #2
@@ -844,7 +844,7 @@ run_basestrap() {
 
     # do the `basestrap`
     # `-i` was removed, as that is for "interactive" mode
-    basestrap /mnt pkgs --noconfirm --needed \
+    basestrap /mnt $pkgs --noconfirm --needed \
         || error "Failed to basestrap."
 
     unset pkgs
