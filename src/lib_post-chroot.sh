@@ -1,6 +1,7 @@
 #!/bin/sh
 
 aurhelper="yay"
+export TERM=ansi
 
 ####################################################################
 # NEW FUNCTIONS
@@ -68,7 +69,7 @@ enable_networkmanager() {
 }
 
 template_replace() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "Config Update" \
         --infobox "Updating the \`$2\` file..." \
         8 78
@@ -87,6 +88,66 @@ template_replace() {
     sleep 1
 }
 
+arch_aur_prep() {
+    # Allow user to run sudo without entering a password.
+    # Since AUR programs must be installed in a fakeroot environment,
+    # this is required for all builds with AUR packages.
+    trap 'rm -f /etc/sudoers.d/setup-temp' HUP INT QUIT TERM PWR EXIT
+
+    echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/setup-temp
+    echo "Defaults:%wheel,root runcwd=*" >> /etc/sudoers.d/setup-temp
+}
+
+arch_pacman_color() {
+    # Adds color, concurrent downloads, and Pacman eye-candy to `pacman`.
+    grep -q "ILoveCandy" /etc/pacman.conf \
+        || sed -i "/#VerbosePkgLists/a ILoveCandy" /etc/pacman.conf
+
+    sed -Ei "s/^#(ParallelDownloads).*/\1 = 5/;/^#Color$/s/#//" /etc/pacman.conf
+}
+
+arch_makepkg_conf() {
+    # Use all cores for compilation.
+    sed -i "s/-j2/-j$(nproc)/;/^#MAKEFLAGS/s/^#//" /etc/makepkg.conf
+}
+
+install_aur() {
+    # Installs $1 manually. Used only for AUR helper here.
+    # Should be run after repodir is created and var is set.
+    pacman -Qq "$1" \
+        && return 0
+
+	whiptail \
+        --infobox "Installing \"$1\" manually." \
+        7 50
+
+	sudo -u "$username" mkdir -p "$repodir/$1"
+
+	sudo -u "$username" git -C "$repodir" clone \
+        --depth 1 \
+        --single-branch \
+		--no-tags -q "https://aur.archlinux.org/$1.git" "$repodir/$1" \
+        || {
+            cd "$repodir/$1" \
+                || return 1
+            sudo -u "$username" git pull --force origin master
+        }
+
+	cd "$repodir/$1" \
+        || exit 1
+
+	sudo -u "$username" makepkg --noconfirm -si \
+        > /dev/null 2>&1 \
+        || return 1
+}
+
+arch_aur_install() {
+    install_aur $aurhelper \
+        || error "Failed to install AUR helper."
+
+    $aurhelper -Y --save --devel
+}
+
 ####################################################################
 # FUNCTIONS - CHECK_INSTALL_OS
 ####################################################################
@@ -100,8 +161,6 @@ check_install_os() {
 ####################################################################
 
 list_packages="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/master/packages.csv"
-
-TERM=linux
 
 ####################################################################
 # FUNCTIONS - DEBIAN-SETUP
@@ -172,6 +231,17 @@ do_basic_adjustments() {
 
     # curl was added so that the script can pull the file while it's reworked
     install_pkg curl
+
+    # git was added so that the script can install `yay` (AUR helper)
+    install_pkg git
+
+    # for Arch and Artix, enable AUR installs by temporarily allowing `sudo` without password
+    check_install_os "arch" \
+        || check_install_os "artix" \
+        && arch_aur_prep \
+        && arch_pacman_color \
+        && arch_makepkg_conf \
+        && arch_aur_install
 }
 
 setup_locale() {
@@ -206,7 +276,7 @@ error_install() {
 }
 
 install_pkg_aur() {
-    sudo -u "$name" $aurhelper -S --noconfirm "$1" \
+    sudo -u "$username" $aurhelper -S --noconfirm "$1" \
         > /dev/null 2>&1
 }
 
@@ -221,13 +291,6 @@ install_pkg_pacman() {
 }
 
 install_pkg() {
-    check_install_os "arch" \
-        || check_install_os "artix" \
-        && [ "$tag" = "A" ] \
-        && return 1
-        #&& install_pkg_aur "$1" \
-        #&& return 0
-
     check_install_os "debian" \
         || check_install_os "ubuntu" \
         && install_pkg_apt "$1" \
@@ -237,6 +300,16 @@ install_pkg() {
         || check_install_os "artix" \
         && install_pkg_pacman "$1" \
         && return 0
+}
+
+install_loop_install_aur() {
+    whiptail \
+        --title "Package Installation" \
+        --infobox "Installing \`$1\` ($n of $total) from the AUR. $1 $2" \
+        9 70
+
+    install_pkg_aur "$1" \
+        || error_install "$1"
 }
 
 install_loop_install_default() {
@@ -261,14 +334,21 @@ install_loop_read() {
 
     while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
         n=$((n + 1))
+        pkg_check_name="pkg_${install_os_selected}"
 
-        [ "$pkg_${install_os_selected}" == "null" ] \
+        # `!` allows the script to print the value of `pkg_${install_os_selected}`
+        # if value of `pkg_check_name` is `skip`, skips to the next package
+        [ "${!pkg_check_name}" == "skip" ] \
             && continue
 
         echo "$comment" | grep -q "^\".*\"$" \
             && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
 
-        install_loop_install_default "$pkg" "$comment"
+        [ -z "${!pkg_check_name}" ] \
+            && install_loop_install_default "$pkg" "$comment"
+
+        [ ! -z "${!pkg_check_name}" ] \
+            && install_loop_install_aur "${!pkg_check_name}" "$comment"
     done < /tmp/packages.csv
 }
 
@@ -694,6 +774,12 @@ chroot_from_debootstrap() {
 }
 
 chroot_from_arch() {
+    echo "Updating packages, one moment..." \
+        && pacman -Sy \
+            > /dev/null 2>&1 \
+        && install_pkg_pacman libnewt \
+            > /dev/null 2>&1
+
     add_user_and_pass \
         || error "Failed to set root pass, username, or user pass."
 

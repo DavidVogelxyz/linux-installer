@@ -8,6 +8,7 @@
 export lvm_name="cryptlvm"
 
 # HARDCODED, LEGIT
+export TERM=ansi
 
 ## PATHS
 export path_dev="/dev"
@@ -586,7 +587,7 @@ format_disk_warning_screen() {
 }
 
 format_disk() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "Format Disk" \
         --infobox "Formatting disk..." \
         8 78
@@ -618,7 +619,7 @@ encrypt_drive() {
     [ "$encryption" = true ] \
         || return 0
 
-    TERM=ansi whiptail \
+    whiptail \
         --title "Encrypt Disk" \
         --infobox "Encrypting disk..." \
         8 78
@@ -673,7 +674,7 @@ run_format_disk() {
 #run_cryptsetup() {}
 
 make_file_systems() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "File Systems" \
         --infobox "Making file systems..." \
         8 78
@@ -695,7 +696,7 @@ make_file_systems() {
 }
 
 mount_file_systems() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "File Systems" \
         --infobox "Mounting file systems..." \
         8 78
@@ -716,7 +717,7 @@ mount_file_systems() {
 }
 
 bind_mounts() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "Bind Mounts" \
         --infobox "Binding certain devices to the chroot environment..." \
         8 78
@@ -752,7 +753,7 @@ debootstrap_sourceslist() {
 }
 
 update_mirrors() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "Package Repositories" \
         --infobox "Making sure that the \`${mirrorlist_dest}\` file is good..." \
         8 78
@@ -863,7 +864,7 @@ run_basestrap() {
 ####################################################################
 
 run_pre_debootstrap() {
-    TERM=ansi whiptail \
+    whiptail \
         --title "Pre-Debootstrap" \
         --infobox "Installing \`debootstrap\` and \`vim\` to the install image environment." \
         8 78
