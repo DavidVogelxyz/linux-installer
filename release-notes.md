@@ -1,3 +1,9 @@
+## v0.0.8
+
+This project has expanded its Arch and Artix capabilities, and can now install AUR packages.
+
+Tested on an Arch Linux image, with no encryption or swap partition.
+
 ## v0.0.7
 
 This project can now complete a basic Arch Linux install.
