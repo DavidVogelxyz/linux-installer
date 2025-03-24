@@ -1,3 +1,9 @@
+## v0.0.9
+
+This project has expanded its Arch and Artix capabilities, and can now work with both "basic `rootfs` encryption" and swap partitions.
+
+Tested on an Artix Linux image, with both encryption and swap partition.
+
 ## v0.0.8
 
 This project has expanded its Arch and Artix capabilities, and can now install AUR packages.

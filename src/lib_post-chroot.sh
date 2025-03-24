@@ -611,6 +611,10 @@ doconfigs() {
     check_install_os "artix" \
         && ln -s /etc/runit/sv/NetworkManager /etc/runit/runsvdir/current
 
+    # enables autologin on Artix
+    check_install_os "artix" \
+        && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
+
     # add relevant content to the `/etc/fstab` file
     check_install_os "debian" \
         || check_install_os "ubuntu" \
@@ -679,7 +683,7 @@ cryptsetup_arch() {
 
     # lays down the foundation for the UUID substitution
     sed -i \
-        "s/^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"/\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root}\"/g" \
+        "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root}\"|g" \
         "/etc/default/grub"
 
     # all Arch and Artix have the same partitions
