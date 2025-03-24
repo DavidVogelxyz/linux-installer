@@ -127,10 +127,12 @@ install_aur() {
         --depth 1 \
         --single-branch \
 		--no-tags -q "https://aur.archlinux.org/$1.git" "$repodir/$1" \
+        > /dev/null 2>&1 \
         || {
             cd "$repodir/$1" \
                 || return 1
-            sudo -u "$username" git pull --force origin master
+            sudo -u "$username" git pull --force origin master \
+                > /dev/null 2>&1
         }
 
 	cd "$repodir/$1" \
@@ -139,6 +141,8 @@ install_aur() {
 	sudo -u "$username" makepkg --noconfirm -si \
         > /dev/null 2>&1 \
         || return 1
+
+    cd "/root/.local/src/${post_chroot_path}"
 }
 
 arch_aur_install() {

@@ -791,7 +791,7 @@ lsblk_to_fstab() {
 
 chroot_arch_prelude() {
     repodir="/root/.local/src"
-    post_chroot_path="linux-image-setup"
+    export post_chroot_path="linux-image-setup"
     post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
 
     mkdir -p "/mnt$repodir"
@@ -875,7 +875,7 @@ run_pre_debootstrap() {
 
 chroot_debootstrap_prelude() {
     repodir="/root/.local/src"
-    post_chroot_path="linux-image-setup"
+    export post_chroot_path="linux-image-setup"
     post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
 
     mkdir -p "/mnt$repodir"
