@@ -832,7 +832,7 @@ chroot_artix() {
 run_basestrap() {
     pkgs="base base-devel linux linux-firmware runit elogind-runit cryptsetup lvm2 lvm2-runit grub networkmanager networkmanager-runit neovim vim"
 
-    [ "$uefi" = true ] \
+    [ "$uefi" = "uefi" ] \
         && pkgs+=" efibootmgr"
 
     generate_fstab() {
