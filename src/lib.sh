@@ -106,7 +106,8 @@ ask_uefi() {
 get_uefi() {
     check_uefi
 
-    ask_uefi || error "Failed when asking about UEFI."
+    ask_uefi \
+        || error "Failed when asking about UEFI."
 }
 
 ####################################################################
@@ -156,16 +157,24 @@ get_ram_size() {
 }
 
 get_setup_info() {
-    get_setup_os # sets `setup_os`
+    # sets `setup_os`
+    get_setup_os
 
-    get_uefi || error "Failed to set UEFI." # sets `uefi` (0 is "legacy BIOS")
+    # sets `uefi` (0 is "legacy BIOS")
+    get_uefi \
+        || error "Failed to set UEFI."
 
-    get_disks || error "Failed to set \`disk_selected\`." # sets `disk_count` and `disk_selected`
+    # sets `disk_count` and `disk_selected`
+    get_disks \
+        || error "Failed to set \`disk_selected\`."
 
-    get_ram_size # set `ram_size` in the format of `xyGB`
+    # set `ram_size` in the format of `xyGB`
+    get_ram_size
 
-    [ -z "$install_os_selected" ] && export install_os_selected="$setup_os"
-    [ -z "$release_selected" ] && release_selected="rolling"
+    [ -z "$install_os_selected" ] \
+        && export install_os_selected="$setup_os"
+    [ -z "$release_selected" ] \
+        && release_selected="rolling"
 }
 
 ####################################################################
@@ -267,7 +276,8 @@ get_encryption_pass() {
 get_partition_info() {
     #ask_partition_scheme || error
 
-    ask_to_encrypt || error "Failed to get answer about encryption."
+    ask_to_encrypt \
+        || error "Failed to get answer about encryption."
 
     # if `encryption` is `true`, run `get_encryption_pass`
     # if `get_encryption_pass` fails, error
@@ -318,9 +328,11 @@ debootstrap_release_version() {
 }
 
 ask_debootstrap() {
-    ask_debootstrap_install_os || error "Failed to get \`debootstrap\` install OS."
+    ask_debootstrap_install_os \
+        || error "Failed to get \`debootstrap\` install OS."
 
-    debootstrap_release_version || error "Failed to get \`debootstrap\` release version."
+    debootstrap_release_version \
+        || error "Failed to get \`debootstrap\` release version."
 }
 
 ####################################################################
@@ -535,11 +547,14 @@ questions() {
 ####################################################################
 
 get_other_setup_info() {
-    get_user_and_pass || error "Failed to get a username and password." # gets user and pass info
+    get_user_and_pass \
+        || error "Failed to get a username and password."
 
-    get_networking_info || error "Failed to get networking information." # gets networking info
+    get_networking_info \
+        || error "Failed to get networking information."
 
-    questions || error "Failed to answer all the questions."
+    questions \
+        || error "Failed to answer all the questions."
 }
 
 ####################################################################
@@ -555,11 +570,11 @@ ask_confirm_inputs() {
             \\n     Disk selected                   =   ${path_dev}/${disk_selected}
             \\n     Encryption                      =   $encryption
             \\n     LVM name                        =   ${path_dev_mapper}/${lvm_name}
-            \\n     RAM                             =   $ram_size
             \\n     Install OS & release            =   $install_os_selected $release_selected
             \\n     user@hostname.domain            =   ${username}@${hostname}.${localdomain}
             \\n     Timezone                        =   $timezone
             \\n     Region                          =   $region
+            \\n     RAM                             =   $ram_size
             \\n     swapanswer                      =   $swapanswer" \
         --yes-button "Let's go!" \
         --no-button "Cancel" \
@@ -592,12 +607,8 @@ format_disk() {
         --infobox "Formatting disk..." \
         8 78
 
-    # gives the feeling of starting up
-    sleep 0.5
-
-    # if successful, half second to read screen
-    # if not, fails immediately
-    sfdisk ${path_dev}/${disk_selected} < src/templates/format_disk/${uefi}_standard && sleep 0.5 || error "Failed to format disk! Is the disk currently in use?"
+    sfdisk ${path_dev}/${disk_selected} < src/templates/format_disk/${uefi}_standard \
+        || error "Failed to format disk! Is the disk currently in use?"
 }
 
 set_partition_names() {
@@ -616,6 +627,7 @@ set_partition_names() {
 }
 
 encrypt_drive() {
+    # assert `encryption` is true, or exit function
     [ "$encryption" = true ] \
         || return 0
 
@@ -631,6 +643,7 @@ encrypt_drive() {
 }
 
 create_swap() {
+    # assert `swapanswer` is true, or exit function
     [ "$swapanswer" = true ] \
         || return 0
 

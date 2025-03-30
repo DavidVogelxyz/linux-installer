@@ -160,6 +160,16 @@ check_install_os() {
     [ "$install_os_selected" == "$1" ]
 }
 
+check_pkgmgr_apt() {
+    check_install_os "debian" \
+        || check_install_os "ubuntu"
+}
+
+check_pkgmgr_pacman() {
+    check_install_os "arch" \
+        || check_install_os "artix"
+}
+
 ####################################################################
 # VARIABLES - DEBIAN-SETUP
 ####################################################################
@@ -189,12 +199,10 @@ add_user_and_pass() {
         && unset rootpass1 rootpass2
 
     # create user
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && useradd -G sudo -s /bin/bash -m "$username"
 
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && useradd -G wheel -s /bin/bash -m "$username"
 
     # change user password; if successful, unset the password
@@ -227,8 +235,7 @@ do_basic_adjustments() {
     set_datetime
 
     # Debian and Ubuntu should have `nala` installed at this point
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && apt install -y \
             nala \
             > /dev/null 2>&1
@@ -240,8 +247,7 @@ do_basic_adjustments() {
     install_pkg git
 
     # for Arch and Artix, enable AUR installs by temporarily allowing `sudo` without password
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && arch_aur_prep \
         && arch_pacman_color \
         && arch_makepkg_conf \
@@ -256,8 +262,7 @@ setup_locale() {
         9 70
 
     # Debian and Ubuntu need this package installed
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && install_pkg_apt "locales"
 
     # set the `/etc/locale.conf` file
@@ -297,13 +302,11 @@ install_pkg_pacman() {
 }
 
 install_pkg() {
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && install_pkg_apt "$1" \
         && return 0
 
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && install_pkg_pacman "$1" \
         && return 0
 }
@@ -480,8 +483,7 @@ doconfigs() {
     run_git-clone "https://github.com/DavidVogelxyz/vim" "$repodir/vim"
 
     # clone `nvim` configs only on Arch and Artix (for now)
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && run_git-clone "https://github.com/DavidVogelxyz/nvim" "$repodir/nvim"
 
     # files to be checked; will be removed if they exist
@@ -517,8 +519,7 @@ doconfigs() {
     )
 
     # specific to Debian and Ubuntu
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && links_to_sym+=(
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/root/.config/lf/scope"
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
@@ -527,8 +528,7 @@ doconfigs() {
     )
 
     # specific to Arch and Artix
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && links_to_sym+=(
         "$repodir/nvim" "/root/.config/"
         "$repodir/nvim" "/home/$username/.config/"
@@ -567,8 +567,7 @@ doconfigs() {
         "/home/$username/.dotfiles/.config/shell/profile"
 
     # on Arch and Artix, allow for members of `wheel` group to `sudo`, after providing a password
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && sed -i \
             's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/g' \
             '/etc/sudoers'
@@ -589,8 +588,7 @@ doconfigs() {
 
     # enable NetworkManager
     # this is true only for Debian and Ubuntu
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && {
             enable_networkmanager \
                 || error "Failed when enabling networking."
@@ -620,18 +618,14 @@ doconfigs() {
         && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
 
     # add relevant content to the `/etc/fstab` file
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && {
             fstab_debootstrap_prep \
                 || error "Failed while prepping \`/etc/fstab\` file."
         }
 
     [ "$swapanswer" = true ] \
-        && {
-            check_install_os "arch" \
-                || check_install_os "artix"
-        } \
+        && check_pkgmgr_pacman \
         && run_fstab_arch
 
     return 0
@@ -718,13 +712,11 @@ run_cryptsetup() {
         --infobox "Configuring the system to request a password on startup to unlock the encrypted disk." \
         9 70
 
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && cryptsetup_debootstrap \
         && return 0
 
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && cryptsetup_arch \
         && return 0
 }
@@ -734,14 +726,12 @@ do_initramfs_update() {
         --infobox "Updating \`initramfs\` on Debian/Ubuntu, and \`mkinitcpio\` on Arch/Artix..." \
         9 70
 
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && update-initramfs -u -k all \
         > /dev/null 2>&1 \
         && return 0
 
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && mkinitcpio -p linux \
         && return 0
 }
@@ -752,11 +742,12 @@ run_grub-install() {
         9 70
 
     [[ $uefi = "bios" ]] \
-        && {
-            check_install_os "debian" \
-                || check_install_os "ubuntu"
-        } \
+        && check_pkgmgr_apt \
         && install_pkg_apt grub-pc
+
+    [[ $uefi = "uefi" ]] \
+        && check_pkgmgr_apt \
+        && install_pkg_apt grub-efi
 
     [[ $uefi = "bios" ]] \
         && grub-install \
@@ -765,26 +756,17 @@ run_grub-install() {
             > /dev/null 2>&1
 
     [[ $uefi = "uefi" ]] \
-        && {
-            check_install_os "debian" \
-                || check_install_os "ubuntu"
-        } \
-        && install_pkg_apt grub-efi
-
-    [[ $uefi = "uefi" ]] \
         && grub-install \
             --target=x86_64-efi \
             --efi-directory=/boot \
             --bootloader-id=GRUB \
             > /dev/null 2>&1
 
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && update-grub > /dev/null 2>&1 \
         && return 0
 
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 }
 
@@ -798,14 +780,22 @@ final_message() {
 }
 
 ####################################################################
-# ACTUAL SCRIPT - DEBIAN-SETUP
+# ACTUAL SCRIPT - PLAYBOOK_POST_CHROOT
 ####################################################################
 
-chroot_from_debootstrap() {
-    echo "Updating packages, one moment..." \
+playbook_post_chroot() {
+    echo "Updating packages, one moment..."
+
+    check_pkgmgr_apt \
         && apt update \
             > /dev/null 2>&1 \
         && install_pkg_apt whiptail \
+            > /dev/null 2>&1
+
+    check_pkgmgr_pacman \
+        && pacman -Sy \
+            > /dev/null 2>&1 \
+        && install_pkg_pacman libnewt \
             > /dev/null 2>&1
 
     add_user_and_pass \
@@ -830,43 +820,7 @@ chroot_from_debootstrap() {
         && run_cryptsetup
 
     do_initramfs_update \
-        || error "Failed during initramfs update."
-
-    run_grub-install \
-        || error "Failed during GRUB install."
-
-    final_message
-
-    exit 0
-}
-
-chroot_from_arch() {
-    echo "Updating packages, one moment..." \
-        && pacman -Sy \
-            > /dev/null 2>&1 \
-        && install_pkg_pacman libnewt \
-            > /dev/null 2>&1
-
-    add_user_and_pass \
-        || error "Failed to set root pass, username, or user pass."
-
-    do_basic_adjustments \
-        || error "Failed to do basic adjustments."
-
-    setup_locale \
-        || error "Failed to set up locale."
-
-    install_loop \
-        || error "Failed during the install loop."
-
-    doconfigs \
-        || error "Failed during \`doconfigs\`."
-
-    [ "$encryption" = true ] \
-        && run_cryptsetup
-
-    do_initramfs_update \
-        || error "Failed when running \`mkinitcpio\`."
+        || error "Failed while updating the initial ramdisk (initramfs)."
 
     run_grub-install \
         || error "Failed during GRUB install."
