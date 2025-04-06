@@ -7,12 +7,12 @@ export TERM=ansi
 # NEW FUNCTIONS
 #####################################################################
 
-# check if timezone is symlink
+# check if path is link
 check_path_link() {
     [ -L "$1" ]
 }
 
-# check if timezone is file
+# check if path is file
 check_path_file() {
     [ -f "$1" ]
 }
@@ -202,6 +202,7 @@ list_packages="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/mast
 # FUNCTIONS - DEBIAN-SETUP
 #####################################################################
 
+# prints argument to STDERR and exits
 error() {
     echo "$1" >&2 \
         && exit 1
@@ -396,7 +397,9 @@ create_useful_directories() {
     mkdir -p \
         "/home/$username/.cache/bash" \
         "/home/$username/.cache/zsh" \
+        "/home/$username/.local/bin/cron" \
         "/home/$username/.local/bin/statusbar" \
+        "/home/$username/.local/share" \
         /root/.cache/bash \
         /root/.cache/zsh \
         /root/.config/lf \
@@ -583,7 +586,10 @@ doconfigs() {
     # small edits to `~/.config/shell/profile` for SERVERS
     # DWM and others will want these on
     sed -i \
-        's/^\[ "\$(tty)"/#[ "$(tty)"]/g' \
+        's/^\[ \! -f \"\$XDG_CONFIG_HOME/#[ \! -f \"\$XDG_CONFIG_HOME/g' \
+        "/home/$username/.dotfiles/.config/shell/profile"
+    sed -i \
+        's/^\[ "\$(tty)"/#[ "$(tty)"/g' \
         "/home/$username/.dotfiles/.config/shell/profile"
     sed -i \
         's/^sudo -n loadkeys "$XDG_DATA_HOME/#sudo -n loadkeys "$XDG_DATA_HOME/g' \
