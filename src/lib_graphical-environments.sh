@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export username="test"
-export install_os_selected="artix"
+#export username="test"
+#export install_os_selected="artix"
 export repodir="/home/$username/.local/src"
 
 # REQUIRES THE FOLLOWING VARIABLES TO BE ALREADY SET:

@@ -854,6 +854,17 @@ playbook_post_chroot() {
     run_grub-install \
         || error "Failed during GRUB install."
 
+    export flag_graphical_enviroment=true
+    export flag_dwm=true
+
+    cd "/root/.local/src/${post_chroot_path}"
+
+    [ "$flag_graphical_enviroment" = true ] \
+        && {
+            bash src/graphical-environments.sh \
+                || error "Failed when installing the graphical environment."
+        }
+
     final_message
 
     exit 0
