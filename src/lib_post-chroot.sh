@@ -397,6 +397,7 @@ create_useful_directories() {
     mkdir -p \
         "/home/$username/.cache/bash" \
         "/home/$username/.cache/zsh" \
+        "/home/$username/.config" \
         "/home/$username/.local/bin/cron" \
         "/home/$username/.local/bin/statusbar" \
         "/home/$username/.local/share" \

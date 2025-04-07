@@ -565,17 +565,17 @@ ask_confirm_inputs() {
     whiptail \
         --title "Confirm Inputs" \
         --yesno "\\nHere's what we have:
-            \\n     Image OS                    =   $setup_os
-            \\n     Partitioning to deploy      =   $uefi $partition_scheme_selected
-            \\n     Disk selected               =   ${path_dev}/${disk_selected}
-            \\n     Encryption                  =   $encryption
-            \\n     LVM name                    =   ${path_dev_mapper}/${lvm_name}
-            \\n     Install OS & release        =   $install_os_selected $release_selected
-            \\n     user@hostname.domain        =   ${username}@${hostname}.${localdomain}
-            \\n     Timezone                    =   $timezone
-            \\n     Region                      =   $region
-            \\n     RAM                         =   $ram_size
-            \\n     swapanswer                  =   $swapanswer" \
+            \\n    Image OS                     =   $setup_os
+            \\n    Firmware                     =   $uefi $partition_scheme_selected
+            \\n    Disk selected                =   ${path_dev}/${disk_selected}
+            \\n    Encryption                   =   $encryption
+            \\n    LVM name                     =   ${path_dev_mapper}/${lvm_name}
+            \\n    Installing OS & release      =   $install_os_selected $release_selected
+            \\n    user@hostname.domain         =   ${username}@${hostname}.${localdomain}
+            \\n    Timezone                     =   $timezone
+            \\n    Region                       =   $region
+            \\n    RAM                          =   $ram_size
+            \\n    swapanswer                   =   $swapanswer" \
         --yes-button "Let's go!" \
         --no-button "Cancel" \
         32 78 \
@@ -895,7 +895,7 @@ chroot_debootstrap_prelude() {
 
     # clone `debian-setup`
     #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
-    cp -r /home/ubuntu/linux-image-setup "/mnt$repodir"
+    cp -r /root/linux-image-setup "/mnt$repodir"
 
     # exclusively for compatibilty with `debian-setup`
     sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"

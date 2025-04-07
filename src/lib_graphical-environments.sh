@@ -212,8 +212,11 @@ install_loop_read() {
             && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
 
         [ ! -z "${!pkg_check_name}" ] \
-            && [ "$tag" == "A" ] \
-            && install_loop_install_aur "${!pkg_check_name}" "$comment" \
+            && pkg="${!pkg_check_name}"
+
+        [ "$tag" == "A" ] \
+            && check_pkgmgr_pacman \
+            && install_loop_install_aur "$pkg" "$comment" \
             && continue
 
         [ "$tag" == "G" ] \
@@ -293,7 +296,7 @@ fixes_post_install_dwm() {
 
     # getting extra progs into `~/.local/bin`
     cd "/home/${username}/.local/bin" \
-        || error "Failed to change directory to voidrice for additional dotfile deployment."
+        || error "Failed to change directory to \`/home/${username}/.local/bin\` for additional dotfile deployment."
 
     run_git-clone "https://github.com/LukeSmithxyz/voidrice" "$repodir/voidrice"
 
@@ -308,7 +311,7 @@ fixes_post_install_dwm() {
 
     # getting extra progs into `~/.local/bin/statusbar`
     cd "/home/${username}/.local/bin/statusbar" \
-        || error "Failed to change directory to voidrice for additional dotfile deployment."
+        || error "Failed to change directory to \`/home/${username}/.local/bin/statusbar\` for additional dotfile deployment."
 
     mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin/statusbar" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
 
@@ -319,17 +322,46 @@ fixes_post_install_dwm() {
             || ln -s "../../src/voidrice/.local/bin/statusbar/${file}" .
     done
 
-    # set a wallpaper
+    # getting extra dotfiles into `~/.config`
+    cd "/home/${username}/.config" \
+        || error "Failed to change directory to \`/home/${username}/.config\` for additional dotfile deployment."
+
+    list_of_dirs=(
+        "dunst"
+        "fontconfig"
+        "gtk-2.0"
+        "gtk-3.0"
+        "mimeapps.list"
+        "mpd"
+        "mpv"
+        "newsboat"
+        "pipewire"
+        "pulse"
+        "sxiv"
+        "user-dirs.dirs"
+        "wal"
+        "wget"
+        "zathura"
+        )
+
+    for dir in "${list_of_dirs[@]}"; do
+        [ -e "$dir" ] \
+            || ln -s "../.local/src/voidrice/.config/${dir}" .
+    done
+
+    # set the `.gtkrc-2.0` symlink
+    cd "/home/${username}" \
+        && ln -s .local/src/voidrice/.gtkrc-2.0 .
+
+    # get a wallpaper
     file_wallpaper="https://raw.githubusercontent.com/DavidVogelxyz/wallpapers/master/artists/muhammad-nafay/wallhaven-g8pmol.jpg"
 
-    cd "/home/$username/.local/share"
+    cd "/home/$username/.local/share" \
+        && curl -LJO "$file_wallpaper"
 
-    # get the wallpaper
-    curl -LJO "$file_wallpaper"
-
-    file_wallpaper=$(basename "$file_wallpaper")
-
-    ln -s "$file_wallpaper" bg
+    # set the wallpaper
+    file_wallpaper=$(basename "$file_wallpaper") \
+        && ln -s "$file_wallpaper" bg
 }
 
 #####################################################################
@@ -353,6 +385,20 @@ playbook_graphical_environments() {
 
     check_pkgmgr_pacman \
         && arch_aur_prep
+
+    check_pkgmgr_apt \
+        && dependencies=(
+            "libx11-dev"
+            "libxft-dev"
+            "libxinerama-dev"
+            "libx11-xcb-dev"
+            "libxcb-res0-dev"
+            "libharfbuzz-dev"
+        ) \
+        && for pkg in "${dependencies[@]}" ; do
+            install_pkg_apt "$pkg" \
+                || echo "Failed to install ${pkg}." >> pkg_fail_dwm.txt
+        done
 
     install_loop \
         || error "Failed during the install loop."
