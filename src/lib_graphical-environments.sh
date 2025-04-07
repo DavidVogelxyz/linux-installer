@@ -365,6 +365,12 @@ fixes_post_install_gnome() {
     progname="dash-to-dock"
     dir="$repodir/$progname"
 
+    check_install_os "debian" \
+        && {
+            install_pkg_apt gettext
+            install_pkg_apt sassc
+        }
+
     install_pkg_git "https://github.com/micheleg/dash-to-dock"
 }
 
@@ -389,6 +395,11 @@ playbook_graphical_environments() {
             > /dev/null 2>&1 \
         && install_pkg_pacman libnewt \
             > /dev/null 2>&1
+
+    whiptail \
+        --title "GNOME Installation" \
+        --infobox "Installing GNOME." \
+        9 70
 
     check_install_os "debian" \
         && install_pkg_apt gnome-core
