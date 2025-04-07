@@ -185,8 +185,6 @@ install_loop_install_default() {
 }
 
 prep_packages_file() {
-    packfile_changethis="packages_dwm.csv"
-
     ([ -f "$packfile_changethis" ] && cp "$packfile_changethis" "/tmp/${packfile_changethis}") \
         && sed -i '/^#/d' "/tmp/${packfile_changethis}" \
         || curl -Ls "$list_packages" | sed '/^#/d' > "/tmp/${packfile_changethis}"
@@ -194,7 +192,6 @@ prep_packages_file() {
 
 install_loop_read() {
     curr_dir="$(pwd)"
-    file_pkg_fail="pkg_fail_dwm.txt"
 
     total=$(wc -l < "/tmp/${packfile_changethis}")
     n="0"
@@ -298,7 +295,7 @@ fixes_post_install_dwm() {
     cd "/home/${username}/.local/bin" \
         || error "Failed to change directory to \`/home/${username}/.local/bin\` for additional dotfile deployment."
 
-    run_git-clone "https://github.com/LukeSmithxyz/voidrice" "$repodir/voidrice"
+    sudo -u "$username" run_git-clone "https://github.com/LukeSmithxyz/voidrice" "$repodir/voidrice"
 
     mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
 
@@ -306,7 +303,7 @@ fixes_post_install_dwm() {
         file=$(basename "$file")
 
         [ -e "$file" ] \
-            || ln -s "../src/voidrice/.local/bin/${file}" .
+            || sudo -u "$username" ln -s "../src/voidrice/.local/bin/${file}" .
     done
 
     # getting extra progs into `~/.local/bin/statusbar`
@@ -319,7 +316,7 @@ fixes_post_install_dwm() {
         file=$(basename "$file")
 
         [ -e "$file" ] \
-            || ln -s "../../src/voidrice/.local/bin/statusbar/${file}" .
+            || sudo -u "$username" ln -s "../../src/voidrice/.local/bin/statusbar/${file}" .
     done
 
     # getting extra dotfiles into `~/.config`
@@ -346,22 +343,29 @@ fixes_post_install_dwm() {
 
     for dir in "${list_of_dirs[@]}"; do
         [ -e "$dir" ] \
-            || ln -s "../.local/src/voidrice/.config/${dir}" .
+            || sudo -u "$username" ln -s "../.local/src/voidrice/.config/${dir}" .
     done
 
     # set the `.gtkrc-2.0` symlink
     cd "/home/${username}" \
-        && ln -s .local/src/voidrice/.gtkrc-2.0 .
+        && sudo -u "$username" ln -s .local/src/voidrice/.gtkrc-2.0 .
 
     # get a wallpaper
     file_wallpaper="https://raw.githubusercontent.com/DavidVogelxyz/wallpapers/master/artists/muhammad-nafay/wallhaven-g8pmol.jpg"
 
     cd "/home/$username/.local/share" \
-        && curl -LJO "$file_wallpaper"
+        && sudo -u "$username" curl -LJO "$file_wallpaper"
 
     # set the wallpaper
     file_wallpaper=$(basename "$file_wallpaper") \
-        && ln -s "$file_wallpaper" bg
+        && sudo -u "$username" ln -s "$file_wallpaper" bg
+}
+
+fixes_post_install_gnome() {
+    progname="dash-to-dock"
+    dir="$repodir/$progname"
+
+    install_pkg_git "https://github.com/micheleg/dash-to-dock"
 }
 
 #####################################################################
@@ -369,6 +373,41 @@ fixes_post_install_dwm() {
 #####################################################################
 
 playbook_graphical_environments() {
+    packfile_changethis="packages_gnome.csv"
+    file_pkg_fail="pkg_fail_gnome.txt"
+
+    echo "Updating packages, one moment..."
+
+    check_pkgmgr_apt \
+        && apt update \
+            > /dev/null 2>&1 \
+        && install_pkg_apt whiptail \
+            > /dev/null 2>&1
+
+    check_pkgmgr_pacman \
+        && pacman -Sy \
+            > /dev/null 2>&1 \
+        && install_pkg_pacman libnewt \
+            > /dev/null 2>&1
+
+    check_install_os "debian" \
+        && install_pkg_apt gnome-core
+
+    check_install_os "ubuntu" \
+        && install_pkg_apt ubuntu-desktop-minimal
+
+    check_pkgmgr_pacman \
+        && install_pkg_pacman gnome
+
+    # post install GNOME fixes for machines that ARE NOT Ubuntu
+    check_install_os "ubuntu" \
+        || fixes_post_install_gnome
+}
+
+playbook_dwm() {
+    packfile_changethis="packages_dwm.csv"
+    file_pkg_fail="pkg_fail_dwm.txt"
+
     echo "Updating packages, one moment..."
 
     check_pkgmgr_apt \

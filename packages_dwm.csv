@@ -1,19 +1,19 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU
-,xorg-server,"is the graphical server. This first one may take a while as it pulls many other dependencies first on clean installs.",xorg,,,
-,xorg-xbacklight,"enables changing screen brightness levels.",xbacklight,,,
-,xorg-xinit,"starts the graphical server.",skip,,,
-,xorg-xprop,"is a tool for detecting window properties.",skip,,,
-,xorg-xset,"utility for configuring and ajusting X server",skip,,,
-,xorg-xwininfo,"allows querying information about windows.",skip,,,
+,xorg-server,"is the graphical server. This first one may take a while as it pulls many other dependencies first on clean installs.",xorg,,,xorg
+,xorg-xbacklight,"enables changing screen brightness levels.",xbacklight,,,xbacklight
+,xorg-xinit,"starts the graphical server.",skip,,,skip
+,xorg-xprop,"is a tool for detecting window properties.",skip,,,skip
+,xorg-xset,"utility for configuring and ajusting X server",skip,,,skip
+,xorg-xwininfo,"allows querying information about windows.",skip,,,skip
 ,xcape,"gives the special escape/super mappings of LARBS.",,,,
 ,xclip,"allows for copying and pasting from the command line.",,,,
 ,xcompmgr,"is for transparency and removing screen-tearing.",,,,
 ,xdotool,"provides window action utilities on the command line.",,,,
 ,xwallpaper,"sets the wallpaper.",,,,
-,polkit,"manages user policies.",polkitd,,,
-,otf-libertinus,"provides the sans and serif fonts for LARBS.",fonts-linuxlibertine,,,
-,ttf-dejavu,"properly displays emojis.",fonts-dejavu,,,
-,ttf-font-awesome,"provides extended glyph support.",fonts-font-awesome,,,
+,polkit,"manages user policies.",polkitd,,,polkitd
+,otf-libertinus,"provides the sans and serif fonts for LARBS.",fonts-linuxlibertine,,,fonts-linuxlibertine
+,ttf-dejavu,"properly displays emojis.",fonts-dejavu,,,fonts-dejavu
+,ttf-font-awesome,"provides extended glyph support.",fonts-font-awesome,,,fonts-font-awesome
 ,pipewire-pulse,"gives pipewire compatibility with PulseAudio programs.",,,,
 ,pulsemixer,"is an audio controller.",,,,
 ,arandr,"allows the user to customize monitor arrangements.",,,,
@@ -23,11 +23,11 @@
 ,calcurse,"terminal-based organizer for interactive and command line use",,,,
 ,dosfstools,"allows your computer to access dos-like filesystems.",,,,
 ,dunst,"is a suckless notification system.",,,,
-,exfat-utils,"allows management of FAT drives.",exfatprogs,,,
+,exfat-utils,"allows management of FAT drives.",exfatprogs,,,exfatprogs
 ,ffmpeg,"can record and splice video and audio on the command line.",,,,
 ,ffmpegthumbnailer,"creates thumbnail previews of video files.",,,,
 ,gnome-keyring,"serves as the system keyring.",,,,
-,libnotify,"allows desktop notifications.",libnotify-bin,,,
+,libnotify,"allows desktop notifications.",libnotify-bin,,,libnotify-bin
 ,lynx,"is a terminal browser also used in LARBS for generating in-terminal previews of websites.",,,,
 ,maim,"can take quick screenshots at your request.",,,,
 ,man-db,"lets you read man pages of programs.",,,,
@@ -37,34 +37,34 @@
 ,mpd,"is a lightweight music daemon.",,,,
 ,mpv,"is the patrician's choice video player.",,,,
 ,ncmpcpp,"a ncurses interface for music with multiple formats and a powerful tag editor.",,,,
-,newsboat,"is a terminal RSS client.",,,,
-,noto-fonts,"is an expansive font package.",fonts-noto,,,
-,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,
+,newsboat,"is a terminal RSS client.",,,,skip
+,noto-fonts,"is an expansive font package.",fonts-noto,,,fonts-noto
+,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,fonts-noto-color-emoji
 ,nsxiv,"is a minimalist image viewer.",,,,
 ,ntfs-3g,"allows accessing NTFS partitions.",,,,
-,poppler,"manipulates .pdfs and gives .pdf previews and other .pdf functions.",poppler-utils,,,
-,python-qdarkstyle,"provides a dark Qt theme.",python3-qdarkstyle,,,
-,slock,"allows you to lock your computer and quickly unlock with your password.",suckless-tools,,,
+,poppler,"manipulates .pdfs and gives .pdf previews and other .pdf functions.",poppler-utils,,,poppler-utils
+,python-qdarkstyle,"provides a dark Qt theme.",python3-qdarkstyle,,,python3-qdarkstyle
+,slock,"allows you to lock your computer and quickly unlock with your password.",suckless-tools,,,suckless-tools
 ,socat,"is a utility which establishes two byte streams and transfers data between them.",,,,
-,tesseract,"command-line OCR engine for advance maimpick",skip,,,
-,tesseract-data-eng,"english language pack for OCR",skip,,,
+,tesseract,"command-line OCR engine for advance maimpick",skip,,,skip
+,tesseract-data-eng,"english language pack for OCR",skip,,,skip
 ,unclutter,"hides an inactive mouse.",,,,
 ,unzip,"unzips zips.",,,,
 ,wireplumber,"is the audio system.",,,,
 ,yt-dlp,"can download any YouTube video (or playlist or channel) when given the link.",,,,
 ,zathura,"is a pdf viewer with vim-like bindings.",,,,
-,zathura-pdf-mupdf,"allows mupdf pdf compatibility in zathura.",zathura-pdf-poppler,,,
+,zathura-pdf-mupdf,"allows mupdf pdf compatibility in zathura.",zathura-pdf-poppler,,,zathura-pdf-poppler
 A,abook,"is an offline addressbook usable by neomutt.",,,,
-A,arkenfox-user.js,"provides hardened security settings for Firefox and Librewolf to avoid Mozilla spyware and general web fingerprinting.",skip,,,
-A,gtk-theme-arc-gruvbox-git,"gives the dark GTK theme used in LARBS.",arc-theme,,,
-A,librewolf-bin,"is the default browser of LARBS which also comes with ad-blocking and other sensible and necessary features by default.",skip,,,
-A,librewolf-extension-istilldontcareaboutcookies-bin,"removes annoying cookie banners",skip,,,
-A,librewolf-extension-localcdn-bin,"local emulation of Content Delivery Networks.",skip,,,
-A,librewolf-extension-tridactyl-bin,"vim bindings in your browser.",skip,,,
-A,librewolf-extension-ublock-origin-bin,"the best ad blocker in town.",skip,,,
-A,mutt-wizard-git,"is a light-weight terminal-based email system.",skip,,,
-A,sc-im,"is an Excel-like terminal spreadsheet manager.",sc,,,
-A,simple-mtpfs,"enables the mounting of cell phones.",skip,,,
+A,arkenfox-user.js,"provides hardened security settings for Firefox and Librewolf to avoid Mozilla spyware and general web fingerprinting.",skip,,,skip
+A,gtk-theme-arc-gruvbox-git,"gives the dark GTK theme used in LARBS.",arc-theme,,,arc-theme
+A,librewolf-bin,"is the default browser of LARBS which also comes with ad-blocking and other sensible and necessary features by default.",skip,,,skip
+A,librewolf-extension-istilldontcareaboutcookies-bin,"removes annoying cookie banners",skip,,,skip
+A,librewolf-extension-localcdn-bin,"local emulation of Content Delivery Networks.",skip,,,skip
+A,librewolf-extension-tridactyl-bin,"vim bindings in your browser.",skip,,,skip
+A,librewolf-extension-ublock-origin-bin,"the best ad blocker in town.",skip,,,skip
+A,mutt-wizard-git,"is a light-weight terminal-based email system.",skip,,,skip
+A,sc-im,"is an Excel-like terminal spreadsheet manager.",sc,,,sc
+A,simple-mtpfs,"enables the mounting of cell phones.",skip,,,skip
 A,task-spooler,"queues commands or files for download.",,,,
 G,https://github.com/DavidVogelxyz/dmenu,"runs commands and provides a UI for selection.",,,,
 G,https://github.com/DavidVogelxyz/dwm,"is the window manager.",,,,
