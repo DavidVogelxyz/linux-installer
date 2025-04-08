@@ -294,7 +294,7 @@ setup_locale() {
 
     # uncomments language files in `/etc/locale.gen`
     [ "$region" == "en_US" ] \
-        && sed -i 's/^# en_US/en_US/g' /etc/locale.gen
+        && sed -i 's/^#.*en_US/en_US/g' /etc/locale.gen
 
     # run `locale-gen`
     locale-gen > /dev/null 2>&1
@@ -627,7 +627,7 @@ doconfigs() {
     # enable networking on Arch
     check_install_os "arch" \
         && {
-            systemctl enable systemd-networkd > /dev/null 2>&1 \
+            systemctl enable NetworkManager > /dev/null 2>&1 \
                 && systemctl enable dhcpcd > /dev/null 2>&1 \
                 || error "Failed when enabling networking."
         }

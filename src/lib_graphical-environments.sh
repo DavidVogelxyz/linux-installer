@@ -371,7 +371,32 @@ fixes_post_install_gnome() {
             install_pkg_apt sassc
         }
 
-    install_pkg_git "https://github.com/micheleg/dash-to-dock"
+    #install_pkg_git "https://github.com/micheleg/dash-to-dock"
+
+    sudo -u "$username" git -C "$repodir" clone \
+        --depth 1 \
+        --single-branch \
+        --no-tags \
+        -q \
+        "https://github.com/micheleg/dash-to-dock" "$dir" \
+        || {
+            cd "$dir" \
+                || return 1
+
+            sudo -u "$username" git pull --force origin master
+        }
+
+    cd "$dir" \
+        || exit 1
+
+    sudo -u "$username" make \
+        > /dev/null 2>&1
+
+    sudo -u "$username" make install \
+        > /dev/null 2>&1
+
+    cd /tmp \
+        || return 1
 }
 
 #####################################################################
@@ -407,12 +432,22 @@ playbook_graphical_environments() {
     check_install_os "ubuntu" \
         && install_pkg_apt ubuntu-desktop-minimal
 
-    check_pkgmgr_pacman \
-        && install_pkg_pacman gnome
+    #check_pkgmgr_pacman \
+    #    && install_pkg_pacman xorg \
+    #    && install_pkg_pacman gnome
 
     # post install GNOME fixes for machines that ARE NOT Ubuntu
     check_install_os "ubuntu" \
         || fixes_post_install_gnome
+
+    #check_install_os "arch" \
+    #    && systemctl enable gdm
+
+    #check_install_os "artix" \
+    #    && install_pkg_pacman gdm-runit \
+    #    && ln -s /etc/runit/sv/gdm /run/runit/service
+
+    return 0
 }
 
 playbook_dwm() {
@@ -455,4 +490,6 @@ playbook_dwm() {
 
     # post install DWM fixes
     fixes_post_install_dwm
+
+    return 0
 }
