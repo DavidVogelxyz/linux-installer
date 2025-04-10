@@ -18,22 +18,6 @@ list_packages="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/mast
 # FUNCTIONS
 #####################################################################
 
-# prints argument to STDERR and exits
-error() {
-    echo "$1" >&2 \
-        && exit 1
-}
-
-# check if path is link
-check_path_link() {
-    [ -L "$1" ]
-}
-
-# check if path is file
-check_path_file() {
-    [ -f "$1" ]
-}
-
 arch_aur_prep() {
     # Allow user to run sudo without entering a password.
     # Since AUR programs must be installed in a fakeroot environment,
@@ -93,144 +77,6 @@ check_pkgmgr_pacman() {
 
 error_install() {
     echo "Failed to install \`$1\`." >> "$file_pkg_fail"
-}
-
-#####################################################################
-# FUNCTIONS - INSTALLATION
-#####################################################################
-
-install_pkg_aur() {
-    sudo -u "$username" $aurhelper -S --noconfirm "$1" \
-        > /dev/null 2>&1
-}
-
-install_pkg_git() {
-    sudo -u "$username" git -C "$repodir" clone \
-        --depth 1 \
-        --single-branch \
-        --no-tags \
-        -q \
-        "$1" "$dir" \
-        || {
-            cd "$dir" \
-                || return 1
-
-            sudo -u "$username" git pull --force origin master
-        }
-
-    cd "$dir" \
-        || exit 1
-
-    make \
-        > /dev/null 2>&1
-
-    make install \
-        > /dev/null 2>&1
-
-    cd /tmp \
-        || return 1
-}
-
-install_pkg_apt() {
-    apt install -y "$1" \
-        > /dev/null 2>&1
-}
-
-install_pkg_pacman() {
-    pacman --noconfirm --needed -S "$1" \
-        > /dev/null 2>&1
-}
-
-install_pkg() {
-    check_pkgmgr_apt \
-        && install_pkg_apt "$1" \
-        && return 0
-
-    check_pkgmgr_pacman \
-        && install_pkg_pacman "$1" \
-        && return 0
-}
-
-install_loop_install_aur() {
-    whiptail \
-        --title "Package Installation" \
-        --infobox "Installing \`$1\` ($n of $total) from the AUR. $1 $2" \
-        9 70
-
-    install_pkg_aur "$1" \
-        || error_install "$1"
-}
-
-install_loop_install_git() {
-    progname="${1##*/}"
-    dir="$repodir/$progname"
-
-    whiptail \
-        --title "Package Installation" \
-        --infobox "Installing \`$progname\` ($n of $total) via \`git\` and \`make\`. $progname $2" \
-        9 70
-
-    install_pkg_git "$1" \
-        || error_install "$1"
-}
-
-install_loop_install_default() {
-    whiptail \
-        --title "Package Installation" \
-        --infobox "Installing \`$1\` ($n of $total). $1 $2" \
-        9 70
-
-    install_pkg "$1" \
-        || error_install "$1"
-}
-
-prep_packages_file() {
-    ([ -f "$packfile_changethis" ] && cp "$packfile_changethis" "/tmp/${packfile_changethis}") \
-        && sed -i '/^#/d' "/tmp/${packfile_changethis}" \
-        || curl -Ls "$list_packages" | sed '/^#/d' > "/tmp/${packfile_changethis}"
-}
-
-install_loop_read() {
-    curr_dir="$(pwd)"
-
-    total=$(wc -l < "/tmp/${packfile_changethis}")
-    n="0"
-
-    while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
-        n=$((n + 1))
-        pkg_check_name="pkg_${install_os_selected}"
-
-        # `!` allows the script to print the value of `pkg_${install_os_selected}`
-        # if value of `pkg_check_name` is `skip`, skips to the next package
-        [ "${!pkg_check_name}" == "skip" ] \
-            && continue
-
-        echo "$comment" | grep -q "^\".*\"$" \
-            && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
-
-        [ ! -z "${!pkg_check_name}" ] \
-            && pkg="${!pkg_check_name}"
-
-        [ "$tag" == "A" ] \
-            && check_pkgmgr_pacman \
-            && install_loop_install_aur "$pkg" "$comment" \
-            && continue
-
-        [ "$tag" == "G" ] \
-            && install_loop_install_git "$pkg" "$comment" \
-            && continue
-
-        install_loop_install_default "$pkg" "$comment"
-    done < "/tmp/${packfile_changethis}"
-
-    cd "$curr_dir" \
-        || return 1
-}
-
-install_loop() {
-    prep_packages_file
-
-    install_loop_read
 }
 
 #####################################################################
@@ -403,8 +249,46 @@ fixes_post_install_gnome() {
 # ACTUAL SCRIPT - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
-playbook_graphical_environments() {
-    packfile_changethis="packages_gnome.csv"
+playbook_kde() {
+    package_file="src/packages/packages_kde.csv"
+    file_pkg_fail="pkg_fail_kde.txt"
+
+    echo "Updating packages, one moment..."
+
+    check_pkgmgr_apt \
+        && apt update \
+            > /dev/null 2>&1 \
+        && install_pkg_apt whiptail \
+            > /dev/null 2>&1
+
+    check_pkgmgr_pacman \
+        && pacman -Sy \
+            > /dev/null 2>&1 \
+        && install_pkg_pacman libnewt \
+            > /dev/null 2>&1
+
+    whiptail \
+        --title "KDE Installation" \
+        --infobox "Installing KDE." \
+        9 70
+
+    check_install_os "debian" \
+        && install_pkg_apt kde-plasma-desktop
+
+    check_install_os "ubuntu" \
+        && install_pkg_apt kubuntu-desktop
+
+    check_pkgmgr_pacman \
+        && install_pkg_pacman plasma-desktop
+        #&& install_pkg_pacman xorg-xserver \
+        #&& install_pkg_pacman xorg-xinit \
+        #&& install_pkg_pacman plasma-desktop
+
+    return 0
+}
+
+playbook_gnome() {
+    package_file="src/packages/packages_gnome.csv"
     file_pkg_fail="pkg_fail_gnome.txt"
 
     echo "Updating packages, one moment..."
@@ -451,7 +335,7 @@ playbook_graphical_environments() {
 }
 
 playbook_dwm() {
-    packfile_changethis="packages_dwm.csv"
+    package_file="src/packages/packages_dwm.csv"
     file_pkg_fail="pkg_fail_dwm.txt"
 
     echo "Updating packages, one moment..."

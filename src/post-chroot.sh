@@ -1,7 +1,15 @@
 #!/bin/sh
 
-# path to the library file
-library="src/lib_post-chroot.sh"
+#####################################################################
+# SOURCE THE REQUIRED LIBRARY FILES
+#####################################################################
+
+# path to the library files
+libraries=(
+    "src/lib/lib_common.sh"
+    "src/lib/lib_installer.sh"
+    "src/lib/lib_post-chroot.sh"
+)
 
 # sources file, if the path is a file
 source_file() {
@@ -14,9 +22,15 @@ error() {
         && exit 1
 }
 
-# sources library file, or error
-source_file "$library" \
-    || error "Failed to source the library file."
+# sources library files, or error
+for file in "${libraries[@]}"; do
+    source_file "$file" \
+        || error "Failed to source the \`$file\` library."
+done
 
-# runs the "post_chroot" playbook
+#####################################################################
+# RUN THE PLAYBOOK
+#####################################################################
+
+# runs the `post_chroot` playbook
 playbook_post_chroot

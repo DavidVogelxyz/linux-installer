@@ -1,28 +1,51 @@
 #!/bin/sh
 
-# variables and functions for sourcing the library file
-library="src/lib.sh"
+#####################################################################
+# SOURCE THE REQUIRED LIBRARY FILES
+#####################################################################
 
-source_lib() {
-    [ -f $library ] && source $library
+# path to the library files
+libraries=(
+    "src/lib/lib_common.sh"
+    "src/lib/lib_main.sh"
+)
+
+# sources file, if the path is a file
+source_file() {
+    [ -f "$1" ] && source "$1"
 }
 
+# prints argument to STDERR and exits
 error() {
     echo "$1" >&2 \
         && exit 1
 }
 
-# prelude
-# sources library file, or error
-source_lib \
-    || error "Failed to source the library file."
+# sources library files, or error
+for file in "${libraries[@]}"; do
+    source_file "$file" \
+        || error "Failed to source the \`$file\` library."
+done
 
-grep -q "artix" /etc/os-release \
+#####################################################################
+# RUN THE PLAYBOOK
+#####################################################################
+
+# sets `setup_os`, or error
+get_setup_os \
+    || error "It appears that the OS image you're using isn't supported by this script. Sorry!"
+
+# if `setup_os` is `artix`, install `whiptail`
+check_setup_os "artix" \
     && (pacman -S --noconfirm --needed libnewt || error "Are you sure you're running as root?")
 
 # informs the user of how the script works, or error
 welcome_screen \
     || error "Failed at the welcome screen."
+
+# if Ubuntu image, configures `debootstrap`
+check_setup_os "ubuntu" \
+    && ask_debootstrap
 
 # gather information
 # gets info about system, with little user input, or error
@@ -31,10 +54,6 @@ get_setup_info \
 
 # ask about partition scheme, encryption, etc
 get_partition_info
-
-# if Ubuntu image, configures `debootstrap`
-check_setup_os "ubuntu" \
-    && ask_debootstrap
 
 # gets other user info for setting up new user
 get_other_setup_info \

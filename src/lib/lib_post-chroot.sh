@@ -7,16 +7,6 @@ export TERM=ansi
 # NEW FUNCTIONS
 #####################################################################
 
-# check if path is link
-check_path_link() {
-    [ -L "$1" ]
-}
-
-# check if path is file
-check_path_file() {
-    [ -f "$1" ]
-}
-
 set_timezone() {
     path_to_check="/etc/localtime"
 
@@ -74,18 +64,12 @@ template_replace() {
         --infobox "Updating the \`$2\` file..." \
         8 78
 
-    # just long enough for the screen to be read
-    sleep 1
-
     [ -f "$1" ] \
         && [ -f "$2" ] \
         && diff "$2" "$1"
 
     # update file with template
     cp "$1" "$2"
-
-    # just long enough for the screen to be read
-    sleep 1
 }
 
 arch_aur_prep() {
@@ -175,24 +159,6 @@ arch_aur_install() {
 }
 
 #####################################################################
-# FUNCTIONS - CHECK_INSTALL_OS
-#####################################################################
-
-check_install_os() {
-    [ "$install_os_selected" == "$1" ]
-}
-
-check_pkgmgr_apt() {
-    check_install_os "debian" \
-        || check_install_os "ubuntu"
-}
-
-check_pkgmgr_pacman() {
-    check_install_os "arch" \
-        || check_install_os "artix"
-}
-
-#####################################################################
 # VARIABLES - DEBIAN-SETUP
 #####################################################################
 
@@ -218,7 +184,7 @@ add_user_and_pass() {
         9 70
 
     # change root password; if successful, unset the password
-    echo "root:$rootpass1" | chpasswd \
+    echo "root:${rootpass1}" | chpasswd \
         && unset rootpass1 rootpass2
 
     # create user
@@ -229,7 +195,7 @@ add_user_and_pass() {
         && useradd -G wheel -s /bin/bash -m "$username"
 
     # change user password; if successful, unset the password
-    echo "$username:$userpass1" | chpasswd \
+    echo "${username}:${userpass1}" | chpasswd \
         && unset userpass1 userpass2
 
     # export `repodir`
@@ -304,92 +270,6 @@ setup_ubuntu() {
     template_replace src/templates/etc/kernel-img_ubuntu.conf /etc/kernel-img.conf
 
     template_replace src/templates/etc/netplan/networkmanager_ubuntu.yaml /etc/netplan/networkmanager.yaml
-}
-
-error_install() {
-    echo "Failed to install \`$1\`." >> pkg_fail.txt
-}
-
-install_pkg_aur() {
-    sudo -u "$username" $aurhelper -S --noconfirm "$1" \
-        > /dev/null 2>&1
-}
-
-install_pkg_apt() {
-    apt install -y "$1" \
-        > /dev/null 2>&1
-}
-
-install_pkg_pacman() {
-    pacman --noconfirm --needed -S "$1" \
-        > /dev/null 2>&1
-}
-
-install_pkg() {
-    check_pkgmgr_apt \
-        && install_pkg_apt "$1" \
-        && return 0
-
-    check_pkgmgr_pacman \
-        && install_pkg_pacman "$1" \
-        && return 0
-}
-
-install_loop_install_aur() {
-    whiptail \
-        --title "Package Installation" \
-        --infobox "Installing \`$1\` ($n of $total) from the AUR. $1 $2" \
-        9 70
-
-    install_pkg_aur "$1" \
-        || error_install "$1"
-}
-
-install_loop_install_default() {
-    whiptail \
-        --title "Package Installation" \
-        --infobox "Installing \`$1\` ($n of $total). $1 $2" \
-        9 70
-
-    install_pkg "$1" \
-        || error_install "$1"
-}
-
-prep_packages_file() {
-    ([ -f packages.csv ] && cp packages.csv /tmp/packages.csv) \
-        && sed -i '/^#/d' /tmp/packages.csv \
-        || curl -Ls "$list_packages" | sed '/^#/d' > /tmp/packages.csv
-}
-
-install_loop_read() {
-    total=$(wc -l < /tmp/packages.csv)
-    n="0"
-
-    while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
-        n=$((n + 1))
-        pkg_check_name="pkg_${install_os_selected}"
-
-        # `!` allows the script to print the value of `pkg_${install_os_selected}`
-        # if value of `pkg_check_name` is `skip`, skips to the next package
-        [ "${!pkg_check_name}" == "skip" ] \
-            && continue
-
-        echo "$comment" | grep -q "^\".*\"$" \
-            && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
-
-        [ ! -z "${!pkg_check_name}" ] \
-            && [ "$tag" == "A" ] \
-            && install_loop_install_aur "${!pkg_check_name}" "$comment" \
-            && continue
-
-        install_loop_install_default "$pkg" "$comment"
-    done < /tmp/packages.csv
-}
-
-install_loop() {
-    prep_packages_file
-
-    install_loop_read
 }
 
 create_useful_directories() {
@@ -816,6 +696,8 @@ final_message() {
 playbook_post_chroot() {
     echo "Updating packages, one moment..."
 
+    cd "/root/.local/src/${post_chroot_path}"
+
     check_pkgmgr_apt \
         && apt update \
             > /dev/null 2>&1 \
@@ -839,6 +721,8 @@ playbook_post_chroot() {
 
     check_install_os "ubuntu" \
         && setup_ubuntu
+
+    package_file="src/packages/packages_base.csv"
 
     install_loop \
         || error "Failed during the install loop."

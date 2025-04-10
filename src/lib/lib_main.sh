@@ -14,8 +14,7 @@ export TERM=ansi
 export path_dev="/dev"
 export path_dev_mapper="/dev/mapper"
 
-## LISTS
-
+## LIST OF SUPPORTED OS
 os_supported=(
     "arch"
     "artix"
@@ -24,25 +23,8 @@ os_supported=(
 )
 
 #####################################################################
-# FUNCTIONS - WELCOME
+# FUNCTIONS - PRE-FLIGHT CHECKS
 #####################################################################
-
-error() {
-    echo "$1" >&2 \
-        && exit 1
-}
-
-welcome_screen() {
-    whiptail \
-        --title "Welcome!" \
-        --yesno "On the next few screens, you will be asked some questions.
-            \\nThe script will configure and install Linux based on the provided answers.
-            \\nYou will have a chance to exit out of the script before any changes are made." \
-        --yes-button "Let's go!" \
-        --no-button "No thanks." \
-        25 78 \
-        3>&1 1>&2 2>&3 3>&1
-}
 
 get_setup_os() {
     # don't like that the grep is O(n)
@@ -55,12 +37,69 @@ get_setup_os() {
     done
 }
 
-#####################################################################
-# FUNCTIONS - CHECK_SETUP_OS
-#####################################################################
-
 check_setup_os() {
     [ "$setup_os" == "$1" ]
+}
+
+get_ram_size() {
+    # `--si` gets the human readable `-h` in units of "GB"
+    ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
+}
+
+#####################################################################
+# FUNCTIONS - WELCOME
+#####################################################################
+
+welcome_screen() {
+    whiptail \
+        --title "Welcome!" \
+        --yesno "Greetings, and welcome to DavidVogelxyz's automatic Linux installer!
+            \\nOn the next few screens, you will be asked some configuration questions.
+            \\nThe script will configure and install Linux based on the provided answers.
+            \\nYou will have a chance to exit out of the script before any changes are made." \
+        --yes-button "Let's go!" \
+        --no-button "No thanks." \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+}
+
+#####################################################################
+# FUNCTIONS - ASK_DEBOOTSTRAP
+#####################################################################
+
+ask_debootstrap_install_os() {
+    # Debootstrap OS options
+    debootstrap_os_choices=(
+        "debian" "| Debian 12 - Bookworm"
+        "ubuntu" "| Ubuntu 24 - Noble"
+    )
+
+    export install_os_selected=$(whiptail \
+        --title "Debootstrap - Install OS" \
+        --menu "\\nThe script noticed that you are using an Ubuntu image.
+            \\nPlease select the OS to install:" \
+        25 78 10 \
+        "${debootstrap_os_choices[@]} " \
+        3>&1 1>&2 2>&3 3>&1
+    )
+}
+
+debootstrap_release_version() {
+    check_install_os "debian" \
+        && release_selected="bookworm" \
+        && return 0
+
+    check_install_os "ubuntu" \
+        && release_selected="noble" \
+        && return 0
+}
+
+ask_debootstrap() {
+    ask_debootstrap_install_os \
+        || error "Failed to get \`debootstrap\` install OS."
+
+    debootstrap_release_version \
+        || error "Failed to get \`debootstrap\` release version."
 }
 
 #####################################################################
@@ -151,15 +190,7 @@ get_disks() {
 # FUNCTIONS - GET_SETUP_INFO
 #####################################################################
 
-get_ram_size() {
-    # `--si` gets the human readable `-h` in units of "GB"
-    ram_size=$(free -th --si | grep "Total" | awk '{print $2}')
-}
-
 get_setup_info() {
-    # sets `setup_os`
-    get_setup_os
-
     # sets `uefi` (0 is "legacy BIOS")
     get_uefi \
         || error "Failed to set UEFI."
@@ -173,8 +204,11 @@ get_setup_info() {
 
     [ -z "$install_os_selected" ] \
         && export install_os_selected="$setup_os"
+
     [ -z "$release_selected" ] \
         && release_selected="rolling"
+
+    return 0
 }
 
 #####################################################################
@@ -286,53 +320,6 @@ get_partition_info() {
             get_encryption_pass \
                 || error "Failed to get an encryption password."
         }
-}
-
-#####################################################################
-# FUNCTIONS - CHECK_INSTALL_OS
-#####################################################################
-
-check_install_os() {
-    [ "$install_os_selected" == "$1" ]
-}
-
-#####################################################################
-# FUNCTIONS - ASK_DEBOOTSTRAP
-#####################################################################
-
-ask_debootstrap_install_os() {
-    # Debootstrap OS options
-    debootstrap_os_installable=(
-        "debian" "| Debian 12 - Bookworm"
-        "ubuntu" "| Ubuntu 24 - Noble"
-    )
-
-    install_os_selected=$(whiptail \
-        --title "Debootstrap - Install OS" \
-        --menu "\\nThe script noticed that you are using an Ubuntu image.
-            \\nPlease select the OS to install:" \
-        25 78 10 \
-        "${debootstrap_os_installable[@]} " \
-        3>&1 1>&2 2>&3 3>&1
-    )
-}
-
-debootstrap_release_version() {
-    check_install_os "debian" \
-        && release_selected="bookworm" \
-        && return 0
-
-    check_install_os "ubuntu" \
-        && release_selected="noble" \
-        && return 0
-}
-
-ask_debootstrap() {
-    ask_debootstrap_install_os \
-        || error "Failed to get \`debootstrap\` install OS."
-
-    debootstrap_release_version \
-        || error "Failed to get \`debootstrap\` release version."
 }
 
 #####################################################################
@@ -507,7 +494,7 @@ get_networking_info() {
 # FUNCTIONS - DEBIAN-SETUP - QUESTIONS
 #####################################################################
 
-questions() {
+ask_timezone() {
     # would still need to ask this question
     export timezone=$(whiptail \
         --title "Timezone" \
@@ -519,7 +506,9 @@ questions() {
         "US/Pacific" "" \
         3>&1 1>&2 2>&3 3>&1
     )
+}
 
+ask_region() {
     # would still need to ask this question
     export region=$(whiptail \
         --title "Region" \
@@ -528,18 +517,28 @@ questions() {
         "en_US" "" \
         3>&1 1>&2 2>&3 3>&1
     )
+}
 
+ask_swap() {
     # this should be asked sooner
     # change variable!
     export swapanswer=$(whiptail \
         --title "Swap Partition?" \
-        --menu "\\nDoes this computer have a swap partition?" \
+        --menu "\\nShould the script create a swap partition for this machine?" \
         14 80 4 \
         "false" "| No, do not create a swap partition."\
         "true" "| Yes, create a swap partition."\
         3>&1 1>&2 2>&3 3>&1
     ) \
         || exit 1
+}
+
+questions() {
+    ask_timezone
+
+    ask_region
+
+    ask_swap
 }
 
 #####################################################################
@@ -566,11 +565,11 @@ ask_confirm_inputs() {
         --title "Confirm Inputs" \
         --yesno "\\nHere's what we have:
             \\n    Image OS                     =   $setup_os
+            \\n    Installing OS & release      =   $install_os_selected $release_selected
             \\n    Firmware                     =   $uefi $partition_scheme_selected
             \\n    Disk selected                =   ${path_dev}/${disk_selected}
             \\n    Encryption                   =   $encryption
             \\n    LVM name                     =   ${path_dev_mapper}/${lvm_name}
-            \\n    Installing OS & release      =   $install_os_selected $release_selected
             \\n    user@hostname.domain         =   ${username}@${hostname}.${localdomain}
             \\n    Timezone                     =   $timezone
             \\n    Region                       =   $region
@@ -771,27 +770,19 @@ update_mirrors() {
         --infobox "Making sure that the \`${mirrorlist_dest}\` file is good..." \
         8 78
 
-    # just long enough for the screen to be read
-    sleep 1
-
     [ -f "$mirrorlist_src" ] \
         && [ -f "$mirrorlist_dest" ] \
         && diff "$mirrorlist_dest" "$mirrorlist_src"
 
     # update `sources.list`
-    check_install_os "debian" \
-        || check_install_os "ubuntu" \
+    check_pkgmgr_apt \
         && cp "$mirrorlist_src" "/mnt$mirrorlist_dest"
 
-    check_install_os "arch" \
-        || check_install_os "artix" \
+    check_pkgmgr_pacman \
         && cp "$mirrorlist_src" "$mirrorlist_dest"
 
     unset mirrorlist_src
     unset mirrorlist_dest
-
-    # just long enough for the screen to be read
-    sleep 1
 }
 
 lsblk_to_grub() {
