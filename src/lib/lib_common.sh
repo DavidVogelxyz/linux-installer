@@ -1,11 +1,11 @@
 #!/bin/sh
 
 #####################################################################
-# FUNCTIONS - CHECK_INSTALL_OS
+# FUNCTIONS - CHECK_LINUX_INSTALL
 #####################################################################
 
-check_install_os() {
-    [ "$install_os_selected" == "$1" ]
+check_linux_install() {
+    [ "$linux_install" == "$1" ]
 }
 
 #####################################################################
@@ -13,13 +13,13 @@ check_install_os() {
 #####################################################################
 
 check_pkgmgr_apt() {
-    check_install_os "debian" \
-        || check_install_os "ubuntu"
+    check_linux_install "debian" \
+        || check_linux_install "ubuntu"
 }
 
 check_pkgmgr_pacman() {
-    check_install_os "arch" \
-        || check_install_os "artix"
+    check_linux_install "arch" \
+        || check_linux_install "artix"
 }
 
 #####################################################################

@@ -34,7 +34,7 @@ set_datetime() {
 
     # sync system to hardware clock
     # Ubuntu doesn't have `hwclock`
-    check_install_os "ubuntu" \
+    check_linux_install "ubuntu" \
         || sync_clock
 }
 
@@ -91,13 +91,13 @@ arch_pacman_color() {
 }
 
 arch_add_arch_mirror() {
-    check_install_os "arch" \
+    check_linux_install "arch" \
         && {
             install_pkg_pacman archlinux-keyring
         } \
         && return 0
 
-    check_install_os "artix" \
+    check_linux_install "artix" \
         && {
             install_pkg_pacman artix-keyring
             install_pkg_pacman artix-archlinux-support
@@ -505,7 +505,7 @@ doconfigs() {
         }
 
     # enable networking on Arch
-    check_install_os "arch" \
+    check_linux_install "arch" \
         && {
             systemctl enable NetworkManager > /dev/null 2>&1 \
                 && systemctl enable dhcpcd > /dev/null 2>&1 \
@@ -513,18 +513,18 @@ doconfigs() {
         }
 
     # enable ssh on Arch
-    check_install_os "arch" \
+    check_linux_install "arch" \
         && {
             systemctl enable sshd > /dev/null 2>&1 \
                 || error "Failed when enabling SSH."
         }
 
     # enable networking on Artix
-    check_install_os "artix" \
+    check_linux_install "artix" \
         && ln -s /etc/runit/sv/NetworkManager /etc/runit/runsvdir/current
 
     # enables autologin on Artix
-    check_install_os "artix" \
+    check_linux_install "artix" \
         && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
 
     # add relevant content to the `/etc/fstab` file
@@ -719,7 +719,7 @@ playbook_post_chroot() {
     setup_locale \
         || error "Failed to set up locale."
 
-    check_install_os "ubuntu" \
+    check_linux_install "ubuntu" \
         && setup_ubuntu
 
     package_file="src/packages/packages_base.csv"
@@ -739,12 +739,9 @@ playbook_post_chroot() {
     run_grub-install \
         || error "Failed during GRUB install."
 
-    export flag_graphical_enviroment=true
-    export flag_dwm=true
-
     cd "/root/.local/src/${post_chroot_path}"
 
-    [ "$flag_graphical_enviroment" = true ] \
+    [ "$graphical_enviroment" != "server" ] \
         && {
             bash src/graphical-environments.sh \
                 || error "Failed when installing the graphical environment."

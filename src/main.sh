@@ -31,21 +31,33 @@ done
 # RUN THE PLAYBOOK
 #####################################################################
 
-# sets `setup_os`, or error
-get_setup_os \
+# sets `linux_iso`, or error
+get_linux_iso \
     || error "It appears that the OS image you're using isn't supported by this script. Sorry!"
 
-# if `setup_os` is `artix`, install `whiptail`
-check_setup_os "artix" \
+# if `linux_iso` is `artix`, install `whiptail`
+check_linux_iso "artix" \
     && (pacman -S --noconfirm --needed libnewt || error "Are you sure you're running as root?")
 
-# informs the user of how the script works, or error
+# WHIPTAIL 1
+# informs the user of how the script works
 welcome_screen \
     || error "Failed at the welcome screen."
 
-# if Ubuntu image, configures `debootstrap`
-check_setup_os "ubuntu" \
-    && ask_debootstrap
+# WHIPTAIL 2
+# confirms with the user both the Linux distro of the ISO, as well as the Linux distro to install
+set_linux_install \
+    || error "Failed to properly set a Linux distribution to install."
+
+# WHIPTAIL 3
+# allows the user to choose (or refuse) a graphical environment
+set_graphical_environment \
+    || error "Failed to choose (or refuse) a graphical environment."
+
+# WHIPTAIL 4
+# allows the user to choose a web browser, if a graphical environment was chosen
+set_browser_install \
+    || error "Failed to choose a web browser."
 
 # gather information
 # gets info about system, with little user input, or error
@@ -79,16 +91,16 @@ mount_file_systems \
 # begin install
 # probably want to use a match (case) function in the future
 # runs basestrap on Artix images; exit on success
-check_setup_os "artix" \
+check_linux_iso "artix" \
     && run_basestrap \
     && exit 0
 
 # runs pacstrap on Arch images; exit on success
-check_setup_os "arch" \
+check_linux_iso "arch" \
     && run_pacstrap \
     && exit 0
 
 # runs debootstrap on Ubuntu images; exit on success
-check_setup_os "ubuntu" \
+check_linux_iso "ubuntu" \
     && run_debootstrap \
     && exit 0

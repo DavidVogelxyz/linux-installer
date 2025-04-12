@@ -1,12 +1,12 @@
 #!/bin/sh
 
 #export username="test"
-#export install_os_selected="artix"
+#export linux_install="artix"
 export repodir="/home/$username/.local/src"
 
 # REQUIRES THE FOLLOWING VARIABLES TO BE ALREADY SET:
 # username
-# install_os_selected
+# linux_install
 # repodir
 
 aurhelper="yay"
@@ -29,13 +29,13 @@ arch_aur_prep() {
 }
 
 arch_add_arch_mirror() {
-    check_install_os "arch" \
+    check_linux_install "arch" \
         && {
             install_pkg_pacman archlinux-keyring
         } \
         && return 0
 
-    check_install_os "artix" \
+    check_linux_install "artix" \
         && {
             install_pkg_pacman artix-keyring
             install_pkg_pacman artix-archlinux-support
@@ -58,29 +58,15 @@ arch_aur_install() {
 }
 
 #####################################################################
-# FUNCTIONS - CHECK_INSTALL_OS
+# FUNCTIONS - ERROR_INSTALL
 #####################################################################
-
-check_install_os() {
-    [ "$install_os_selected" == "$1" ]
-}
-
-check_pkgmgr_apt() {
-    check_install_os "debian" \
-        || check_install_os "ubuntu"
-}
-
-check_pkgmgr_pacman() {
-    check_install_os "arch" \
-        || check_install_os "artix"
-}
 
 error_install() {
     echo "Failed to install \`$1\`." >> "$file_pkg_fail"
 }
 
 #####################################################################
-# FUNCTIONS - CHECK_INSTALL_OS
+# FUNCTIONS - OTHER FUNCTIONS
 #####################################################################
 
 run_git-clone() {
@@ -207,11 +193,11 @@ fixes_post_install_dwm() {
         && sudo -u "$username" ln -s "$file_wallpaper" bg
 }
 
-fixes_post_install_gnome() {
+install_gnome_dash-to-dock() {
     progname="dash-to-dock"
     dir="$repodir/$progname"
 
-    check_install_os "debian" \
+    check_linux_install "debian" \
         && {
             install_pkg_apt gettext
             install_pkg_apt sassc
@@ -245,6 +231,34 @@ fixes_post_install_gnome() {
         || return 1
 }
 
+fixes_post_install_gnome() {
+    # install `dash-to-dock` extension
+    # may only currently work on Debian
+    install_gnome_dash-to-dock
+
+    # add GNOME tweaks to Debian
+    check_linux_install "debian" \
+        && install_pkg_apt gnome-tweaks
+}
+
+install_brave_apt() {
+    curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
+        && echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list \
+        && apt update \
+            > /dev/null 2>&1 \
+        && apt install brave-browser
+}
+
+install_browser() {
+    [ "$linux_install" = "debian" ] \
+        && [ "$browser_install" = "firefox" ] \
+        && install_pkg_apt firefox_esr
+
+    check_pkgmgr_apt \
+        && [ "$browser_install" = "brave" ] \
+        && install_brave_apt
+}
+
 #####################################################################
 # ACTUAL SCRIPT - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
@@ -272,10 +286,10 @@ playbook_kde() {
         --infobox "Installing KDE." \
         9 70
 
-    check_install_os "debian" \
+    check_linux_install "debian" \
         && install_pkg_apt kde-plasma-desktop
 
-    check_install_os "ubuntu" \
+    check_linux_install "ubuntu" \
         && install_pkg_apt kubuntu-desktop
 
     check_pkgmgr_pacman \
@@ -283,6 +297,8 @@ playbook_kde() {
         #&& install_pkg_pacman xorg-xserver \
         #&& install_pkg_pacman xorg-xinit \
         #&& install_pkg_pacman plasma-desktop
+
+    install_browser
 
     return 0
 }
@@ -310,10 +326,10 @@ playbook_gnome() {
         --infobox "Installing GNOME." \
         9 70
 
-    check_install_os "debian" \
+    check_linux_install "debian" \
         && install_pkg_apt gnome-core
 
-    check_install_os "ubuntu" \
+    check_linux_install "ubuntu" \
         && install_pkg_apt ubuntu-desktop-minimal
 
     #check_pkgmgr_pacman \
@@ -321,15 +337,17 @@ playbook_gnome() {
     #    && install_pkg_pacman gnome
 
     # post install GNOME fixes for machines that ARE NOT Ubuntu
-    check_install_os "ubuntu" \
+    check_linux_install "ubuntu" \
         || fixes_post_install_gnome
 
-    #check_install_os "arch" \
+    #check_linux_install "arch" \
     #    && systemctl enable gdm
 
-    #check_install_os "artix" \
+    #check_linux_install "artix" \
     #    && install_pkg_pacman gdm-runit \
     #    && ln -s /etc/runit/sv/gdm /run/runit/service
+
+    install_browser
 
     return 0
 }
@@ -376,4 +394,18 @@ playbook_dwm() {
     fixes_post_install_dwm
 
     return 0
+}
+
+playbook_graphical_environment() {
+    [ "$graphical_environment" = "dwm" ] \
+        && playbook_dwm \
+        && return 0
+
+    [ "$graphical_environment" = "gnome" ] \
+        && playbook_gnome \
+        && return 0
+
+    [ "$graphical_environment" = "kde" ] \
+        && playbook_kde \
+        && return 0
 }

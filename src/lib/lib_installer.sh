@@ -105,7 +105,7 @@ prep_packages_file() {
 
 install_loop_read() {
     curr_dir="$(pwd)"
-    pkg_check_name="pkg_${install_os_selected}"
+    pkg_check_name="pkg_${linux_install}"
 
     total=$(wc -l < "/tmp/${package_file##*/}")
     n="0"
@@ -113,7 +113,7 @@ install_loop_read() {
     while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
         n=$((n + 1))
 
-        # `!` allows the script to print the value of `pkg_${install_os_selected}`
+        # `!` allows the script to print the value of `pkg_${linux_install}`
         # if value of `pkg_check_name` is `skip`, skips to the next package
         [ "${!pkg_check_name}" == "skip" ] \
             && continue

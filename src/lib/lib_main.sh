@@ -15,7 +15,7 @@ export path_dev="/dev"
 export path_dev_mapper="/dev/mapper"
 
 ## LIST OF SUPPORTED OS
-os_supported=(
+linux_supported=(
     "arch"
     "artix"
     "debian"
@@ -26,19 +26,19 @@ os_supported=(
 # FUNCTIONS - PRE-FLIGHT CHECKS
 #####################################################################
 
-get_setup_os() {
+get_linux_iso() {
     # don't like that the grep is O(n)
     # would it be faster to search once, grab `ID`, and then check against supported OS?
     # probably
-    for os in "${os_supported[@]}"; do
+    for os in "${linux_supported[@]}"; do
         grep -q "ID=$os" /etc/os-release \
-            && export setup_os="$os" \
+            && export linux_iso="$os" \
             && break
     done
 }
 
-check_setup_os() {
-    [ "$setup_os" == "$1" ]
+check_linux_iso() {
+    [ "$linux_iso" == "$1" ]
 }
 
 get_ram_size() {
@@ -47,7 +47,7 @@ get_ram_size() {
 }
 
 #####################################################################
-# FUNCTIONS - WELCOME
+# FUNCTIONS - WELCOME_SCREEN
 #####################################################################
 
 welcome_screen() {
@@ -64,42 +64,116 @@ welcome_screen() {
 }
 
 #####################################################################
-# FUNCTIONS - ASK_DEBOOTSTRAP
+# FUNCTIONS - SET_INSTALL_OS
 #####################################################################
 
 ask_debootstrap_install_os() {
-    # Debootstrap OS options
-    debootstrap_os_choices=(
+    # Linux distro choices for `debootstrap`
+    debootstrap_distros=(
         "debian" "| Debian 12 - Bookworm"
         "ubuntu" "| Ubuntu 24 - Noble"
     )
 
-    export install_os_selected=$(whiptail \
-        --title "Debootstrap - Install OS" \
-        --menu "\\nThe script noticed that you are using an Ubuntu image.
-            \\nPlease select the OS to install:" \
+    linux_install=$(whiptail \
+        --title "OS Identification" \
+        --menu "\\nThis installer believes that it's currently running on \"${linux_iso}\".
+            \\nWhen installing via \`debootstrap\`, the user has a choice of which Linux distribution to install.
+            \\nPlease select from the following options:" \
         25 78 10 \
-        "${debootstrap_os_choices[@]} " \
+        "${debootstrap_distros[@]} " \
+        3>&1 1>&2 2>&3 3>&1
+    )
+
+    check_linux_install "debian" \
+        && release_install="bookworm" \
+        && return 0
+
+    check_linux_install "ubuntu" \
+        && release_install="noble" \
+        && return 0
+}
+
+os_identify_screen() {
+    whiptail \
+        --title "OS Identification" \
+        --yesno "This installer believes that it's currently running on \"${linux_iso}\".
+            \\nBecause of this, the installer will attempt to install \"${linux_install} ${release_install}\".
+            \\nIf this is incorrect, please exit the script now." \
+        --yes-button "That's correct!" \
+        --no-button "No, that's incorrect." \
+        25 78 \
+        3>&1 1>&2 2>&3 3>&1
+}
+
+set_linux_install() {
+    export linux_install=""
+
+    check_linux_iso "ubuntu" \
+        && {
+            ask_debootstrap_install_os \
+                && return 0 \
+                || return 1
+        }
+
+    [ -z "$linux_install" ] \
+        && linux_install="$linux_iso"
+
+    [ -z "$release_install" ] \
+        && release_install="rolling"
+
+    os_identify_screen \
+        || return 1
+}
+
+#####################################################################
+# FUNCTIONS - SET_ENVIRONMENT
+#####################################################################
+
+set_graphical_environment() {
+    export graphical_environment=""
+
+    choices_environment=(
+        "server" "| No graphical environment."
+        "dwm" "| DavidVogelxyz's custom build of DWM."
+    )
+
+    (check_linux_install "debian" || check_linux_install "ubuntu") \
+        && choices_environment+=("gnome" "| The GNOME desktop environment.") \
+        && choices_environment+=("kde" "| The KDE desktop environment.")
+
+    graphical_environment=$(whiptail \
+        --title "Graphical Environment" \
+        --menu "\\nPlease choose from the following options:" \
+        25 78 10 \
+        "${choices_environment[@]} " \
         3>&1 1>&2 2>&3 3>&1
     )
 }
 
-debootstrap_release_version() {
-    check_install_os "debian" \
-        && release_selected="bookworm" \
+#####################################################################
+# FUNCTIONS - SET_BROWSER_INSTALL
+#####################################################################
+
+set_browser_install() {
+    ([ "$graphical_environment" = "server" ] || [ "$graphical_environment" = "dwm" ]) \
         && return 0
 
-    check_install_os "ubuntu" \
-        && release_selected="noble" \
-        && return 0
-}
+    export browser_install=""
+    choices_browser=()
 
-ask_debootstrap() {
-    ask_debootstrap_install_os \
-        || error "Failed to get \`debootstrap\` install OS."
+    (check_linux_install "debian" || check_linux_install "ubuntu") \
+        && choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
 
-    debootstrap_release_version \
-        || error "Failed to get \`debootstrap\` release version."
+    check_linux_install "debian" \
+        && choices_browser+=("firefox" "| The Firefox web browser.")
+
+    browser_install=$(whiptail \
+        --title "Web Browser" \
+        --menu "\\nPlease choose from the following options:" \
+        25 78 10 \
+        "${choices_browser[@]} " \
+        3>&1 1>&2 2>&3 3>&1
+    )
 }
 
 #####################################################################
@@ -201,12 +275,6 @@ get_setup_info() {
 
     # set `ram_size` in the format of `xyGB`
     get_ram_size
-
-    [ -z "$install_os_selected" ] \
-        && export install_os_selected="$setup_os"
-
-    [ -z "$release_selected" ] \
-        && release_selected="rolling"
 
     return 0
 }
@@ -564,8 +632,8 @@ ask_confirm_inputs() {
     whiptail \
         --title "Confirm Inputs" \
         --yesno "\\nHere's what we have:
-            \\n    Image OS                     =   $setup_os
-            \\n    Installing OS & release      =   $install_os_selected $release_selected
+            \\n    Image OS                     =   $linux_iso
+            \\n    Install OS & release         =   $linux_install $release_install
             \\n    Firmware                     =   $uefi $partition_scheme_selected
             \\n    Disk selected                =   ${path_dev}/${disk_selected}
             \\n    Encryption                   =   $encryption
@@ -656,7 +724,7 @@ create_swap() {
             export volume_physical="${partition_crypt}"
         }
 
-    export group_volume="vg${install_os_selected}"
+    export group_volume="vg${linux_install}"
     export swap_name="swap_1"
     export volume_logical_swap="${path_dev_mapper}/${group_volume}-${swap_name}"
     export volume_logical_root="${path_dev_mapper}/${group_volume}-root"
@@ -750,7 +818,7 @@ basestrap_mirrorlist() {
 
 pacstrap_mirrorlist() {
     pkgmgr="pacman"
-    mirrorlist_src="src/templates/${pkgmgr}/${install_os_selected}_mirrorlist"
+    mirrorlist_src="src/templates/${pkgmgr}/${linux_install}_mirrorlist"
     mirrorlist_dest="/etc/pacman.d/mirrorlist"
 
     update_mirrors
@@ -758,7 +826,7 @@ pacstrap_mirrorlist() {
 
 debootstrap_sourceslist() {
     pkgmgr="apt"
-    mirrorlist_src="src/templates/${pkgmgr}/${install_os_selected}_${release_selected}_sources.list"
+    mirrorlist_src="src/templates/${pkgmgr}/${linux_install}_${release_install}_sources.list"
     mirrorlist_dest="/etc/apt/sources.list"
 
     update_mirrors
@@ -908,7 +976,7 @@ run_debootstrap() {
     run_pre_debootstrap || error "Failed to set up for \`debootstrap\`."
 
     # do the `debootstrap`
-    debootstrap $release_selected /mnt || error "Failed to run \`debootstrap\`."
+    debootstrap $release_install /mnt || error "Failed to run \`debootstrap\`."
 
     bind_mounts || error "Failed to bind mounts."
 

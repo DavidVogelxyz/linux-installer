@@ -32,5 +32,5 @@ done
 # RUN THE PLAYBOOK
 #####################################################################
 
-# performs the graphical install
-playbook_graphical_environments
+# performs the install of the selected graphical environment
+playbook_graphical_environment
