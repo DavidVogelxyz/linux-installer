@@ -523,10 +523,6 @@ doconfigs() {
     check_linux_install "artix" \
         && ln -s /etc/runit/sv/NetworkManager /etc/runit/runsvdir/current
 
-    # enables autologin on Artix
-    check_linux_install "artix" \
-        && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
-
     # add relevant content to the `/etc/fstab` file
     check_pkgmgr_apt \
         && {

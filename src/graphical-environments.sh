@@ -8,6 +8,9 @@
 libraries=(
     "src/lib/lib_common.sh"
     "src/lib/lib_installer.sh"
+    "src/lib/lib_dwm.sh"
+    "src/lib/lib_gnome.sh"
+    "src/lib/lib_kde.sh"
     "src/lib/lib_graphical-environments.sh"
 )
 

@@ -1,22 +1,40 @@
 #!/bin/sh
 
-#export username="test"
-#export linux_install="artix"
-export repodir="/home/$username/.local/src"
-
 # REQUIRES THE FOLLOWING VARIABLES TO BE ALREADY SET:
 # username
 # linux_install
 # repodir
 
+#export username="test"
+#export linux_install="artix"
+export repodir="/home/$username/.local/src"
+
 aurhelper="yay"
 export TERM=ansi
 
-list_packages="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/master/packages.csv"
+#####################################################################
+# FUNCTIONS - OTHER FUNCTIONS
+#####################################################################
 
-#####################################################################
-# FUNCTIONS
-#####################################################################
+error_install() {
+    echo "Failed to install \`$1\`." >> "$file_pkg_fail"
+}
+
+whiptail_check() {
+    #echo "Updating packages, one moment..."
+
+    check_pkgmgr_apt \
+        && apt update \
+            > /dev/null 2>&1 \
+        && install_pkg_apt whiptail \
+            > /dev/null 2>&1
+
+    check_pkgmgr_pacman \
+        && pacman -Sy \
+            > /dev/null 2>&1 \
+        && install_pkg_pacman libnewt \
+            > /dev/null 2>&1
+}
 
 arch_aur_prep() {
     # Allow user to run sudo without entering a password.
@@ -57,18 +75,6 @@ arch_aur_install() {
     $aurhelper -Y --save --devel
 }
 
-#####################################################################
-# FUNCTIONS - ERROR_INSTALL
-#####################################################################
-
-error_install() {
-    echo "Failed to install \`$1\`." >> "$file_pkg_fail"
-}
-
-#####################################################################
-# FUNCTIONS - OTHER FUNCTIONS
-#####################################################################
-
 run_git-clone() {
     # add some error correction:
     # - what if the repo already exists?
@@ -76,177 +82,12 @@ run_git-clone() {
     git clone "$1" "$2" > /dev/null 2>&1
 }
 
-fixes_post_install_dwm() {
-    # the xprofile file
-    file_xprofile=".dotfiles/.xprofile"
-
-    # xprofile should have a link in the homedir
-    # FUTURE: add check to see if link should be unlinked in the first place
-    cd "/home/${username}" \
-        && sudo -u "$username" \
-            ln -s "$file_xprofile" .
-
-    # the xinitrc file
-    file_xinitrc="$(readlink .dotfiles/.config/x11/xinitrc)"
-
-    # the xprofile file
-    file_xprofile="$(readlink .dotfiles/.xprofile)"
-
-    # the zprofile file
-    file_zprofile="$(readlink .dotfiles/.zprofile)"
-
-    # undo a commented out line in zprofile
-    # FUTURE: add check to see if line should be commented in the first place
-    check_path_file "$file_zprofile" \
-        && sed -i \
-            's/^#\[ \"\$(tty)\"/[ "$(tty)"/g' \
-            "$file_zprofile"
-
-    # undo a commented out line in zprofile
-    # FUTURE: add check to see if line should be commented in the first place
-    check_path_file "$file_zprofile" \
-        && sed -i \
-            's/^#sudo -n loadkeys "$XDG_DATA_HOME/sudo -n loadkeys "$XDG_DATA_HOME/g' \
-            "$file_zprofile"
-
-    # xinitrc should have a change
-    # this is due to stow - the file is a link, not a file
-    # FUTURE: change should be upstream in `dotfiles` repo
-    check_path_file "$file_xinitrc" \
-        && sed -i \
-            's/^if \[ -f/if \[ -e/g' \
-            "$file_xinitrc"
-
-    # since testing on VM, fix the resolution
-    check_path_file "$file_xprofile" \
-        && sed -i \
-            's/^#xrandr -s/xrandr -s/g' \
-            "$file_xprofile"
-
-    # getting extra progs into `~/.local/bin`
-    cd "/home/${username}/.local/bin" \
-        || error "Failed to change directory to \`/home/${username}/.local/bin\` for additional dotfile deployment."
-
-    sudo -u "$username" run_git-clone "https://github.com/LukeSmithxyz/voidrice" "$repodir/voidrice"
-
-    mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
-
-    for file in "${list_of_files[@]}"; do
-        file=$(basename "$file")
-
-        [ -e "$file" ] \
-            || sudo -u "$username" ln -s "../src/voidrice/.local/bin/${file}" .
-    done
-
-    # getting extra progs into `~/.local/bin/statusbar`
-    cd "/home/${username}/.local/bin/statusbar" \
-        || error "Failed to change directory to \`/home/${username}/.local/bin/statusbar\` for additional dotfile deployment."
-
-    mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin/statusbar" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
-
-    for file in "${list_of_files[@]}"; do
-        file=$(basename "$file")
-
-        [ -e "$file" ] \
-            || sudo -u "$username" ln -s "../../src/voidrice/.local/bin/statusbar/${file}" .
-    done
-
-    # getting extra dotfiles into `~/.config`
-    cd "/home/${username}/.config" \
-        || error "Failed to change directory to \`/home/${username}/.config\` for additional dotfile deployment."
-
-    list_of_dirs=(
-        "dunst"
-        "fontconfig"
-        "gtk-2.0"
-        "gtk-3.0"
-        "mimeapps.list"
-        "mpd"
-        "mpv"
-        "newsboat"
-        "pipewire"
-        "pulse"
-        "sxiv"
-        "user-dirs.dirs"
-        "wal"
-        "wget"
-        "zathura"
-        )
-
-    for dir in "${list_of_dirs[@]}"; do
-        [ -e "$dir" ] \
-            || sudo -u "$username" ln -s "../.local/src/voidrice/.config/${dir}" .
-    done
-
-    # set the `.gtkrc-2.0` symlink
-    cd "/home/${username}" \
-        && sudo -u "$username" ln -s .local/src/voidrice/.gtkrc-2.0 .
-
-    # get a wallpaper
-    file_wallpaper="https://raw.githubusercontent.com/DavidVogelxyz/wallpapers/master/artists/muhammad-nafay/wallhaven-g8pmol.jpg"
-
-    cd "/home/$username/.local/share" \
-        && sudo -u "$username" curl -LJO "$file_wallpaper"
-
-    # set the wallpaper
-    file_wallpaper=$(basename "$file_wallpaper") \
-        && sudo -u "$username" ln -s "$file_wallpaper" bg
-}
-
-install_gnome_dash-to-dock() {
-    progname="dash-to-dock"
-    dir="$repodir/$progname"
-
-    check_linux_install "debian" \
-        && {
-            install_pkg_apt gettext
-            install_pkg_apt sassc
-        }
-
-    #install_pkg_git "https://github.com/micheleg/dash-to-dock"
-
-    sudo -u "$username" git -C "$repodir" clone \
-        --depth 1 \
-        --single-branch \
-        --no-tags \
-        -q \
-        "https://github.com/micheleg/dash-to-dock" "$dir" \
-        || {
-            cd "$dir" \
-                || return 1
-
-            sudo -u "$username" git pull --force origin master
-        }
-
-    cd "$dir" \
-        || exit 1
-
-    sudo -u "$username" make \
-        > /dev/null 2>&1
-
-    sudo -u "$username" make install \
-        > /dev/null 2>&1
-
-    cd /tmp \
-        || return 1
-}
-
-fixes_post_install_gnome() {
-    # install `dash-to-dock` extension
-    # may only currently work on Debian
-    install_gnome_dash-to-dock
-
-    # add GNOME tweaks to Debian
-    check_linux_install "debian" \
-        && install_pkg_apt gnome-tweaks
-}
-
 install_brave_apt() {
     curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
         && echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list \
         && apt update \
             > /dev/null 2>&1 \
-        && apt install brave-browser
+        && install_pkg_apt brave-browser
 }
 
 install_browser() {
@@ -260,143 +101,65 @@ install_browser() {
 }
 
 #####################################################################
-# ACTUAL SCRIPT - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
+# FUNCTIONS - PLAYBOOK_KDE
 #####################################################################
 
 playbook_kde() {
-    package_file="src/packages/packages_kde.csv"
-    file_pkg_fail="pkg_fail_kde.txt"
+    # installs KDE
+    # function defined in `lib_kde.sh`
+    install_kde
 
-    echo "Updating packages, one moment..."
-
-    check_pkgmgr_apt \
-        && apt update \
-            > /dev/null 2>&1 \
-        && install_pkg_apt whiptail \
-            > /dev/null 2>&1
-
-    check_pkgmgr_pacman \
-        && pacman -Sy \
-            > /dev/null 2>&1 \
-        && install_pkg_pacman libnewt \
-            > /dev/null 2>&1
-
-    whiptail \
-        --title "KDE Installation" \
-        --infobox "Installing KDE." \
-        9 70
-
-    check_linux_install "debian" \
-        && install_pkg_apt kde-plasma-desktop
-
-    check_linux_install "ubuntu" \
-        && install_pkg_apt kubuntu-desktop
-
-    check_pkgmgr_pacman \
-        && install_pkg_pacman plasma-desktop
-        #&& install_pkg_pacman xorg-xserver \
-        #&& install_pkg_pacman xorg-xinit \
-        #&& install_pkg_pacman plasma-desktop
-
+    # installs the selected web browser
     install_browser
 
     return 0
 }
 
+#####################################################################
+# FUNCTIONS - PLAYBOOK_GNOME
+#####################################################################
+
 playbook_gnome() {
-    package_file="src/packages/packages_gnome.csv"
-    file_pkg_fail="pkg_fail_gnome.txt"
-
-    echo "Updating packages, one moment..."
-
-    check_pkgmgr_apt \
-        && apt update \
-            > /dev/null 2>&1 \
-        && install_pkg_apt whiptail \
-            > /dev/null 2>&1
-
-    check_pkgmgr_pacman \
-        && pacman -Sy \
-            > /dev/null 2>&1 \
-        && install_pkg_pacman libnewt \
-            > /dev/null 2>&1
-
-    whiptail \
-        --title "GNOME Installation" \
-        --infobox "Installing GNOME." \
-        9 70
-
-    check_linux_install "debian" \
-        && install_pkg_apt gnome-core
-
-    check_linux_install "ubuntu" \
-        && install_pkg_apt ubuntu-desktop-minimal
-
-    #check_pkgmgr_pacman \
-    #    && install_pkg_pacman xorg \
-    #    && install_pkg_pacman gnome
+    # installs GNOME
+    # function defined in `lib_gnome.sh`
+    install_gnome
 
     # post install GNOME fixes for machines that ARE NOT Ubuntu
     check_linux_install "ubuntu" \
-        || fixes_post_install_gnome
+        || fix_gnome
 
-    #check_linux_install "arch" \
-    #    && systemctl enable gdm
-
-    #check_linux_install "artix" \
-    #    && install_pkg_pacman gdm-runit \
-    #    && ln -s /etc/runit/sv/gdm /run/runit/service
-
+    # installs the selected web browser
     install_browser
 
     return 0
 }
 
+#####################################################################
+# FUNCTIONS - PLAYBOOK_DWM
+#####################################################################
+
 playbook_dwm() {
-    package_file="src/packages/packages_dwm.csv"
-    file_pkg_fail="pkg_fail_dwm.txt"
-
-    echo "Updating packages, one moment..."
-
-    check_pkgmgr_apt \
-        && apt update \
-            > /dev/null 2>&1 \
-        && install_pkg_apt whiptail \
-            > /dev/null 2>&1
-
-    check_pkgmgr_pacman \
-        && pacman -Sy \
-            > /dev/null 2>&1 \
-        && install_pkg_pacman libnewt \
-            > /dev/null 2>&1
-
-    check_pkgmgr_pacman \
-        && arch_aur_prep
-
-    check_pkgmgr_apt \
-        && dependencies=(
-            "libx11-dev"
-            "libxft-dev"
-            "libxinerama-dev"
-            "libx11-xcb-dev"
-            "libxcb-res0-dev"
-            "libharfbuzz-dev"
-        ) \
-        && for pkg in "${dependencies[@]}" ; do
-            install_pkg_apt "$pkg" \
-                || echo "Failed to install ${pkg}." >> pkg_fail_dwm.txt
-        done
-
-    install_loop \
-        || error "Failed during the install loop."
+    # installs DWM
+    # functions defined in `lib_dwm.sh`
+    install_dwm
 
     # post install DWM fixes
-    fixes_post_install_dwm
+    fix_dwm
 
     return 0
 }
 
+#####################################################################
+# FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
+#####################################################################
+
 playbook_graphical_environment() {
+    package_file="src/packages/packages_${graphical_environment}.csv"
+    file_pkg_fail="pkg_fail_${graphical_environment}.txt"
+
+    # checks for `whiptail`
+    whiptail_check
+
     [ "$graphical_environment" = "dwm" ] \
         && playbook_dwm \
         && return 0
