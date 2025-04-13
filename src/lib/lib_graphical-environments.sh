@@ -75,13 +75,6 @@ arch_aur_install() {
     $aurhelper -Y --save --devel
 }
 
-run_git-clone() {
-    # add some error correction:
-    # - what if the repo already exists?
-    # - possible to check the hashes and only clone if not a repo?
-    git clone "$1" "$2" > /dev/null 2>&1
-}
-
 install_brave_apt() {
     curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
         && echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list \

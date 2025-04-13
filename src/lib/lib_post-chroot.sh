@@ -185,7 +185,7 @@ add_user_and_pass() {
 
     # change root password; if successful, unset the password
     echo "root:${rootpass1}" | chpasswd \
-        && unset rootpass1 rootpass2
+        && unset rootpass1
 
     # create user
     check_pkgmgr_apt \
@@ -196,7 +196,7 @@ add_user_and_pass() {
 
     # change user password; if successful, unset the password
     echo "${username}:${userpass1}" | chpasswd \
-        && unset userpass1 userpass2
+        && unset userpass1
 
     # export `repodir`
     export repodir="/home/$username/.local/src"

@@ -349,8 +349,10 @@ get_partition_info() {
 #####################################################################
 
 ask_root_pass() {
+    export rootpass1=""
+
     # get root pass
-    export rootpass1=$(whiptail \
+    rootpass1=$(whiptail \
         --title "Root Password" \
         --passwordbox "\\nPlease enter a password for the root user." \
         --nocancel \
@@ -386,6 +388,8 @@ ask_root_pass() {
             3>&1 1>&2 2>&3 3>&1
         )
     done
+
+    unset rootpass2
 }
 
 ask_username() {
@@ -414,8 +418,10 @@ ask_username() {
 }
 
 ask_user_pass() {
+    export userpass1=""
+
     # get user pass
-    export userpass1=$(whiptail \
+    userpass1=$(whiptail \
         --title "User Password" \
         --passwordbox "\\nPlease enter a password for $username." \
         --nocancel \
@@ -451,6 +457,8 @@ ask_user_pass() {
             3>&1 1>&2 2>&3 3>&1
         )
     done
+
+    unset userpass2
 }
 
 get_user_and_pass() {

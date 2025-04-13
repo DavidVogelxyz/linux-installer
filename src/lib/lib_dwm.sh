@@ -79,7 +79,10 @@ fix_dwm_additional_dotfiles() {
     cd "/home/${username}/.local/bin" \
         || error "Failed to change directory to \`/home/${username}/.local/bin\` for additional dotfile deployment."
 
-    sudo -u "$username" run_git-clone "https://github.com/LukeSmithxyz/voidrice" "$repodir/voidrice"
+    sudo -u "$username" git clone \
+        "https://github.com/LukeSmithxyz/voidrice" \
+        "$repodir/voidrice" \
+        > /dev/null 2>&1
 
     mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
 
