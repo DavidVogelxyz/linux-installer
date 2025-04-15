@@ -91,6 +91,8 @@ install_browser() {
     check_pkgmgr_apt \
         && [ "$browser_install" = "brave" ] \
         && install_brave_apt
+
+    return 0
 }
 
 #####################################################################

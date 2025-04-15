@@ -375,6 +375,14 @@ run_git-clone() {
     git clone "$1" "$2" > /dev/null 2>&1
 }
 
+vimplugininstall() {
+    # Installs vim plugins.
+    whiptail --infobox "Installing \`vim\` plugins..." 7 60
+    sudo -u "$username" mkdir -p "/home/$name/.vim/autoload"
+    curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/${username}/.vim/autoload/plug.vim"
+    sudo -u "$username" vim -c "PlugInstall|q|q"
+}
+
 doconfigs() {
     whiptail \
         --infobox "Performing some basic configurations..." \
@@ -533,6 +541,19 @@ doconfigs() {
     [ "$swapanswer" = true ] \
         && check_pkgmgr_pacman \
         && run_fstab_arch
+
+    # set up sshd, if not a server
+    [ "$graphical_environment" != "server" ] \
+        && template_replace src/templates/etc/ssh/sshd_config /etc/ssh/sshd_config
+
+    # installs the vim plugins
+    vimplugininstall
+
+    # if no `nvim`, change the default editor
+    [ -x "$(command -v nvim)" ] \
+        || sed -i \
+            's/^export EDITOR="nvim"/export EDITOR="vim"/g' \
+            "/home/$username/.dotfiles/.config/shell/profile"
 
     return 0
 }
