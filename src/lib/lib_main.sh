@@ -193,18 +193,6 @@ mount_file_systems() {
     mount "$partition_boot" /mnt/boot
 }
 
-bind_mounts() {
-    whiptail \
-        --title "Bind Mounts" \
-        --infobox "Binding certain devices to the chroot environment..." \
-        8 78
-
-    for d in sys dev proc; do
-        mount --rbind /$d /mnt/$d \
-            && mount --make-rslave /mnt/$d
-    done
-}
-
 #####################################################################
 # FUNCTIONS - PLAYBOOK_MAIN
 #####################################################################

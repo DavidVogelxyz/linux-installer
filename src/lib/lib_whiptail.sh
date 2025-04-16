@@ -293,7 +293,7 @@ get_encryption_pass() {
          --title "Encryption Password" \
          --passwordbox "\\nPlease enter a password to unlock the encrypted drive." \
         --nocancel \
-        25 78 \
+        10 60 \
         3>&1 1>&2 2>&3 3>&1
     )
 
@@ -301,7 +301,7 @@ get_encryption_pass() {
         --title "Encryption Password" \
         --passwordbox "\\nPlease retype the password to unlock the encrypted drive." \
         --nocancel \
-        25 78 \
+        10 60 \
         3>&1 1>&2 2>&3 3>&1
     )
 
@@ -311,7 +311,7 @@ get_encryption_pass() {
             --passwordbox "\\nThe passwords entered do not match each other, or were left blank.
                 \\nPlease enter a password to unlock the encrypted drive." \
             --nocancel \
-            25 78 \
+            10 60 \
             3>&1 1>&2 2>&3 3>&1
         )
 
@@ -319,7 +319,7 @@ get_encryption_pass() {
             --title "Encryption Password" \
             --passwordbox "\\nPlease retype the password to unlock the encrypted drive." \
             --nocancel \
-            25 78 \
+            10 60 \
             3>&1 1>&2 2>&3 3>&1
         )
     done
@@ -345,7 +345,7 @@ get_partition_info() {
 }
 
 #####################################################################
-# FUNCTIONS - DEBIAN-SETUP - GET_USER_AND_PASS
+# FUNCTIONS - GET_USER_AND_PASS
 #####################################################################
 
 ask_root_pass() {
@@ -470,7 +470,7 @@ get_user_and_pass() {
 }
 
 #####################################################################
-# FUNCTIONS - DEBIAN-SETUP - GET_NETWORKING_INFO
+# FUNCTIONS - GET_NETWORKING_INFO
 #####################################################################
 
 ask_hostname() {
@@ -521,7 +521,7 @@ get_networking_info() {
 }
 
 #####################################################################
-# FUNCTIONS - DEBIAN-SETUP - QUESTIONS
+# FUNCTIONS - QUESTIONS
 #####################################################################
 
 ask_timezone() {

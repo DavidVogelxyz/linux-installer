@@ -159,13 +159,13 @@ arch_aur_install() {
 }
 
 #####################################################################
-# VARIABLES - DEBIAN-SETUP
+# VARIABLES
 #####################################################################
 
-list_packages="https://raw.githubusercontent.com/DavidVogelxyz/debian-setup/master/packages.csv"
+list_packages="https://raw.githubusercontent.com/DavidVogelxyz/linux-image-setup/master/src/packages/packages_base.csv"
 
 #####################################################################
-# FUNCTIONS - DEBIAN-SETUP
+# FUNCTIONS
 #####################################################################
 
 # prints argument to STDERR and exits
@@ -175,7 +175,7 @@ error() {
 }
 
 #####################################################################
-# FUNCTIONS - DEBIAN-SETUP - ADD_USER_AND_PASS
+# FUNCTIONS - ADD_USER_AND_PASS
 #####################################################################
 
 add_user_and_pass() {
@@ -209,7 +209,7 @@ add_user_and_pass() {
 }
 
 #####################################################################
-# FUNCTIONS - DEBIAN-SETUP - DO_BASIC_ADJUSTMENTS
+# FUNCTIONS - DO_BASIC_ADJUSTMENTS
 #####################################################################
 
 do_basic_adjustments() {
@@ -378,7 +378,7 @@ run_git-clone() {
 vimplugininstall() {
     # Installs vim plugins.
     whiptail --infobox "Installing \`vim\` plugins..." 7 60
-    sudo -u "$username" mkdir -p "/home/$name/.vim/autoload"
+    sudo -u "$username" mkdir -p "/home/${username}/.vim/autoload"
     curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/${username}/.vim/autoload/plug.vim"
     sudo -u "$username" vim -c "PlugInstall|q|q"
 }
@@ -668,21 +668,21 @@ run_grub-install() {
         --infobox "Installing and updating GRUB..." \
         9 70
 
-    [[ $uefi = "bios" ]] \
+    [ "$uefi" = "bios" ] \
         && check_pkgmgr_apt \
         && install_pkg_apt grub-pc
 
-    [[ $uefi = "uefi" ]] \
+    [ "$uefi" = "uefi" ] \
         && check_pkgmgr_apt \
         && install_pkg_apt grub-efi
 
-    [[ $uefi = "bios" ]] \
+    [ "$uefi" = "bios" ] \
         && grub-install \
             --target=i386-pc \
             "/dev/$disk_selected" \
             > /dev/null 2>&1
 
-    [[ $uefi = "uefi" ]] \
+    [ "$uefi" = "uefi" ] \
         && grub-install \
             --target=x86_64-efi \
             --efi-directory=/boot \
@@ -758,7 +758,7 @@ playbook_post_chroot() {
 
     cd "/root/.local/src/${post_chroot_path}"
 
-    [ "$graphical_enviroment" != "server" ] \
+    [ "$graphical_environment" != "server" ] \
         && {
             bash src/graphical-environments.sh \
                 || error "Failed when installing the graphical environment."

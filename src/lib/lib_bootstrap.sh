@@ -61,10 +61,11 @@ chroot_arch_prelude() {
     mkdir -p "/mnt$repodir"
 
     # clone `linux-image-setup`
-    #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
-    cp -r /root/linux-image-setup "/mnt$repodir"
+    git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
+    #cp -r /root/linux-image-setup "/mnt$repodir"
 
-    # exclusively for compatibilty with `linux-image-setup`
+    # exclusively for compatibilty
+    # make this more standardized by adding it directly to the script
     sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
     sed -i '2 i \\' "/mnt${post_chroot_script}"
     sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
@@ -137,6 +138,18 @@ run_pre_debootstrap() {
         && apt install -y debootstrap git vim > /dev/null 2>&1
 }
 
+bind_mounts() {
+    whiptail \
+        --title "Bind Mounts" \
+        --infobox "Binding certain devices to the chroot environment..." \
+        8 78
+
+    for d in sys dev proc; do
+        mount --rbind /$d /mnt/$d \
+            && mount --make-rslave /mnt/$d
+    done
+}
+
 chroot_debootstrap_prelude() {
     repodir="/root/.local/src"
     export post_chroot_path="linux-image-setup"
@@ -144,11 +157,12 @@ chroot_debootstrap_prelude() {
 
     mkdir -p "/mnt$repodir"
 
-    # clone `debian-setup`
-    #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
-    cp -r /root/linux-image-setup "/mnt$repodir"
+    # clone `linux-image-setup`
+    git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
+    #cp -r /root/linux-image-setup "/mnt$repodir"
 
-    # exclusively for compatibilty with `debian-setup`
+    # exclusively for compatibilty
+    # make this more standardized by adding it directly to the script
     sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
     sed -i '2 i \\' "/mnt${post_chroot_script}"
     sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"

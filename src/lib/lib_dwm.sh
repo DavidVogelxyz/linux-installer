@@ -197,14 +197,14 @@ larbs_fixes() {
     sudo -u "$name" mkdir -p "/home/${username}/.config/mpd/playlists/"
 
     # Make dash the default #!/bin/sh symlink.
-    ln -sfT /bin/dash /bin/sh >/dev/null 2>&1
+    #ln -sfT /bin/dash /bin/sh >/dev/null 2>&1
 
     # dbus UUID must be generated for Artix runit.
-    dbus-uuidgen >/var/lib/dbus/machine-id
+    #dbus-uuidgen >/var/lib/dbus/machine-id
 
     # Use system notifications for Brave on Artix
     # Only do it when systemd is not present
-    [ "$(readlink -f /sbin/init)" != "/usr/lib/systemd/systemd" ] && echo "export \$(dbus-launch)" >/etc/profile.d/dbus.sh
+    #[ "$(readlink -f /sbin/init)" != "/usr/lib/systemd/systemd" ] && echo "export \$(dbus-launch)" >/etc/profile.d/dbus.sh
 
     # Enable tap to click
     [ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
@@ -245,7 +245,9 @@ makeuserjs(){
 fix_librewolf() {
     # All this below to get Librewolf installed with add-ons and non-bad settings.
 
-    whiptail --infobox "Setting \`LibreWolf\` browser privacy settings and add-ons..." 7 60
+    whiptail \
+        --infobox "Setting \`LibreWolf\` browser privacy settings and add-ons..." \
+        9 70
 
     browserdir="/home/$username/.librewolf"
     profilesini="$browserdir/profiles.ini"
