@@ -112,6 +112,7 @@ fix_dwm_additional_dotfiles() {
 
     list_of_dirs=(
         "dunst"
+        "firefox"
         "fontconfig"
         "gtk-2.0"
         "gtk-3.0"
@@ -229,6 +230,8 @@ fix_browser_dwm() {
         && sed -i \
             's/^export BROWSER="librewolf"/export BROWSER="firefox-esr"/g' \
             "/home/$username/.dotfiles/.config/shell/profile"
+
+    return 0
 }
 
 makeuserjs(){
@@ -254,14 +257,16 @@ fix_librewolf() {
 
     # Start librewolf headless so it generates a profile. Then get that profile in a variable.
     sudo -u "$username" librewolf --headless >/dev/null 2>&1 &
-    sleep 1
+    sleep 7
     profile="$(sed -n "/Default=.*.default-default/ s/.*=//p" "$profilesini")"
     pdir="$browserdir/$profile"
 
-    [ -d "$pdir" ] && makeuserjs
+    [ -d "$pdir" ] \
+        && makeuserjs
 
     # Kill the now unnecessary librewolf instance.
-    pkill -u "$username" librewolf
+    pkill -u "$username" librewolf \
+        || return 0
 }
 
 fix_dwm() {
