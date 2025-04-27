@@ -342,6 +342,8 @@ get_partition_info() {
             get_encryption_pass \
                 || error "Failed to get an encryption password."
         }
+
+    return 0
 }
 
 #####################################################################
