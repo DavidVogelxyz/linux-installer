@@ -285,9 +285,6 @@ fix_dwm() {
     check_pkgmgr_pacman \
         && larbs_fixes
 
-    check_pkgmgr_pacman \
-        || install_browser
-
     fix_browser_dwm
 
     check_pkgmgr_pacman \

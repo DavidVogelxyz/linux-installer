@@ -84,13 +84,21 @@ install_brave_apt() {
 }
 
 install_browser() {
-    [ "$linux_install" = "debian" ] \
+    check_linux_install "debian" \
         && [ "$browser_install" = "firefox" ] \
-        && install_pkg_apt firefox_esr
+        && install_pkg_apt firefox-esr
 
     check_pkgmgr_apt \
         && [ "$browser_install" = "brave" ] \
         && install_brave_apt
+
+    check_pkgmgr_pacman \
+        && [ "$browser_install" = "firefox" ] \
+        && install_pkg_pacman firefox-esr
+
+    check_pkgmgr_pacman \
+        && [ "$browser_install" = "brave" ] \
+        && install_pkg_aur brave-bin
 
     return 0
 }
@@ -107,6 +115,9 @@ playbook_kde() {
     # installs the selected web browser
     install_browser
 
+    # post install KDE fixes for Arch-based machines
+    fix_kde
+
     return 0
 }
 
@@ -119,12 +130,12 @@ playbook_gnome() {
     # function defined in `lib_gnome.sh`
     install_gnome
 
+    # installs the selected web browser
+    install_browser
+
     # post install GNOME fixes for machines that ARE NOT Ubuntu
     check_linux_install "ubuntu" \
         || fix_gnome
-
-    # installs the selected web browser
-    install_browser
 
     return 0
 }
@@ -137,6 +148,10 @@ playbook_dwm() {
     # installs DWM
     # functions defined in `lib_dwm.sh`
     install_dwm
+
+    # installs the selected web browser, unless on Arch and Artix
+    check_pkgmgr_pacman \
+        || install_browser
 
     # post install DWM fixes
     fix_dwm
@@ -166,4 +181,6 @@ playbook_graphical_environment() {
     [ "$graphical_environment" = "kde" ] \
         && playbook_kde \
         && return 0
+
+    return 0
 }

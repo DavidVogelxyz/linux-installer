@@ -89,11 +89,9 @@ set_graphical_environment() {
     choices_environment=(
         "server" "| No graphical environment."
         "dwm" "| DavidVogelxyz's custom build of DWM."
+        "gnome" "| The GNOME desktop environment."
+        "kde" "| The KDE desktop environment."
     )
-
-    (check_linux_install "debian" || check_linux_install "ubuntu") \
-        && choices_environment+=("gnome" "| The GNOME desktop environment.") \
-        && choices_environment+=("kde" "| The KDE desktop environment.")
 
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
@@ -115,10 +113,10 @@ set_browser_install() {
     export browser_install=""
     choices_browser=()
 
-    (check_linux_install "debian" || check_linux_install "ubuntu") \
+    (check_linux_install "debian" || check_linux_install "ubuntu" || check_linux_install "arch" || check_linux_install "artix" ) \
         && choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
 
-    check_linux_install "debian" \
+    (check_linux_install "debian" || check_linux_install "arch" || check_linux_install "artix" ) \
         && choices_browser+=("firefox" "| The Firefox web browser.")
 
     browser_install=$(whiptail \
