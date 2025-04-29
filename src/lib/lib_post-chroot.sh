@@ -307,10 +307,11 @@ fstab_entry_add_swap_uuid() {
             grep -q "$object" <<< "$blkid_dev" \
                 && {
                     grep_result=$?
-                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    [ "${grep_result}" == 0 ] \
+                        && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
                     sed -i "s|$object|$uuid_item|g" /etc/fstab
                 } \
-                || return 0
+                || continue
         done
     done < "/etc/fstab-helper"
 
@@ -348,10 +349,11 @@ run_fstab_debootstrap() {
             grep -q "$object" <<< "$blkid_dev" \
                 && {
                     grep_result=$?
-                    [ "${grep_result}" == 0 ] && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    [ "${grep_result}" == 0 ] \
+                        && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
                     sed -i "s|$object|$uuid_item|g" /etc/fstab
                 } \
-                || return 0
+                || continue
         done
     done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
 }

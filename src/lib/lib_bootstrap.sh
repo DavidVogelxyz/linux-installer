@@ -1,6 +1,18 @@
 #!/bin/sh
 
 #####################################################################
+# FUNCTIONS - BOOTSTRAP - GENERAL
+#####################################################################
+
+lsblk_to_grub() {
+    lsblk -f >> /mnt/etc/default/grub
+}
+
+blkid_to_fstab() {
+    blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /mnt/etc/fstab-helper
+}
+
+#####################################################################
 # FUNCTIONS - BOOTSTRAP - MIRRORS
 #####################################################################
 
@@ -43,14 +55,6 @@ update_mirrors() {
 
     unset mirrorlist_src
     unset mirrorlist_dest
-}
-
-lsblk_to_grub() {
-    lsblk -f >> /mnt/etc/default/grub
-}
-
-lsblk_to_fstab() {
-    lsblk -f >> /mnt/etc/fstab-helper
 }
 
 chroot_arch_prelude() {
@@ -117,7 +121,7 @@ run_basestrap() {
     #lsblk_to_grub
 
     [ "$swapanswer" = true ] \
-        && lsblk_to_fstab
+        && blkid_to_fstab
 
     generate_fstab
 
@@ -219,7 +223,7 @@ run_pacstrap() {
     #lsblk_to_grub
 
     [ "$swapanswer" = true ] \
-        && lsblk_to_fstab
+        && blkid_to_fstab
 
     generate_fstab
 
