@@ -19,6 +19,7 @@ linux_supported=(
     "arch"
     "artix"
     "debian"
+    "rocky"
     "ubuntu"
 )
 
@@ -31,7 +32,7 @@ get_linux_iso() {
     # would it be faster to search once, grab `ID`, and then check against supported OS?
     # probably
     for os in "${linux_supported[@]}"; do
-        grep -q "ID=$os" /etc/os-release \
+        grep -q "ID=.*${os}" /etc/os-release \
             && export linux_iso="$os" \
             && break
     done
@@ -208,6 +209,10 @@ playbook_main() {
     check_linux_iso "artix" \
         && (pacman -S --noconfirm --needed libnewt || error "Are you sure you're running as root?")
 
+    # if `linux_iso` is `rocky`, disable SELinux
+    check_linux_iso "rocky" \
+        && setenforce 0
+
     # WHIPTAIL 1
     # informs the user of how the script works
     # function defined in `lib_whiptail.sh`
@@ -289,5 +294,10 @@ playbook_main() {
     # runs basestrap on Artix images; exit on success
     check_linux_iso "artix" \
         && run_basestrap \
+        && exit 0
+
+    # runs basestrap on Artix images; exit on success
+    check_linux_iso "rocky" \
+        && run_rockystrap \
         && exit 0
 }

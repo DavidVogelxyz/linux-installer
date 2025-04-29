@@ -49,7 +49,8 @@ set_etc_hosts() {
 }
 
 set_hosts() {
-    set_etc_hostname
+    check_linux_install "rocky" \
+        || set_etc_hostname
 
     set_etc_hosts
 }
@@ -187,11 +188,16 @@ add_user_and_pass() {
     echo "root:${rootpass1}" | chpasswd \
         && unset rootpass1
 
-    # create user
+    # create user on Debian and Ubuntu machines
     check_pkgmgr_apt \
         && useradd -G sudo -s /bin/bash -m "$username"
 
+    # create user on Arch and Artix machines
     check_pkgmgr_pacman \
+        && useradd -G wheel -s /bin/bash -m "$username"
+
+    # create user on Rocky machines
+    check_linux_install "rocky" \
         && useradd -G wheel -s /bin/bash -m "$username"
 
     # change user password; if successful, unset the password
@@ -258,6 +264,10 @@ setup_locale() {
     # set the `/etc/locale.conf` file
     template_replace src/templates/etc/locale.conf /etc/locale.conf
 
+    # Rocky doesn't seem to have `/etc/locale.gen`, so bail here
+    check_linux_install "rocky" \
+        && return 0
+
     # uncomments language files in `/etc/locale.gen`
     [ "$region" == "en_US" ] \
         && sed -i 's/^#.*en_US/en_US/g' /etc/locale.gen
@@ -270,6 +280,14 @@ setup_ubuntu() {
     template_replace src/templates/etc/kernel-img_ubuntu.conf /etc/kernel-img.conf
 
     template_replace src/templates/etc/netplan/networkmanager_ubuntu.yaml /etc/netplan/networkmanager.yaml
+}
+
+setup_rocky() {
+    # install language pack for Rocky
+    install_pkg_dnf glibc-langpack-en
+
+    # enables and manages the EPEL repo
+    install_pkg_dnf epel-release
 }
 
 create_useful_directories() {
@@ -370,6 +388,49 @@ fstab_debootstrap_prep() {
     run_fstab_debootstrap
 }
 
+run_fstab_rocky() {
+    # all Rocky machines have the same boot partition
+    blkid_partitions=(
+        "${partition_boot}"
+    )
+
+    # if no swap partition, add default `rootfs` to array
+    # if swap partition, add `swap` and `root` LVs to array
+    [ -z "$volume_logical_swap" ] \
+        && blkid_partitions+=(
+            "${partition_rootfs}"
+            ) \
+        || blkid_partitions+=(
+            "${volume_logical_swap}"
+            "${volume_logical_root}"
+            )
+
+    while read -r blkid_dev blkid_uuid blkid_block_size blkid_type blkid_partuuid ; do
+        for object in "${blkid_partitions[@]}"; do
+            grep -q "$object" <<< "$blkid_dev" \
+                && {
+                    grep_result=$?
+                    [ "${grep_result}" == 0 ] \
+                        && uuid_item="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
+                    sed -i "s|$object|$uuid_item|g" /etc/fstab
+                } \
+                || continue
+        done
+    done< <(blkid | grep UUID | sed '/^\/dev\/sr0/d')
+}
+
+fstab_rocky_prep() {
+    # append to `/etc/fstab` any line from `/proc/mounts` beginning with `/dev`
+    grep "^/dev" /proc/mounts >> /etc/fstab
+
+    fstab_entry_add_swap
+
+    # append to `/etc/fstab` any line from `/proc/mounts` beginning with `tmp`
+    grep "^tmp" /proc/mounts | sed 's/dev\/shm/tmp/g' >> /etc/fstab
+
+    run_fstab_rocky
+}
+
 run_git-clone() {
     # add some error correction:
     # - what if the repo already exists?
@@ -383,6 +444,40 @@ vimplugininstall() {
     sudo -u "$username" mkdir -p "/home/${username}/.vim/autoload"
     curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/${username}/.vim/autoload/plug.vim"
     sudo -u "$username" vim -c "PlugInstall|q|q"
+}
+
+do_the_stow() {
+    cd "/home/$username/.dotfiles" \
+        && stow . \
+        && cd "$curr_dir" \
+        && unlink "/home/$username/.xprofile" # this is true only for servers; should not be done on DWM machines
+}
+
+do_zsh_setup() {
+    git clone \
+        --depth=1 \
+        https://github.com/romkatv/powerlevel10k \
+        "$repodir/powerlevel10k" \
+        > /dev/null 2>&1
+
+    fonts=(
+        "MesloLGS_NF_Regular.ttf"
+        "MesloLGS_NF_Bold.ttf"
+        "MesloLGS_NF_Italic.ttf"
+        "MesloLGS_NF_Bold_Italic.ttf"
+    )
+
+    sudo mkdir -p /usr/local/share/fonts/m
+
+    for font in "${fonts[@]}"; do
+        webfont=$(echo $font | sed 's/_/%20/g')
+
+        [ ! -e /usr/local/share/fonts/m/$font ] \
+            && sudo curl -L \
+                https://github.com/romkatv/powerlevel10k-media/raw/master/$webfont \
+                -o /usr/local/share/fonts/m/$font \
+                > /dev/null 2>&1
+    done
 }
 
 doconfigs() {
@@ -421,11 +516,8 @@ doconfigs() {
             && rm -rf "$path"
     done
 
-    # stow
-    cd "/home/$username/.dotfiles" \
-        && stow . \
-        && cd "$curr_dir" \
-        && unlink "/home/$username/.xprofile" # this is true only for servers; should not be done on DWM machines
+    # do the stow!
+    do_the_stow
 
     # all systems
     links_to_sym=(
@@ -499,11 +591,15 @@ doconfigs() {
         "\nsource ~/.bashrc" \
         >> "/home/$username/.dotfiles/.config/shell/profile"
 
-    dozshsetup \
+    do_zsh_setup \
         || error "Failed during \`zsh\` setup."
 
-    sudo chsh -s /bin/zsh "$username" \
-        || error "Failed when changing shell."
+    # Rocky doesn't have `chsh`...
+    check_linux_install "rocky" \
+        || {
+            sudo chsh -s /bin/zsh "$username" \
+                || error "Failed when changing shell."
+        }
 
     # make sure all files in user's home dir are owned by them
     chown -R "$username": "/home/$username"
@@ -511,6 +607,14 @@ doconfigs() {
     # enable NetworkManager
     # this is true only for Debian and Ubuntu
     check_pkgmgr_apt \
+        && {
+            enable_networkmanager \
+                || error "Failed when enabling networking."
+        }
+
+    # enable NetworkManager
+    # true also for Rocky
+    check_linux_install "rocky" \
         && {
             enable_networkmanager \
                 || error "Failed when enabling networking."
@@ -536,9 +640,18 @@ doconfigs() {
         && ln -s /etc/runit/sv/NetworkManager /etc/runit/runsvdir/current
 
     # add relevant content to the `/etc/fstab` file
+    # for Debian and Ubuntu
     check_pkgmgr_apt \
         && {
             fstab_debootstrap_prep \
+                || error "Failed while prepping \`/etc/fstab\` file."
+        }
+
+    # add relevant content to the `/etc/fstab` file
+    # for Rocky
+    check_linux_install "rocky" \
+        && {
+            fstab_rocky_prep \
                 || error "Failed while prepping \`/etc/fstab\` file."
         }
 
@@ -559,34 +672,13 @@ doconfigs() {
             's/^export EDITOR="nvim"/export EDITOR="vim"/g' \
             "/home/$username/.dotfiles/.config/shell/profile"
 
+    # on Rocky, disable SELINUX
+    check_linux_install "rocky" \
+        && sed -i \
+            's/^SELINUX=/SELINUX=disabled/g' \
+            "/etc/sysconfig/selinux"
+
     return 0
-}
-
-dozshsetup(){
-    git clone \
-        --depth=1 \
-        https://github.com/romkatv/powerlevel10k \
-        "$repodir/powerlevel10k" \
-        > /dev/null 2>&1
-
-    fonts=(
-        "MesloLGS_NF_Regular.ttf"
-        "MesloLGS_NF_Bold.ttf"
-        "MesloLGS_NF_Italic.ttf"
-        "MesloLGS_NF_Bold_Italic.ttf"
-    )
-
-    sudo mkdir -p /usr/local/share/fonts/m
-
-    for font in "${fonts[@]}"; do
-        webfont=$(echo $font | sed 's/_/%20/g')
-
-        [ ! -e /usr/local/share/fonts/m/$font ] \
-            && sudo curl -L \
-                https://github.com/romkatv/powerlevel10k-media/raw/master/$webfont \
-                -o /usr/local/share/fonts/m/$font \
-                > /dev/null 2>&1
-    done
 }
 
 cryptsetup_debootstrap() {
@@ -653,6 +745,9 @@ run_cryptsetup() {
 }
 
 do_initramfs_update() {
+    check_linux_install "rocky" \
+        && return 0
+
     whiptail \
         --infobox "Updating \`initramfs\` on Debian/Ubuntu, and \`mkinitcpio\` on Arch/Artix..." \
         9 70
@@ -672,33 +767,82 @@ run_grub-install() {
         --infobox "Installing and updating GRUB..." \
         9 70
 
+    # installs `grub-pc` on Debian and Ubuntu machines running BIOS
     [ "$uefi" = "bios" ] \
         && check_pkgmgr_apt \
         && install_pkg_apt grub-pc
 
+    # installs `grub-efi` on Debian and Ubuntu machines running UEFI
     [ "$uefi" = "uefi" ] \
         && check_pkgmgr_apt \
         && install_pkg_apt grub-efi
 
-    [ "$uefi" = "bios" ] \
-        && grub-install \
-            --target=i386-pc \
+    # installs `grub2-pc` on Rocky machines running BIOS
+    check_linux_install "rocky" \
+        && [ "$uefi" = "bios" ] \
+        && install_pkg_dnf grub2-pc \
+        && install_pkg_dnf grub2-pc-modules
+
+    # installs `grub2-pc` on Rocky machines running BIOS
+    check_linux_install "rocky" \
+        && [ "$uefi" = "uefi" ] \
+        && install_pkg_dnf grub2-efi-x64 \
+        && install_pkg_dnf grub2-efi-x64-modules \
+        && install_pkg_dnf shim \
+        && install_pkg_dnf efibootmgr
+
+    # on BIOS machines that are NOT running Rocky, installs GRUB for BIOS machines
+    check_linux_install "rocky" \
+        || {
+            [ "$uefi" = "bios" ] \
+                && grub-install \
+                    --target=i386-pc \
+                    "/dev/$disk_selected" \
+                    > /dev/null 2>&1
+        }
+
+    # on UEFI machines that are NOT running Rocky, installs GRUB for UEFI machines
+    check_linux_install "rocky" \
+        || {
+            [ "$uefi" = "uefi" ] \
+                && grub-install \
+                    --target=x86_64-efi \
+                    --efi-directory=/boot \
+                    --bootloader-id=GRUB \
+                    > /dev/null 2>&1
+        }
+
+    # on BIOS machines that ARE running Rocky, installs GRUB for BIOS machines
+    check_linux_install "rocky" \
+        && [ "$uefi" = "bios" ] \
+        && grub2-install \
             "/dev/$disk_selected" \
-            > /dev/null 2>&1
-
-    [ "$uefi" = "uefi" ] \
-        && grub-install \
-            --target=x86_64-efi \
-            --efi-directory=/boot \
-            --bootloader-id=GRUB \
-            > /dev/null 2>&1
-
-    check_pkgmgr_apt \
-        && update-grub > /dev/null 2>&1 \
+            > /dev/null 2>&1 \
+        && grub2-mkconfig \
+            -o /boot/grub2/grub.cfg \
+            > /dev/null 2>&1 \
         && return 0
 
+    # on UEFI machines that ARE running Rocky, installs GRUB for UEFI machines
+    check_linux_install "rocky" \
+        && [ "$uefi" = "uefi" ] \
+        && grub2-mkconfig \
+            -o /boot/efi/EFI/rocky/grub.cfg \
+            > /dev/null 2>&1 \
+        && return 0
+
+    # on Debian and Ubuntu systems, runs `update-grub`
+    check_pkgmgr_apt \
+        && update-grub \
+            > /dev/null 2>&1 \
+        && return 0
+
+    # on Arch and Artix systems, runs `grub-mkconfig`
     check_pkgmgr_pacman \
-        && grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
+        && grub-mkconfig \
+            -o /boot/grub/grub.cfg \
+            > /dev/null 2>&1 \
+        && return 0
 }
 
 final_message() {
@@ -742,6 +886,9 @@ playbook_post_chroot() {
 
     check_linux_install "ubuntu" \
         && setup_ubuntu
+
+    check_linux_install "rocky" \
+        && setup_rocky
 
     package_file="src/packages/packages_base.csv"
 

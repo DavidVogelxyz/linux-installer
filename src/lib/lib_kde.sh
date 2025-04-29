@@ -30,6 +30,11 @@ install_kde_artix() {
         && install_kde_arch
 }
 
+install_kde_rocky() {
+    dnf group install -y --skip-broken "KDE Plasma Workspaces" \
+        > /dev/null 2>&1
+}
+
 install_kde() {
     whiptail \
         --title "KDE Installation" \
@@ -47,6 +52,9 @@ install_kde() {
 
     check_linux_install "artix" \
         && install_kde_artix
+
+    check_linux_install "rocky" \
+        && install_kde_rocky
 
     return 0
 }

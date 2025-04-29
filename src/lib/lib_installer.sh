@@ -45,6 +45,11 @@ install_pkg_apt() {
         > /dev/null 2>&1
 }
 
+install_pkg_dnf() {
+    dnf install -y "$1" \
+        > /dev/null 2>&1
+}
+
 install_pkg_pacman() {
     pacman --noconfirm --needed -S "$1" \
         > /dev/null 2>&1
@@ -57,6 +62,10 @@ install_pkg() {
 
     check_pkgmgr_pacman \
         && install_pkg_pacman "$1" \
+        && return 0
+
+    check_pkgmgr_dnf \
+        && install_pkg_dnf "$1" \
         && return 0
 }
 
@@ -110,7 +119,7 @@ install_loop_read() {
     total=$(wc -l < "/tmp/${package_file##*/}")
     n="0"
 
-    while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu; do
+    while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu pkg_rocky; do
         n=$((n + 1))
 
         # `!` allows the script to print the value of `pkg_${linux_install}`

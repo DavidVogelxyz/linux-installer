@@ -53,8 +53,8 @@ os_identify_screen() {
         --yesno "This installer believes that it's currently running on \"${linux_iso}\".
             \\nBecause of this, the installer will attempt to install \"${linux_install} ${release_install}\".
             \\nIf this is incorrect, please exit the script now." \
-        --yes-button "That's correct!" \
-        --no-button "No, that's incorrect." \
+        --yes-button "Correct!" \
+        --no-button "Incorrect." \
         25 78 \
         3>&1 1>&2 2>&3 3>&1
 }
@@ -72,6 +72,9 @@ set_linux_install() {
     [ -z "$linux_install" ] \
         && linux_install="$linux_iso"
 
+    check_linux_install "rocky" \
+        && release_install="9"
+
     [ -z "$release_install" ] \
         && release_install="rolling"
 
@@ -85,13 +88,23 @@ set_linux_install() {
 
 set_graphical_environment() {
     export graphical_environment=""
+    choices_environment=()
 
-    choices_environment=(
-        "server" "| No graphical environment."
-        "dwm" "| DavidVogelxyz's custom build of DWM."
-        "gnome" "| The GNOME desktop environment."
-        "kde" "| The KDE desktop environment."
-    )
+    # all supported distros have support for `server` ("headless")
+    choices_environment+=("server" "| No graphical environment.")
+
+    # Rocky is the only distro that is not yet able to install DWM
+    # names of dependencies on Rocky repos still needs to be figured out
+    check_linux_install "rocky" \
+        || choices_environment+=("dwm" "| DavidVogelxyz's custom build of DWM.")
+
+    # All supported distros have support for GNOME
+    choices_environment+=("gnome" "| The GNOME desktop environment.")
+
+    # Rocky is the only distro that is not yet able to install KDE
+    # still need to figure out `dnf group install` for KDE
+    check_linux_install "rocky" \
+        || choices_environment+=("kde" "| The KDE desktop environment.")
 
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
@@ -107,17 +120,27 @@ set_graphical_environment() {
 #####################################################################
 
 set_browser_install() {
-    ([ "$graphical_environment" = "server" ] || [ "$graphical_environment" = "dwm" ]) \
+    # servers skip this section
+    [ "$graphical_environment" = "server" ] \
+        && return 0
+
+    # if DWM and Arch-based, LibreWolf overrides this option
+    [ "$graphical_environment" = "dwm" ] \
+        && check_pkgmgr_pacman \
         && return 0
 
     export browser_install=""
     choices_browser=()
 
-    (check_linux_install "debian" || check_linux_install "ubuntu" || check_linux_install "arch" || check_linux_install "artix" ) \
-        && choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
+    # Rocky is the only distro that is not yet able to install Brave
+    # need to read install instructions over on Brave website
+    check_linux_install "rocky" \
+        || choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
 
-    (check_linux_install "debian" || check_linux_install "arch" || check_linux_install "artix" ) \
-        && choices_browser+=("firefox" "| The Firefox web browser.")
+    # Ubuntu is the only distro that has access to Firefox restricted
+    # this is because Ubuntu forces the snap version of Firefox
+    check_linux_install "ubuntu" \
+        || choices_browser+=("firefox" "| The Firefox web browser.")
 
     browser_install=$(whiptail \
         --title "Web Browser" \

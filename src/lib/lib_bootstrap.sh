@@ -203,3 +203,23 @@ run_pacstrap() {
 
     chroot_arch
 }
+
+#####################################################################
+# FUNCTIONS - "ROCKYSTRAP" (DNF) - ROCKY
+#####################################################################
+
+run_rockystrap() {
+    # "Rockystrap"
+    dnf --releasever=${release_install} --installroot=/mnt -y groupinstall core
+
+    bind_mounts || error "Failed to bind mounts."
+
+    systemd-firstboot --root=/mnt --timezone="America/Chicago" --hostname="${hostname}" --setup-machine-id
+
+    # Rocky doesn't bring this over by default
+    cp /etc/resolv.conf /mnt/etc/resolv.conf
+
+    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
+
+    chroot /mnt "${post_chroot_script}"
+}

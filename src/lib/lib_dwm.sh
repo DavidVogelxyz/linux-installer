@@ -219,13 +219,13 @@ larbs_fixes() {
 }
 
 fix_browser_dwm() {
-    # if browser is set to Brave, change default editor
+    # if browser is set to Brave, change default browser
     [ "$browser_install" = "brave" ] \
         && sed -i \
             's/^export BROWSER="librewolf"/export BROWSER="brave-bin"/g' \
             "/home/$username/.dotfiles/.config/shell/profile"
 
-    # if browser is set to Firefox, change default editor
+    # if browser is set to Firefox, change default browser
     [ "$browser_install" = "firefox" ] \
         && sed -i \
             's/^export BROWSER="librewolf"/export BROWSER="firefox-esr"/g' \

@@ -100,6 +100,10 @@ install_browser() {
         && [ "$browser_install" = "brave" ] \
         && install_pkg_aur brave-bin
 
+    check_linux_install "rocky" \
+        && [ "$browser_install" = "firefox" ] \
+        && install_pkg_dnf firefox
+
     return 0
 }
 
@@ -149,8 +153,10 @@ playbook_dwm() {
     # functions defined in `lib_dwm.sh`
     install_dwm
 
-    # installs the selected web browser, unless on Arch and Artix
-    check_pkgmgr_pacman \
+    # installs the selected web browser
+    # on Arch and Artix, this doesn't get set
+    # Arch and Artix get LibreWolf by default
+    [ -z "$browser_install" ] \
         || install_browser
 
     # post install DWM fixes

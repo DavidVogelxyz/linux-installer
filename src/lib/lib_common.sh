@@ -17,6 +17,10 @@ check_pkgmgr_apt() {
         || check_linux_install "ubuntu"
 }
 
+check_pkgmgr_dnf() {
+    check_linux_install "rocky"
+}
+
 check_pkgmgr_pacman() {
     check_linux_install "arch" \
         || check_linux_install "artix"

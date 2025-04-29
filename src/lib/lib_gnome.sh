@@ -30,6 +30,11 @@ install_gnome_artix() {
         && install_gnome_arch
 }
 
+install_gnome_rocky() {
+    dnf group install -y gnome \
+        > /dev/null 2>&1
+}
+
 install_gnome() {
     whiptail \
         --title "GNOME Installation" \
@@ -47,6 +52,9 @@ install_gnome() {
 
     check_linux_install "artix" \
         && install_gnome_artix
+
+    check_linux_install "rocky" \
+        && install_gnome_rocky
 
     return 0
 }
@@ -96,13 +104,8 @@ fix_gnome() {
     check_linux_install "debian" \
         && install_gnome_dash-to-dock
 
-    # add GNOME tweaks to Debian
-    check_linux_install "debian" \
-        && install_pkg_apt gnome-tweaks
-
-    # add GNOME tweaks to Arch and Artix
-    check_pkgmgr_pacman \
-        && install_pkg_pacman gnome-tweaks
+    # Install GNOME Tweaks on all systems
+    install_pkg gnome-tweaks
 
     # Enable `sddm` on Arch
     check_linux_install "arch" \
