@@ -4,12 +4,41 @@
 # FUNCTIONS - BOOTSTRAP - GENERAL
 #####################################################################
 
-lsblk_to_grub() {
-    lsblk -f >> /mnt/etc/default/grub
+bind_mounts() {
+    whiptail \
+        --title "Bind Mounts" \
+        --infobox "Binding certain devices to the chroot environment..." \
+        8 78
+
+    for d in sys dev proc; do
+        mount --rbind /$d /mnt/$d \
+            && mount --make-rslave /mnt/$d
+    done
 }
 
 blkid_to_fstab() {
     blkid | grep UUID | sed '/^\/dev\/sr0/d' >> /mnt/etc/fstab-helper
+}
+
+create_chroot_workspace() {
+    repodir="/root/.local/src"
+    export post_chroot_path="linux-image-setup"
+    post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
+
+    mkdir -p "/mnt${repodir}"
+
+    # copy `linux-image-setup`
+    #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
+    cp -r /root/linux-image-setup "/mnt${repodir}"
+
+    # exclusively for compatibilty
+    # make this more standardized by adding it directly to the script
+    sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
+    sed -i '2 i \\' "/mnt${post_chroot_script}"
+    sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
+
+    # make executable
+    chmod +x "/mnt${post_chroot_script}"
 }
 
 #####################################################################
@@ -46,10 +75,13 @@ update_mirrors() {
         && [ -f "$mirrorlist_dest" ] \
         && diff "$mirrorlist_dest" "$mirrorlist_src"
 
-    # update `sources.list`
+    # update `/mnt/etc/apt/sources.list`
+    # on Debian and Ubuntu, this is run AFTER `debootstrap`, on the new install
     check_pkgmgr_apt \
-        && cp "$mirrorlist_src" "/mnt$mirrorlist_dest"
+        && cp "$mirrorlist_src" "/mnt${mirrorlist_dest}"
 
+    # update `/etc/pacman.d/mirrorlist`
+    # on Arch and Artix, this is run BEFORE `pacstrap`/`basestrap`, on the live image
     check_pkgmgr_pacman \
         && cp "$mirrorlist_src" "$mirrorlist_dest"
 
@@ -57,39 +89,18 @@ update_mirrors() {
     unset mirrorlist_dest
 }
 
-chroot_arch_prelude() {
-    repodir="/root/.local/src"
-    export post_chroot_path="linux-image-setup"
-    post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
-
-    mkdir -p "/mnt$repodir"
-
-    # clone `linux-image-setup`
-    git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
-    #cp -r /root/linux-image-setup "/mnt$repodir"
-
-    # exclusively for compatibilty
-    # make this more standardized by adding it directly to the script
-    sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
-    sed -i '2 i \\' "/mnt${post_chroot_script}"
-    sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
-
-    # make executable
-    chmod +x "/mnt${post_chroot_script}"
-}
-
-chroot_artix_prelude() {
-    chroot_arch_prelude
-}
+#####################################################################
+# FUNCTIONS - ARCH AND ARTIX
+#####################################################################
 
 chroot_arch() {
-    chroot_arch_prelude || error "Failed to configure the \`chroot\` environment."
+    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
 
     arch-chroot /mnt "${post_chroot_script}"
 }
 
 chroot_artix() {
-    chroot_artix_prelude || error "Failed to configure the \`chroot\` environment."
+    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
 
     artix-chroot /mnt "${post_chroot_script}"
 }
@@ -118,8 +129,6 @@ run_basestrap() {
 
     unset pkgs
 
-    #lsblk_to_grub
-
     [ "$swapanswer" = true ] \
         && blkid_to_fstab
 
@@ -142,41 +151,8 @@ run_pre_debootstrap() {
         && apt install -y debootstrap git vim > /dev/null 2>&1
 }
 
-bind_mounts() {
-    whiptail \
-        --title "Bind Mounts" \
-        --infobox "Binding certain devices to the chroot environment..." \
-        8 78
-
-    for d in sys dev proc; do
-        mount --rbind /$d /mnt/$d \
-            && mount --make-rslave /mnt/$d
-    done
-}
-
-chroot_debootstrap_prelude() {
-    repodir="/root/.local/src"
-    export post_chroot_path="linux-image-setup"
-    post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
-
-    mkdir -p "/mnt$repodir"
-
-    # clone `linux-image-setup`
-    git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
-    #cp -r /root/linux-image-setup "/mnt$repodir"
-
-    # exclusively for compatibilty
-    # make this more standardized by adding it directly to the script
-    sed -i "s/bin\/sh/bin\/bash/g" "/mnt${post_chroot_script}"
-    sed -i '2 i \\' "/mnt${post_chroot_script}"
-    sed -i "3 i cd ${repodir}/${post_chroot_path}" "/mnt${post_chroot_script}"
-
-    # make executable
-    chmod +x "/mnt${post_chroot_script}"
-}
-
 chroot_debootstrap() {
-    chroot_debootstrap_prelude || error "Failed to configure the \`chroot\` environment."
+    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
 
     chroot /mnt "${post_chroot_script}"
 }
@@ -219,8 +195,6 @@ run_pacstrap() {
         || error "Failed to pacstrap."
 
     unset pkgs
-
-    #lsblk_to_grub
 
     [ "$swapanswer" = true ] \
         && blkid_to_fstab
