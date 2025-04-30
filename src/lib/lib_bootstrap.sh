@@ -41,6 +41,26 @@ create_chroot_workspace() {
     chmod +x "/mnt${post_chroot_script}"
 }
 
+chroot_time() {
+    # copy the repo into the chroot environment
+    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
+
+    # `chroot` into Debian, Ubuntu, or Rocky
+    (check_linux_install "debian" || check_linux_install "ubuntu" || check_linux_install "rocky") \
+        && chroot /mnt "${post_chroot_script}" \
+        && return 0
+
+    # `chroot` into Arch
+    check_linux_install "arch" \
+        && arch-chroot /mnt "${post_chroot_script}" \
+        && return 0
+
+    # `chroot` into Artix
+    check_linux_install "artix" \
+        && artix-chroot /mnt "${post_chroot_script}" \
+        && return 0
+}
+
 #####################################################################
 # FUNCTIONS - BOOTSTRAP - MIRRORS
 #####################################################################
@@ -90,22 +110,6 @@ update_mirrors() {
 }
 
 #####################################################################
-# FUNCTIONS - ARCH AND ARTIX
-#####################################################################
-
-chroot_arch() {
-    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
-
-    arch-chroot /mnt "${post_chroot_script}"
-}
-
-chroot_artix() {
-    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
-
-    artix-chroot /mnt "${post_chroot_script}"
-}
-
-#####################################################################
 # FUNCTIONS - BASESTRAP - ARTIX
 #####################################################################
 
@@ -114,10 +118,6 @@ run_basestrap() {
 
     [ "$uefi" = "uefi" ] \
         && pkgs+=" efibootmgr"
-
-    generate_fstab() {
-        fstabgen -U /mnt >> /mnt/etc/fstab
-    }
 
     # set mirrors
     basestrap_mirrorlist
@@ -129,12 +129,14 @@ run_basestrap() {
 
     unset pkgs
 
+    # if swap, creates the `/etc/fstab-helper` file
     [ "$swapanswer" = true ] \
         && blkid_to_fstab
 
-    generate_fstab
+    # generate the `/etc/fstab` file on Artix
+    fstabgen -U /mnt >> /mnt/etc/fstab
 
-    chroot_artix
+    chroot_time || error "Failed to \`chroot\`!"
 }
 
 #####################################################################
@@ -151,12 +153,6 @@ run_pre_debootstrap() {
         && apt install -y debootstrap git vim > /dev/null 2>&1
 }
 
-chroot_debootstrap() {
-    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
-
-    chroot /mnt "${post_chroot_script}"
-}
-
 run_debootstrap() {
     # make sure `debootstrap` and `vim` are installed
     run_pre_debootstrap || error "Failed to set up for \`debootstrap\`."
@@ -168,7 +164,7 @@ run_debootstrap() {
 
     debootstrap_sourceslist || error "Failed to set up \`/etc/apt/sources.list\`."
 
-    chroot_debootstrap || error "Failed to \`chroot\`!"
+    chroot_time || error "Failed to \`chroot\`!"
 }
 
 #####################################################################
@@ -182,10 +178,6 @@ run_pacstrap() {
     [ "$uefi" = true ] \
         && pkgs+=" efibootmgr"
 
-    generate_fstab() {
-        genfstab -U /mnt >> /mnt/etc/fstab
-    }
-
     # set mirrors
     pacstrap_mirrorlist
 
@@ -196,12 +188,14 @@ run_pacstrap() {
 
     unset pkgs
 
+    # if swap, creates the `/etc/fstab-helper` file
     [ "$swapanswer" = true ] \
         && blkid_to_fstab
 
-    generate_fstab
+    # generate the `/etc/fstab` file on Arch
+    genfstab -U /mnt >> /mnt/etc/fstab
 
-    chroot_arch
+    chroot_time || error "Failed to \`chroot\`!"
 }
 
 #####################################################################
@@ -219,7 +213,5 @@ run_rockystrap() {
     # Rocky doesn't bring this over by default
     cp /etc/resolv.conf /mnt/etc/resolv.conf
 
-    create_chroot_workspace || error "Failed to configure the \`chroot\` environment."
-
-    chroot /mnt "${post_chroot_script}"
+    chroot_time || error "Failed to \`chroot\`!"
 }
