@@ -93,10 +93,10 @@ set_graphical_environment() {
     # all supported distros have support for `server` ("headless")
     choices_environment+=("server" "| No graphical environment.")
 
-    # Rocky is the only distro that is not yet able to install DWM
+    # Rocky is the only distro that is not yet able to install dwm
     # names of dependencies on Rocky repos still needs to be figured out
     check_linux_install "rocky" \
-        || choices_environment+=("dwm" "| DavidVogelxyz's custom build of DWM.")
+        || choices_environment+=("dwm" "| DavidVogelxyz's custom build of dwm.")
 
     # All supported distros have support for GNOME
     choices_environment+=("gnome" "| The GNOME desktop environment.")
@@ -124,7 +124,7 @@ set_browser_install() {
     [ "$graphical_environment" = "server" ] \
         && return 0
 
-    # if DWM and Arch-based, LibreWolf overrides this option
+    # if dwm and Arch-based, LibreWolf overrides this option
     [ "$graphical_environment" = "dwm" ] \
         && check_pkgmgr_pacman \
         && return 0

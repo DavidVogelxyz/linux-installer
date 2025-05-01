@@ -22,13 +22,13 @@ blkid_to_fstab() {
 
 create_chroot_workspace() {
     repodir="/root/.local/src"
-    export post_chroot_path="linux-image-setup"
+    export post_chroot_path="linux-installer"
     post_chroot_script="${repodir}/${post_chroot_path}/src/post-chroot.sh"
 
     mkdir -p "/mnt${repodir}"
 
-    # copy `linux-image-setup`
-    cp -r /root/linux-image-setup "/mnt${repodir}"
+    # copy the `linux-installer` repo to the installation's file system
+    cp -r /root/linux-installer "/mnt${repodir}"
 
     # exclusively for compatibilty
     # make this more standardized by adding it directly to the script

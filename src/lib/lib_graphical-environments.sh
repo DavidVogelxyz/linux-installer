@@ -149,7 +149,7 @@ playbook_gnome() {
 #####################################################################
 
 playbook_dwm() {
-    # installs DWM
+    # installs dwm
     # functions defined in `lib_dwm.sh`
     install_dwm
 
@@ -159,7 +159,7 @@ playbook_dwm() {
     [ -z "$browser_install" ] \
         || install_browser
 
-    # post install DWM fixes
+    # post install dwm fixes
     fix_dwm
 
     return 0

@@ -163,7 +163,7 @@ arch_aur_install() {
 # VARIABLES
 #####################################################################
 
-list_packages="https://raw.githubusercontent.com/DavidVogelxyz/linux-image-setup/master/src/packages/packages_base.csv"
+list_packages="https://raw.githubusercontent.com/DavidVogelxyz/linux-installer/master/src/packages/packages_base.csv"
 
 #####################################################################
 # FUNCTIONS
@@ -450,7 +450,7 @@ do_the_stow() {
     cd "/home/$username/.dotfiles" \
         && stow . \
         && cd "$curr_dir" \
-        && unlink "/home/$username/.xprofile" # this is true only for servers; should not be done on DWM machines
+        && unlink "/home/$username/.xprofile" # this is true only for servers; should not be done on dwm machines
 }
 
 do_zsh_setup() {
@@ -569,7 +569,7 @@ doconfigs() {
     done <<< "${links_to_sym[@]}"
 
     # small edits to `~/.config/shell/profile` for SERVERS
-    # DWM and others will want these on
+    # dwm and others will want these on
     sed -i \
         's/^\[ \! -f \"\$XDG_CONFIG_HOME/#[ \! -f \"\$XDG_CONFIG_HOME/g' \
         "/home/$username/.dotfiles/.config/shell/profile"
@@ -848,7 +848,7 @@ run_grub-install() {
 final_message() {
     whiptail \
         --title "Congrats!" \
-        --msgbox "Provided there were no hidden errors, \`linux-image-setup\` completed successfully and all packages and configurations are properly installed." \
+        --msgbox "Provided there were no hidden errors, \`linux-installer\` completed successfully and all packages and configurations are properly installed." \
         9 70
 
     clear
