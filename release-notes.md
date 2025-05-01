@@ -1,3 +1,19 @@
+## v0.1.0
+
+Version 0.1.0 is the first true public release, adding support for various graphical environments, as well as support for Rocky Linux.
+
+Supported graphical environments are `server` ("headless"), `dwm`, `gnome`, and `kde`.
+
+Debian and Ubuntu machines can install all graphical environments, with Ubuntu GNOME being the Ubuntu version of GNOME (Ubuntu Desktop), and Ubuntu KDE being Kubuntu.
+
+Arch and Artix can install all graphical environments, with GNOME and KDE running the `sddm` display manager. `gdm` is not supported at this time.
+
+Rocky Linux can install GNOME and KDE.
+
+Rocky Linux has only been tested in a BIOS environment, with no encryption, and no swap partition. It has not been tested with UEFI, nor with `rootfs` encryption, nor with swap partitions.
+
+The project has undergone extensive testing by this point, and additional bug fixes have been merged in.
+
 ## v0.0.9
 
 This project has expanded its Arch and Artix capabilities, and can now work with both "basic `rootfs` encryption" and swap partitions.
