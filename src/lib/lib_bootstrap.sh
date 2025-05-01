@@ -28,7 +28,6 @@ create_chroot_workspace() {
     mkdir -p "/mnt${repodir}"
 
     # copy `linux-image-setup`
-    #git clone "https://github.com/DavidVogelxyz/${post_chroot_path}" "/mnt${repodir}/${post_chroot_path}"
     cp -r /root/linux-image-setup "/mnt${repodir}"
 
     # exclusively for compatibilty
@@ -146,11 +145,11 @@ run_basestrap() {
 run_pre_debootstrap() {
     whiptail \
         --title "Pre-Debootstrap" \
-        --infobox "Installing \`debootstrap\` and \`vim\` to the install image environment." \
+        --infobox "Installing \`debootstrap\` to the install image environment." \
         8 78
 
     apt update > /dev/null \
-        && apt install -y debootstrap git vim > /dev/null 2>&1
+        && apt install -y debootstrap > /dev/null 2>&1
 }
 
 run_debootstrap() {
