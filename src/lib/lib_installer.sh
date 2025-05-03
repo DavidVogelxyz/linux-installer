@@ -149,9 +149,59 @@ install_loop_read() {
         || return 1
 }
 
+install_loop_browser_read() {
+    curr_dir="$(pwd)"
+    pkg_check_name="pkg_${linux_install}"
+
+    total=$(wc -l < "/tmp/${package_file##*/}")
+    n="0"
+
+    while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu pkg_rocky; do
+        n=$((n + 1))
+
+        # skips to next line until it finds `browser_install`
+        [ "$pkg" == "$browser_install" ] \
+            || continue
+
+        # `!` allows the script to print the value of `pkg_${linux_install}`
+        # if value of `pkg_check_name` is `skip`, skips to the next package
+        [ "${!pkg_check_name}" == "skip" ] \
+            && continue
+
+        echo "$comment" | grep -q "^\".*\"$" \
+            && comment="$(echo "$comment" | sed -E "s/(^\"|\"$)//g")"
+
+        [ ! -z "${!pkg_check_name}" ] \
+            && pkg="${!pkg_check_name}"
+
+        [ "$tag" == "A" ] \
+            && check_pkgmgr_pacman \
+            && install_loop_install_aur "$pkg" "$comment" \
+            && break
+
+        [ "$tag" == "G" ] \
+            && install_loop_install_git "$pkg" "$comment" \
+            && break
+
+        install_loop_install_default "$pkg" "$comment"
+
+        break
+    done < "/tmp/${package_file##*/}"
+
+    cd "$curr_dir" \
+        || return 1
+}
+
 install_loop() {
     prep_packages_file \
         || error "Failed to prep the package file."
 
     install_loop_read
+}
+
+install_loop_browser() {
+    prep_packages_file \
+        || error "Failed to prep the package file."
+
+    install_loop_browser_read
 }

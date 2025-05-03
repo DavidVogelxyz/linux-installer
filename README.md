@@ -41,12 +41,12 @@ Some notes on distributions:
 
 `linux-installer` is able to install the following graphical environments (GE):
 
-| GE / Distros               | Debian | Ubuntu             | Arch | Artix | Rocky  |
-| ---                        | ---    | ---                | ---  | ---   | ---    |
-| None ("headless"/"server") | yes    | yes                | yes  | yes   | yes    |
-| dwm                        | yes    | yes                | yes  | yes   | **NO** |
-| GNOME                      | yes    | **Ubuntu Desktop** | yes  | yes   | yes    |
-| KDE                        | yes    | **Kubuntu**        | yes  | yes   | **NO** |
+| GE / Distros               | Arch | Artix | Debian | Rocky  | Ubuntu             |
+| ---                        | ---  | ---   | ---    | ---    | ---                |
+| None ("headless"/"server") | yes  | yes   | yes    | yes    | yes                |
+| dwm                        | yes  | yes   | yes    | **NO** | yes                |
+| GNOME                      | yes  | yes   | yes    | yes    | **Ubuntu Desktop** |
+| KDE                        | yes  | yes   | yes    | **NO** | **Kubuntu**        |
 
 Some notes on graphical environments:
 
@@ -59,34 +59,38 @@ Some notes on graphical environments:
 - GNOME:
     - On Ubuntu, choosing `gnome` will install Ubuntu's version of GNOME (the standard Ubuntu Desktop).
     - All distributions install `gnome-tweaks`.
-    - Debian's
+        - This package allows the user to restore "window buttons at top right of window".
+    - `dash-to-dock` is currently installed only on Debian systems.
+        - This GNOME extenstion allows the user to have a similar dock to the one found on Ubuntu Desktop.
+        - This feature will soon be expanded to Arch, Artix, and Rocky.
+    - Systems with GNOME will run `gnome-terminal` as their terminal, by default.
 - KDE:
     - On Ubuntu, choosing `kde` will install Ubuntu's version of KDE (Kubuntu).
+    - Systems with KDE will run `konsole` as their terminal, by default.
 
 ### Supported web browsers
 
 When installing a graphical environment, the following web browsers are available for install:
 
-| Browsers / Distros | Debian      | Ubuntu      | Arch                                 | Artix                                | Rocky       |
-| ---                | ---         | ---         | ---                                  | ---                                  | ---         |
-| Brave              | yes         | yes         | yes                                  | yes                                  | **not yet** |
-| Chromium           | **not yet** | **not yet** | **not yet**                          | **not yet**                          | **not yet** |
-| Firefox            | yes         | **no**      | **no on dwm; yes on all other GEs**  | **no on dwm; yes on all other GEs**  | yes         |
-| LibreWolf          | **no**      | **no**      | **default for dwm; no on other GEs** | **default for dwm; no on other GEs** | **no**      |
+| Browsers / Distros | Arch | Artix | Debian | Rocky  | Ubuntu |
+| ---                | ---  | ---   | ---    | ---    | ---    |
+| Brave              | yes  | yes   | yes    | yes    | yes    |
+| Chromium           | yes  | yes   | yes    | yes    | **no** |
+| Firefox            | yes  | yes   | yes    | yes    | **no** |
+| LibreWolf          | yes  | yes   | **no** | **no** | **no** |
 
 Some notes on web browsers:
 
 - Brave:
-    - Brave is an option on all distribution except for Rocky, and Arch and Artix dwm machines:
-        - "Brave on Rocky" is on the roadmap.
+    - Brave is the only browser that is available for all currently available distributions.
 - Chromium:
-    - Chromium on the roadmap for Arch and Artix machines.
-    - If Chromium is available in other distro's package repositories, then it will also be added as an option.
+    - Chromium is an option on all distributions except for Ubuntu:
+        - This is because Ubuntu forces the installation of Chromium as a snap package.
 - Firefox:
-    - Firefox is an option on all distributions except for Ubuntu, and Arch and Artix dwm machines:
+    - Firefox is an option on all distributions except for Ubuntu:
         - This is because Ubuntu forces the installation of Firefox as a snap package.
 - LibreWolf:
-    - LibreWolf is the default on Arch and Artix dwm machines, but is not an option on any other distribution or graphical environment.
+    - LibreWolf is only available on systems with access to the AUR.
 
 `linux-installer` can handle both BIOS and UEFI firmware, can encrypt the rootfs, and can create swap partitions based off the machine's total RAM.
 
@@ -120,15 +124,12 @@ The following is a non-exhaustive list of issues that have been noted:
 Future goals for `linux-installer` include the following:
 
 - Add support for GNOME's `dash-to-dock` on Arch, Artix, and Rocky Linux.
-- Add support for Brave on Rocky Linux.
-- Add support for the Chromium web browser.
 - Add `ssh-agent` to non-dwm machines.
 - Ensure systems with `neovim` also install `ripgrep`.
     - Potentially, also `gettext`.
 - Address that some functions should operate based on init system, and not the distro.
 - Use content from [library](https://github.com/DavidVogelxyz/library) to expand the `whiptail` info screens.
 - **Refactor**; add more comments throughout the code.
-- Enable LibreWolf on all Arch/Artix systems.
 - Add support for other desktop environments, including:
     - Xfce
     - Cinnamon

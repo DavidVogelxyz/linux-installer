@@ -234,41 +234,6 @@ fix_browser_dwm() {
     return 0
 }
 
-makeuserjs(){
-    # Get the Arkenfox user.js and prepare it.
-    arkenfox="$pdir/arkenfox.js"
-    overrides="$pdir/user-overrides.js"
-    userjs="$pdir/user.js"
-    ln -fs "/home/$username/.config/firefox/larbs.js" "$overrides"
-    [ ! -f "$arkenfox" ] && curl -sL "https://raw.githubusercontent.com/arkenfox/user.js/master/user.js" > "$arkenfox"
-    cat "$arkenfox" "$overrides" > "$userjs"
-    chown "$username:wheel" "$arkenfox" "$userjs"
-}
-
-fix_librewolf() {
-    # All this below to get Librewolf installed with add-ons and non-bad settings.
-
-    whiptail \
-        --infobox "Setting \`LibreWolf\` browser privacy settings and add-ons..." \
-        9 70
-
-    browserdir="/home/$username/.librewolf"
-    profilesini="$browserdir/profiles.ini"
-
-    # Start librewolf headless so it generates a profile. Then get that profile in a variable.
-    sudo -u "$username" librewolf --headless >/dev/null 2>&1 &
-    sleep 7
-    profile="$(sed -n "/Default=.*.default-default/ s/.*=//p" "$profilesini")"
-    pdir="$browserdir/$profile"
-
-    [ -d "$pdir" ] \
-        && makeuserjs
-
-    # Kill the now unnecessary librewolf instance.
-    pkill -u "$username" librewolf \
-        || return 0
-}
-
 fix_dwm() {
     fix_dwm_existing_dotfiles
 

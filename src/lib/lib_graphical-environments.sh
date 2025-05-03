@@ -75,38 +75,6 @@ arch_aur_install() {
     $aurhelper -Y --save --devel
 }
 
-install_brave_apt() {
-    curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
-        && echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main"|sudo tee /etc/apt/sources.list.d/brave-browser-release.list \
-        && apt update \
-            > /dev/null 2>&1 \
-        && install_pkg_apt brave-browser
-}
-
-install_browser() {
-    check_linux_install "debian" \
-        && [ "$browser_install" = "firefox" ] \
-        && install_pkg_apt firefox-esr
-
-    check_pkgmgr_apt \
-        && [ "$browser_install" = "brave" ] \
-        && install_brave_apt
-
-    check_pkgmgr_pacman \
-        && [ "$browser_install" = "firefox" ] \
-        && install_pkg_pacman firefox-esr
-
-    check_pkgmgr_pacman \
-        && [ "$browser_install" = "brave" ] \
-        && install_pkg_aur brave-bin
-
-    check_linux_install "rocky" \
-        && [ "$browser_install" = "firefox" ] \
-        && install_pkg_dnf firefox
-
-    return 0
-}
-
 #####################################################################
 # FUNCTIONS - PLAYBOOK_KDE
 #####################################################################
@@ -115,9 +83,6 @@ playbook_kde() {
     # installs KDE
     # function defined in `lib_kde.sh`
     install_kde
-
-    # installs the selected web browser
-    install_browser
 
     # post install KDE fixes for Arch-based machines
     fix_kde
@@ -134,9 +99,6 @@ playbook_gnome() {
     # function defined in `lib_gnome.sh`
     install_gnome
 
-    # installs the selected web browser
-    install_browser
-
     # post install GNOME fixes for machines that ARE NOT Ubuntu
     check_linux_install "ubuntu" \
         || fix_gnome
@@ -152,12 +114,6 @@ playbook_dwm() {
     # installs dwm
     # functions defined in `lib_dwm.sh`
     install_dwm
-
-    # installs the selected web browser
-    # on Arch and Artix, this doesn't get set
-    # Arch and Artix get LibreWolf by default
-    [ -z "$browser_install" ] \
-        || install_browser
 
     # post install dwm fixes
     fix_dwm
@@ -176,17 +132,20 @@ playbook_graphical_environment() {
     # checks for `whiptail`
     whiptail_check
 
+    # dwm
     [ "$graphical_environment" = "dwm" ] \
-        && playbook_dwm \
-        && return 0
+        && playbook_dwm
 
+    # GNOME
     [ "$graphical_environment" = "gnome" ] \
-        && playbook_gnome \
-        && return 0
+        && playbook_gnome
 
+    # KDE
     [ "$graphical_environment" = "kde" ] \
-        && playbook_kde \
-        && return 0
+        && playbook_kde
+
+    # installs the selected web browser
+    install_browser
 
     return 0
 }

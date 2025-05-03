@@ -132,10 +132,17 @@ set_browser_install() {
     export browser_install=""
     choices_browser=()
 
-    # Rocky is the only distro that is not yet able to install Brave
-    # need to read install instructions over on Brave website
-    check_linux_install "rocky" \
-        || choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
+    # if dwm and Arch-based, LibreWolf overrides this option
+    check_pkgmgr_pacman \
+        && choices_browser+=("librewolf" "| Privacy-focused fork of Firefox.")
+
+    # Brave is the only browser able to be installed on all systems
+    choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
+
+    # Ubuntu is the only distro that has access to Chromium restricted
+    # this is because Ubuntu forces the snap version of Chromium
+    check_linux_install "ubuntu" \
+        || choices_browser+=("chromium" "| The open-source version of Chrome.")
 
     # Ubuntu is the only distro that has access to Firefox restricted
     # this is because Ubuntu forces the snap version of Firefox
