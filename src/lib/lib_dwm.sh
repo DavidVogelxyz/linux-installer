@@ -173,14 +173,6 @@ EOF
     return 0
 }
 
-nvimplugininstall() {
-    # Installs neovim plugins.
-    whiptail --infobox "Installing neovim plugins..." 7 60
-    sudo -u "$username" mkdir -p "/home/${username}/.config/nvim/autoload"
-    curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
-    sudo -u "$username" nvim -c "PlugInstall|q|q"
-}
-
 larbs_fixes() {
     # Write urls for newsboat if it doesn't already exist
     [ -s "/home/${username}/.config/newsboat/urls" ] \
@@ -242,10 +234,6 @@ fix_dwm() {
     fix_dwm_wallpaper
 
     enable_dwm_autologin
-
-    check_pkgmgr_pacman \
-        && [ ! -f "/home/${username}/.config/nvim/autoload/plug.vim" ] \
-        && nvimplugininstall
 
     check_pkgmgr_pacman \
         && larbs_fixes

@@ -116,17 +116,31 @@ The following is a non-exhaustive list of issues that have been noted:
 
 - `openssh-server` does not install properly on Arch and Artix.
     - Artix also needs proper handling of `openssh-runit`.
+- Issues with `sftp` on Arch and Artix systems.
+    - Due to line in `/etc/ssh/sshd_config`.
+    - Subsystem for `sftp` should be `internal-sftp`.
 - Running a Proxmox VM, a newly installed "UEFI Debian GNOME" fails to boot.
     - However, "UEFI Debian GNOME" successfully booted on a laptop.
+- The issue of the "post-Librewolf" glitch still occurs:
+    - It seems to be limited to `artix`, as `arch` did not encounter this issue
+- `gdm` does not work on Arch or Artix:
+    - The problem relates to `gdm`, but the problem *isn't* `gdm`:
+        - On Arch and Artix, `gdm` expects 3D acceleration.
+            - Proxmox isn't configured to do 3D acceleration.
+        - On Debian, Rocky, and Ubuntu, `gdm` runs without 3D acceleration.
+        - Therefore, the issue is related to a `gdm` config on Arch and Artix.
 
 ## Future plans
 
 Future goals for `linux-installer` include the following:
 
-- Add support for GNOME's `dash-to-dock` on Arch, Artix, and Rocky Linux.
 - Add `ssh-agent` to non-dwm machines.
 - Ensure systems with `neovim` also install `ripgrep`.
     - Potentially, also `gettext`.
+- Test Rocky Linux with:
+    - UEFI
+    - encryption
+    - swap partitions
 - Address that some functions should operate based on init system, and not the distro.
 - Use content from [library](https://github.com/DavidVogelxyz/library) to expand the `whiptail` info screens.
 - **Refactor**; add more comments throughout the code.

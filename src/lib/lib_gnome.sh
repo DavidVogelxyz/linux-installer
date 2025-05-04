@@ -60,14 +60,16 @@ install_gnome() {
 }
 
 install_gnome_dash-to-dock() {
+    curr_dir="$(pwd)"
     progname="dash-to-dock"
     dir="$repodir/$progname"
 
+    # additional dependency for Debian
     check_linux_install "debian" \
-        && {
-            install_pkg_apt gettext
-            install_pkg_apt sassc
-        }
+        && install_pkg_apt gettext
+
+    # all systems require `sassc`
+    install_pkg sassc
 
     #install_pkg_git "https://github.com/micheleg/dash-to-dock"
 
@@ -93,7 +95,7 @@ install_gnome_dash-to-dock() {
     sudo -u "$username" make install \
         > /dev/null 2>&1
 
-    cd /tmp \
+    cd "$curr_dir" \
         || return 1
 }
 
@@ -101,8 +103,8 @@ fix_gnome() {
     # install `dash-to-dock` extension
     # currently set to "only install on Debian"
     # because only Debian dependencies are certain
-    check_linux_install "debian" \
-        && install_gnome_dash-to-dock
+    check_linux_install "ubuntu" \
+        || install_gnome_dash-to-dock
 
     # Install GNOME Tweaks on all systems
     install_pkg gnome-tweaks
@@ -116,6 +118,14 @@ fix_gnome() {
     # must be run manually after rebooting
     check_linux_install "artix" \
         && ln -s /etc/runit/sv/sddm /run/runit/service
+
+    # Install `breeze` theme for SDDM for Arch and Artix
+    check_pkgmgr_pacman \
+        && cp -r src/configs/sddm-themes/breeze /usr/share/sddm/themes/ \
+        && mkdir -p /etc/sddm.conf.d \
+        && echo "[Theme]" > /etc/sddm.conf.d/sddm.conf \
+        && echo "Current=breeze" >> /etc/sddm.conf.d/sddm.conf \
+        && install_pkg_pacman plasma-workspace
 
     # Install `gnome-terminal` to Arch and Artix machines
     # Debian, Ubuntu, and Rocky all install `gnome-terminal` by default

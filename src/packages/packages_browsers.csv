@@ -1,4 +1,4 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
-A,brave,"The Brave web browser, based off of Chromium.",brave-browser,brave-bin,brave-bin,brave-browser,brave-browser
+A,brave,"The Brave web browser (based off of Chromium).",brave-browser,brave-bin,brave-bin,brave-browser,brave-browser
 ,chromium,"The open-source version of Chrome.",chromium,chromium,chromium,skip,chromium
 ,firefox,"The Firefox web browser.",firefox-esr,firefox-esr,firefox-esr,firefox-esr,firefox

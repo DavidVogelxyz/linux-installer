@@ -67,6 +67,7 @@ fix_librewolf() {
 install_browser() {
     # vars for "specific browsers"
     package_file="src/packages/packages_${browser_install}.csv"
+    list_packages="https://raw.githubusercontent.com/DavidVogelxyz/linux-installer/master/src/packages/packages_${browser_install}.csv"
     file_pkg_fail="pkg_fail_${browser_install}.txt"
 
     # ARCH-BASED + LIBREWOLF
@@ -86,6 +87,7 @@ install_browser() {
 
     # vars for "browsers that can be handled with consolidated CSV"
     package_file="src/packages/packages_browsers.csv"
+    list_packages="https://raw.githubusercontent.com/DavidVogelxyz/linux-installer/master/src/packages/packages_browsers.csv"
     file_pkg_fail="pkg_fail_browsers.txt"
 
     install_loop_browser \

@@ -446,6 +446,14 @@ vimplugininstall() {
     sudo -u "$username" vim -c "PlugInstall|q|q"
 }
 
+nvimplugininstall() {
+    # Installs neovim plugins.
+    whiptail --infobox "Installing neovim plugins..." 7 60
+    sudo -u "$username" mkdir -p "/home/${username}/.config/nvim/autoload"
+    curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
+    sudo -u "$username" nvim -c "PlugInstall|q|q"
+}
+
 do_the_stow() {
     cd "/home/$username/.dotfiles" \
         && stow . \
@@ -665,6 +673,11 @@ doconfigs() {
 
     # installs the vim plugins
     vimplugininstall
+
+    # installs the nvim plugins, if neovim is installed
+    check_pkgmgr_pacman \
+        && [ ! -f "/home/${username}/.config/nvim/autoload/plug.vim" ] \
+        && nvimplugininstall
 
     # if no `nvim`, change the default editor
     [ -x "$(command -v nvim)" ] \

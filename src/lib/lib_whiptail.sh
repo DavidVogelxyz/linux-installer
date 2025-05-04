@@ -99,12 +99,23 @@ set_graphical_environment() {
         || choices_environment+=("dwm" "| DavidVogelxyz's custom build of dwm.")
 
     # All supported distros have support for GNOME
-    choices_environment+=("gnome" "| The GNOME desktop environment.")
+    # But, Ubuntu gets a different message
+    check_linux_install "ubuntu" \
+        || choices_environment+=("gnome" "| The GNOME desktop environment.")
+
+    # Ubuntu with GNOME is the default Ubuntu Desktop
+    check_linux_install "ubuntu" \
+        && choices_environment+=("gnome" "| The default Ubuntu Desktop running GNOME.")
 
     # Rocky is the only distro that is not yet able to install KDE
     # still need to figure out `dnf group install` for KDE
-    check_linux_install "rocky" \
+    (check_linux_install "rocky" || check_linux_install "ubuntu") \
         || choices_environment+=("kde" "| The KDE desktop environment.")
+
+    # Rocky is the only distro that is not yet able to install KDE
+    # still need to figure out `dnf group install` for KDE
+    check_linux_install "ubuntu" \
+        && choices_environment+=("kde" "| Kubuntu (KDE + Ubuntu).")
 
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
@@ -137,7 +148,7 @@ set_browser_install() {
         && choices_browser+=("librewolf" "| Privacy-focused fork of Firefox.")
 
     # Brave is the only browser able to be installed on all systems
-    choices_browser+=("brave" "| The Brave web browser, based off of Chromium.")
+    choices_browser+=("brave" "| The Brave web browser (based off of Chromium).")
 
     # Ubuntu is the only distro that has access to Chromium restricted
     # this is because Ubuntu forces the snap version of Chromium

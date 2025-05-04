@@ -60,6 +60,7 @@ install_kde() {
 }
 
 fix_kde() {
+    # Enable `sddm` on Arch
     check_linux_install "arch" \
         && systemctl enable sddm
 
@@ -68,10 +69,22 @@ fix_kde() {
     check_linux_install "artix" \
         && ln -s /etc/runit/sv/sddm /run/runit/service/
 
+    # Install `breeze` theme for SDDM for Arch and Artix
+    check_pkgmgr_pacman \
+        && mkdir -p /etc/sddm.conf.d \
+        && echo "[Theme]" > /etc/sddm.conf.d/sddm.conf \
+        && echo "Current=breeze" >> /etc/sddm.conf.d/sddm.conf
+
+    # Install extra packages to Arch and Artix systems
+    # these do not come by default
     check_pkgmgr_pacman \
         && install_pkg_pacman arandr \
         && install_pkg_pacman konsole \
         && install_pkg_pacman gnome-terminal
+
+    # Install extra packages to Debian and Ubuntu systems
+    check_pkgmgr_apt \
+        && install_pkg_apt gnome-terminal
 
     return 0
 }

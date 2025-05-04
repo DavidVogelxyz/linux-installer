@@ -1,6 +1,6 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
 ,linux-image-generic,"is the base Linux image.",,skip,skip,,kernel
-,build-essential,"provides essential packages for building packages from source code.",,skip,skip,,skip
+,build-essential,"provides essential packages for building packages from source code.",,skip,skip,,make
 ,network-manager,"is a network manager.",,skip,skip,,NetworkManager
 ,bat,"is a better version of `cat`.",,,,,
 ,curl,"is a package for transferring data from URLs.",,,,,

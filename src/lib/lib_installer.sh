@@ -14,6 +14,8 @@ install_pkg_aur() {
 }
 
 install_pkg_git() {
+    curr_dir="$(pwd)"
+
     sudo -u "$username" git -C "$repodir" clone \
         --depth 1 \
         --single-branch \
@@ -36,7 +38,7 @@ install_pkg_git() {
     make install \
         > /dev/null 2>&1
 
-    cd /tmp \
+    cd "$curr_dir" \
         || return 1
 }
 
@@ -106,6 +108,26 @@ install_loop_install_default() {
         || error_install "$1"
 }
 
+install_loop_browser_install_aur() {
+    whiptail \
+        --title "Package Installation" \
+        --infobox "Installing \`$1\`. $1 $2" \
+        9 70
+
+    install_pkg_aur "$1" \
+        || error_install "$1"
+}
+
+install_loop_browser_install() {
+    whiptail \
+        --title "Package Installation" \
+        --infobox "Installing \`$1\`. $1 $2" \
+        9 70
+
+    install_pkg "$1" \
+        || error_install "$1"
+}
+
 prep_packages_file() {
     ([ -f "$package_file" ] && cp "$package_file" "/tmp/${package_file##*/}") \
         && sed -i '/^#/d' "/tmp/${package_file##*/}" \
@@ -153,12 +175,7 @@ install_loop_browser_read() {
     curr_dir="$(pwd)"
     pkg_check_name="pkg_${linux_install}"
 
-    total=$(wc -l < "/tmp/${package_file##*/}")
-    n="0"
-
     while IFS="," read -r tag pkg comment pkg_debian pkg_arch pkg_artix pkg_ubuntu pkg_rocky; do
-        n=$((n + 1))
-
         # skips to next line until it finds `browser_install`
         [ "$pkg" == "$browser_install" ] \
             || continue
@@ -176,14 +193,14 @@ install_loop_browser_read() {
 
         [ "$tag" == "A" ] \
             && check_pkgmgr_pacman \
-            && install_loop_install_aur "$pkg" "$comment" \
+            && install_loop_browser_install_aur "$pkg" "$comment" \
             && break
 
         [ "$tag" == "G" ] \
             && install_loop_install_git "$pkg" "$comment" \
             && break
 
-        install_loop_install_default "$pkg" "$comment"
+        install_loop_browser_install "$pkg" "$comment"
 
         break
     done < "/tmp/${package_file##*/}"
