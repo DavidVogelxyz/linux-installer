@@ -240,8 +240,5 @@ fix_dwm() {
 
     fix_browser_dwm
 
-    check_pkgmgr_pacman \
-        && fix_librewolf
-
     return 0
 }
