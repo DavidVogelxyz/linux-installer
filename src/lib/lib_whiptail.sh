@@ -135,15 +135,10 @@ set_browser_install() {
     [ "$graphical_environment" = "server" ] \
         && return 0
 
-    # if dwm and Arch-based, LibreWolf overrides this option
-    [ "$graphical_environment" = "dwm" ] \
-        && check_pkgmgr_pacman \
-        && return 0
-
     export browser_install=""
     choices_browser=()
 
-    # if dwm and Arch-based, LibreWolf overrides this option
+    # if AUR is available, LibreWolf is an option
     check_pkgmgr_pacman \
         && choices_browser+=("librewolf" "| Privacy-focused fork of Firefox.")
 
