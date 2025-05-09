@@ -106,8 +106,9 @@ fix_gnome() {
     check_linux_install "ubuntu" \
         || install_gnome_dash-to-dock
 
-    # Install GNOME Tweaks on all systems
-    install_pkg gnome-tweaks
+    # Install GNOME Tweaks on all systems but Ubuntu
+    check_linux_install "ubuntu" \
+        || install_pkg gnome-tweaks
 
     # Enable `sddm` on Arch
     check_linux_install "arch" \
