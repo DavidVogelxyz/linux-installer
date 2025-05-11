@@ -211,10 +211,24 @@ larbs_fixes() {
 }
 
 fix_browser_dwm() {
-    # if browser is set to Brave, change default browser
-    [ "$browser_install" = "brave" ] \
+    # if Arch-based, and browser is set to Brave, change default browser to `brave-bin`
+    check_pkgmgr_pacman \
+        && [ "$browser_install" = "brave" ] \
         && sed -i \
             's/^export BROWSER="librewolf"/export BROWSER="brave-bin"/g' \
+            "/home/$username/.dotfiles/.config/shell/profile"
+
+    # if Debian-based, and browser is set to Brave, change default browser to `brave-browser`
+    check_pkgmgr_apt \
+        && [ "$browser_install" = "brave" ] \
+        && sed -i \
+            's/^export BROWSER="librewolf"/export BROWSER="brave-browser"/g' \
+            "/home/$username/.dotfiles/.config/shell/profile"
+
+    # if browser is set to Chromium, change default browser to `chromium`
+    [ "$browser_install" = "chromium" ] \
+        && sed -i \
+            's/^export BROWSER="librewolf"/export BROWSER="chromium"/g' \
             "/home/$username/.dotfiles/.config/shell/profile"
 
     # if browser is set to Firefox, change default browser
