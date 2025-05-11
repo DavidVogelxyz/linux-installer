@@ -161,8 +161,8 @@ enable_dwm_autologin() {
     check_linux_install "artix" \
         && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
 
-    # enables autologin on Debian
-    check_linux_install "debian" \
+    # enables autologin on Arch and Debian and Ubuntu
+    (check_linux_install "arch" || check_linux_install "debian" || check_linux_install "ubuntu") \
         && sudo mkdir -p /etc/systemd/system/getty@tty1.service.d \
         && sudo tee -a /etc/systemd/system/getty@tty1.service.d/override.conf &>/dev/null <<EOF
 [Service]
