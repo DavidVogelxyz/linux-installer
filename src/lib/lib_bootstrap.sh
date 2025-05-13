@@ -174,7 +174,7 @@ run_pacstrap() {
     # `iptables` and `mkinitcpio` were added explicitly to avoid user prompts
     pkgs="base base-devel linux linux-firmware cryptsetup lvm2 grub networkmanager dhcpcd openssh neovim vim iptables mkinitcpio"
 
-    [ "$uefi" = true ] \
+    [ "$uefi" = "uefi" ] \
         && pkgs+=" efibootmgr"
 
     # set mirrors
