@@ -708,25 +708,44 @@ cryptsetup_debootstrap() {
 }
 
 cryptsetup_arch() {
-    # adds `encrypt lvm2` to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
+    # adds `encrypt` and `lvm2` to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
     sed -i \
         "s/^\(HOOKS.*block\) filesystems/\1 encrypt lvm2 filesystems/g" \
         "/etc/mkinitcpio.conf"
+
+    # if a swap partition was created, adds `resume` to `/etc/mkinitcpio.conf`, between `filesystems` and `fsck`
+    [ "$swapanswer" = true ] \
+        && sed -i \
+            "s/^\(HOOKS.*filesystems\) fsck/\1 filesystems resume fsck/g" \
+            "/etc/mkinitcpio.conf"
 
     # sets `volume_logical_root` to `partition_crypt`, if not already set
     [ -z "$volume_logical_root" ] \
         && volume_logical_root="$partition_crypt"
 
-    # lays down the foundation for the UUID substitution
-    sed -i \
-        "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root}\"|g" \
-        "/etc/default/grub"
+    # for systems without swap, lays down the foundation for the UUID substitution
+    [ "$swapanswer" = false ] \
+        && sed -i \
+            "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root}\"|g" \
+            "/etc/default/grub"
 
-    # all Arch and Artix have the same partitions
-    blkid_partitions=(
-        "${partition_rootfs}"
-        "${volume_logical_root}"
-    )
+    # for systems with swap, lays down the foundation for the UUID substitution
+    [ "$swapanswer" = true ] \
+        && sed -i \
+            "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}\"|g" \
+            "/etc/default/grub"
+
+    # add volumes to array
+    [ -z "$volume_logical_swap" ] \
+        && blkid_partitions+=(
+            "${partition_rootfs}"
+            "${volume_logical_root}"
+            ) \
+        || blkid_partitions+=(
+            "${partition_rootfs}"
+            "${volume_logical_root}"
+            "${volume_logical_swap}"
+            )
 
     # loop through each line of `blkid | grep UUID`
     # within loop, loop through each `object` in the array `blkid_partitions`
