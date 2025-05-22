@@ -5,7 +5,10 @@
 #####################################################################
 
 install_gnome_debian() {
-    install_pkg_apt gnome-core
+    DEBIAN_FRONTEND=noninteractive \
+        apt install -q -y \
+            gnome-core \
+            > /dev/null 2>&1
 }
 
 install_gnome_ubuntu() {
