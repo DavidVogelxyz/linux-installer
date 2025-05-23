@@ -24,7 +24,7 @@ welcome_screen() {
 ask_debootstrap_install_os() {
     # Linux distro choices for `debootstrap`
     debootstrap_distros=(
-        "debian" "| Debian 12 - Bookworm"
+        "debian" "| Debian 12 or 13"
         "ubuntu" "| Ubuntu 24 - Noble"
     )
 
@@ -38,13 +38,24 @@ ask_debootstrap_install_os() {
         3>&1 1>&2 2>&3 3>&1
     )
 
-    check_linux_install "debian" \
-        && release_install="bookworm" \
-        && return 0
-
     check_linux_install "ubuntu" \
         && release_install="noble" \
         && return 0
+
+    # Debian version choices
+    debian_versions=(
+        "bookworm" "| Debian 12 - Bookworm"
+        "trixie" "| Debian 13 - Trixie"
+    )
+
+    release_install=$(whiptail \
+        --title "Debian Release" \
+        --menu "\\nThere are multiple versions available for Debian.
+            \\nPlease select from the following options:" \
+        25 78 10 \
+        "${debian_versions[@]} " \
+        3>&1 1>&2 2>&3 3>&1
+    )
 }
 
 os_identify_screen() {
