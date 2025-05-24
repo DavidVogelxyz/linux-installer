@@ -137,6 +137,21 @@ playbook_cosmic() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_CINNAMON
+#####################################################################
+
+playbook_cinnamon() {
+    # installs cinnamon
+    # functions defined in `lib_cinnamon.sh`
+    install_cinnamon
+
+    # post install cinnamon fixes
+    fix_cinnamon
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -162,6 +177,10 @@ playbook_graphical_environment() {
     # COSMIC
     [ "$graphical_environment" = "cosmic" ] \
         && playbook_cosmic
+
+    # CINNAMON
+    [ "$graphical_environment" = "cinnamon" ] \
+        && playbook_cinnamon
 
     # installs the selected web browser
     install_browser

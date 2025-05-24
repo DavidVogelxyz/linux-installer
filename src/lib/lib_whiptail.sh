@@ -132,6 +132,10 @@ set_graphical_environment() {
     check_linux_install "arch" \
         && choices_environment+=("cosmic" "| COSMIC Desktop.")
 
+    # Rocky is the only distro that is not yet able to install Cinnamon
+    check_linux_install "rocky" \
+        || choices_environment+=("cinnamon" "| Cinnamon Desktop.")
+
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
         --menu "\\nPlease choose from the following options:" \
