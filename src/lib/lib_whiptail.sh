@@ -128,6 +128,10 @@ set_graphical_environment() {
     check_linux_install "ubuntu" \
         && choices_environment+=("kde" "| Kubuntu (KDE + Ubuntu).")
 
+    # Arch is the only distro that can install COSMIC
+    check_linux_install "arch" \
+        && choices_environment+=("cosmic" "| COSMIC Desktop.")
+
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
         --menu "\\nPlease choose from the following options:" \

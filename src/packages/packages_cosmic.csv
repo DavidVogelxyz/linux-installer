@@ -1,0 +1,2 @@
+#TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
+,cosmic,"is a desktop environment.",skip,,skip,skip,skip

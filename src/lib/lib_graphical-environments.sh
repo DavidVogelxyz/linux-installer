@@ -122,6 +122,21 @@ playbook_dwm() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_COSMIC
+#####################################################################
+
+playbook_cosmic() {
+    # installs cosmic
+    # functions defined in `lib_cosmic.sh`
+    install_cosmic
+
+    # post install cosmic fixes
+    fix_cosmic
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -143,6 +158,10 @@ playbook_graphical_environment() {
     # KDE
     [ "$graphical_environment" = "kde" ] \
         && playbook_kde
+
+    # COSMIC
+    [ "$graphical_environment" = "cosmic" ] \
+        && playbook_cosmic
 
     # installs the selected web browser
     install_browser
