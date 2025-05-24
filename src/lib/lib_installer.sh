@@ -43,7 +43,7 @@ install_pkg_git() {
 }
 
 install_pkg_apt() {
-    apt install -y "$1" \
+    DEBIAN_FRONTEND=noninteractive apt install -y "$1" \
         > /dev/null 2>&1
 }
 

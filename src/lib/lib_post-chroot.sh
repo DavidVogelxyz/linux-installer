@@ -695,10 +695,7 @@ doconfigs() {
 }
 
 cryptsetup_debootstrap() {
-    DEBIAN_FRONTEND=noninteractive \
-        apt install -q -y \
-            cryptsetup-initramfs \
-            > /dev/null 2>&1
+    install_pkg_apt cryptsetup-initramfs
 
     while read -r blkid_dev blkid_uuid other ; do
         uuid_crypt="$(echo "$blkid_uuid" | sed -E "s/\"|\"$//g")"
