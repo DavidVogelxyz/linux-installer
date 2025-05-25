@@ -5,3 +5,4 @@
 ,sddm,"is an alternate display manager.",skip,,sddm-runit,skip,skip
 ,gnome-terminal,"is a terminal for GNOME.",,,,,skip
 ,konsole,"is a terminal for KDE.",skip,,,skip,skip
+,dolphin,"is a file explorer for KDE.",skip,,,skip,skip
