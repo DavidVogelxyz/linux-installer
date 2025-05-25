@@ -8,6 +8,10 @@ install_gnome() {
     check_pkgmgr_pacman \
         && arch_aur_prep
 
+    # Install GNOME on Rocky
+    check_linux_install "rocky" \
+        && dnf group install -y gnome > /dev/null 2>&1
+
     install_loop \
         || error "Failed during the install loop."
 }
