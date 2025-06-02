@@ -18,14 +18,14 @@ install_gnome() {
 
 fix_gnome() {
     # Enable `sddm` on Arch
-    check_linux_install "arch" \
-        && systemctl enable sddm
+    #check_linux_install "arch" \
+    #    && systemctl enable sddm
 
     # Enable `sddm` on Artix
     # for some reason, this doesn't work in chroot
     # must be run manually after rebooting
-    check_linux_install "artix" \
-        && ln -s /etc/runit/sv/sddm /run/runit/service
+    #check_linux_install "artix" \
+    #    && ln -s /etc/runit/sv/sddm /run/runit/service
 
     return 0
 }
