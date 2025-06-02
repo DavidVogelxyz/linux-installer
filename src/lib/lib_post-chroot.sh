@@ -533,6 +533,7 @@ doconfigs() {
         "$repodir/vim" "/home/$username/.vim"
         "/home/$username/.dotfiles" "$repodir/dotfiles"
         "/home/$username/.dotfiles/.bashrc" "/root/.bashrc"
+        "/home/$username/.dotfiles/.config/shell/aliasrc" "/root/.config/shell/aliasrc"
         "/home/$username/.dotfiles/.config/shell/profile" "/root/.profile"
         "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
     )
@@ -542,8 +543,6 @@ doconfigs() {
         && links_to_sym+=(
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/root/.config/lf/scope"
         "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
-        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/root/.config/shell/aliasrc"
-        "/home/$username/.dotfiles/.config/shell/aliasrc-debian" "/home/$username/.config/shell/aliasrc"
     )
 
     # specific to Arch and Artix
@@ -553,8 +552,6 @@ doconfigs() {
         "$repodir/nvim" "/home/$username/.config/"
         "/home/$username/.dotfiles/.config/lf/scope-arch" "/root/.config/lf/scope"
         "/home/$username/.dotfiles/.config/lf/scope-arch" "/home/$username/.config/lf/scope"
-        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/root/.config/shell/aliasrc"
-        "/home/$username/.dotfiles/.config/shell/aliasrc-arch" "/home/$username/.config/shell/aliasrc"
     )
 
     # loop through `links_to_sym` and creates the symlinks
