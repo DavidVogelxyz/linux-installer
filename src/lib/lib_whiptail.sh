@@ -44,8 +44,8 @@ ask_debootstrap_install_os() {
 
     # Debian version choices
     debian_versions=(
-        "bookworm" "| Debian 12 - Bookworm"
-        "trixie" "| Debian 13 - Trixie"
+        "bookworm" "| Debian 12 - Bookworm - LATEST OFFICIAL"
+        "trixie" "| Debian 13 - Trixie - TESTING RELEASE"
     )
 
     release_install=$(whiptail \

@@ -41,12 +41,14 @@ Some notes on distributions:
 
 `linux-installer` is able to install the following graphical environments (GE):
 
-| GE / Distros               | Arch | Artix | Debian | Rocky  | Ubuntu             |
-| ---                        | ---  | ---   | ---    | ---    | ---                |
-| None ("headless"/"server") | yes  | yes   | yes    | yes    | yes                |
-| dwm                        | yes  | yes   | yes    | **NO** | yes                |
-| GNOME                      | yes  | yes   | yes    | yes    | **Ubuntu Desktop** |
-| KDE                        | yes  | yes   | yes    | **NO** | **Kubuntu**        |
+| GE / Distros               | Arch   | Artix  | Debian | Rocky  | Ubuntu             |
+| ---                        | ---    | ---    | ---    | ---    | ---                |
+| None ("headless"/"server") | yes    | yes    | yes    | yes    | yes                |
+| dwm                        | yes    | yes    | yes    | **NO** | yes                |
+| GNOME                      | yes    | yes    | yes    | yes    | **Ubuntu Desktop** |
+| KDE                        | yes    | yes    | yes    | **NO** | **Kubuntu**        |
+| COSMIC                     | yes    | **NO** | **NO** | **NO** | **NO**             |
+| Cinnamon                   | yes    | yes    | yes    | **NO** | yes                |
 
 Some notes on graphical environments:
 
