@@ -451,7 +451,7 @@ nvimplugininstall() {
     whiptail --infobox "Installing neovim plugins..." 7 60
     sudo -u "$username" mkdir -p "/home/${username}/.config/nvim/autoload"
     curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
-    sudo -u "$username" nvim -c "PlugInstall|q|q"
+    sudo -u "$username" nvim -c "q"
 }
 
 do_the_stow() {
