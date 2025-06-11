@@ -41,14 +41,14 @@ Some notes on distributions:
 
 `linux-installer` is able to install the following graphical environments (GE):
 
-| GE / Distros               | Arch   | Artix  | Debian | Rocky  | Ubuntu             |
-| ---                        | ---    | ---    | ---    | ---    | ---                |
-| None ("headless"/"server") | yes    | yes    | yes    | yes    | yes                |
-| dwm                        | yes    | yes    | yes    | **NO** | yes                |
-| GNOME                      | yes    | yes    | yes    | yes    | **Ubuntu Desktop** |
-| KDE                        | yes    | yes    | yes    | **NO** | **Kubuntu**        |
-| COSMIC                     | yes    | **NO** | **NO** | **NO** | **NO**             |
-| Cinnamon                   | yes    | yes    | yes    | **NO** | yes                |
+| GE / Distros               | Arch | Artix | Debian | Rocky | Ubuntu              |
+| ---                        | ---  | ---   | ---    | ---   | ---                 |
+| None ("headless"/"server") | ✅   | ✅    | ✅     | ✅    | ✅                  |
+| dwm                        | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| GNOME                      | ✅   | ✅    | ✅     | ✅    | ✅ (Ubuntu Desktop) |
+| KDE                        | ✅   | ✅    | ✅     | ❌    | ✅ (Kubuntu)        |
+| COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
+| Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 
@@ -74,12 +74,12 @@ Some notes on graphical environments:
 
 When installing a graphical environment, the following web browsers are available for install:
 
-| Browsers / Distros | Arch | Artix | Debian | Rocky  | Ubuntu |
-| ---                | ---  | ---   | ---    | ---    | ---    |
-| Brave              | yes  | yes   | yes    | yes    | yes    |
-| Chromium           | yes  | yes   | yes    | yes    | **no** |
-| Firefox            | yes  | yes   | yes    | yes    | **no** |
-| LibreWolf          | yes  | yes   | **no** | **no** | **no** |
+| Browsers / Distros | Arch | Artix | Debian | Rocky | Ubuntu |
+| ---                | ---  | ---   | ---    | ---   | ---    |
+| Brave              | ✅   | ✅    | ✅     | ✅    | ✅     |
+| Chromium           | ✅   | ✅    | ✅     | ✅    | ❌     |
+| Firefox            | ✅   | ✅    | ✅     | ✅    | ❌     |
+| LibreWolf          | ✅   | ✅    | ❌     | ❌    | ❌     |
 
 Some notes on web browsers:
 
