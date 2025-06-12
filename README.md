@@ -50,6 +50,7 @@ Some notes on distributions:
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
 | Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | Xfce                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Mate                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 

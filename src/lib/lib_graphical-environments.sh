@@ -167,6 +167,21 @@ playbook_xfce() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_MATE
+#####################################################################
+
+playbook_mate() {
+    # installs mate
+    # functions defined in `lib_mate.sh`
+    install_mate
+
+    # post install mate fixes
+    fix_mate
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -200,6 +215,10 @@ playbook_graphical_environment() {
     # XFCE
     [ "$graphical_environment" = "xfce" ] \
         && playbook_xfce
+
+    # MATE
+    [ "$graphical_environment" = "mate" ] \
+        && playbook_mate
 
     # installs the selected web browser
     install_browser
