@@ -140,6 +140,10 @@ set_graphical_environment() {
     check_linux_install "rocky" \
         || choices_environment+=("xfce" "| Xfce Desktop.")
 
+    # Rocky is the only distro that is not yet able to install Mate
+    check_linux_install "rocky" \
+        || choices_environment+=("mate" "| Mate Desktop.")
+
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
         --menu "\\nPlease choose from the following options:" \

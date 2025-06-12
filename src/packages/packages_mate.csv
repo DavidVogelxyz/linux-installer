@@ -1,0 +1,6 @@
+#TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
+,noto-fonts,"is a fonts package.",skip,,,skip,skip
+,mate,"is the Mate desktop package.",mate-desktop-environment-core,,,mate-desktop-environment-core,skip
+,gdm,"is the GNOME display manager.",gdm3,skip,skip,gdm3,skip
+,sddm,"is an alternate display manager.",skip,,sddm-runit,skip,skip
+,gnome-terminal,"is a terminal for GNOME.",,,,,skip
