@@ -152,6 +152,21 @@ playbook_cinnamon() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_XFCE
+#####################################################################
+
+playbook_xfce() {
+    # installs xfce
+    # functions defined in `lib_xfce.sh`
+    install_xfce
+
+    # post install xfce fixes
+    fix_xfce
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -181,6 +196,10 @@ playbook_graphical_environment() {
     # CINNAMON
     [ "$graphical_environment" = "cinnamon" ] \
         && playbook_cinnamon
+
+    # XFCE
+    [ "$graphical_environment" = "xfce" ] \
+        && playbook_xfce
 
     # installs the selected web browser
     install_browser

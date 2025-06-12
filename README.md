@@ -49,6 +49,7 @@ Some notes on distributions:
 | KDE                        | ✅   | ✅    | ✅     | ❌    | ✅ (Kubuntu)        |
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
 | Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Xfce                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 
