@@ -185,9 +185,8 @@ larbs_fixes() {
 
     # Make zsh the default shell for the user.
     #chsh -s /bin/zsh "$username" >/dev/null 2>&1
-    sudo -u "$name" mkdir -p "/home/${username}/.cache/zsh/"
-    sudo -u "$name" mkdir -p "/home/${username}/.config/abook/"
-    sudo -u "$name" mkdir -p "/home/${username}/.config/mpd/playlists/"
+    sudo -u "$username" mkdir -p "/home/${username}/.config/abook"
+    sudo -u "$username" mkdir -p "/home/${username}/.config/mpd/playlists"
 
     # Make dash the default #!/bin/sh symlink.
     #ln -sfT /bin/dash /bin/sh >/dev/null 2>&1

@@ -1,3 +1,20 @@
+## v0.1.1
+
+New features:
+- added more browser support (Brave, Chromium)
+- GNOME installs now come with `dash-to-dock`
+- autologin for Arch and Ubuntu dwm systems
+- added support for Debian 13 (trixie)
+- added COSMIC desktop to Arch installs
+- added Cinnamon desktop to all distros except Rocky
+
+Bug fixes:
+- `nvim` plugins are now installed on Arch-based systems
+- `sddm` now installs with the Breeze theme
+- Arch now correctly installs `efibootmgr`
+- systems with encrypted swap partitions now hibernate correctly
+- added `DEBIAN_FRONTEND=interactive` to `install_pkg_apt`
+
 ## v0.1.0
 
 Version 0.1.0 is the first true public release, adding support for various graphical environments, as well as support for Rocky Linux.
