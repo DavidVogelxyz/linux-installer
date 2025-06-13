@@ -197,6 +197,21 @@ playbook_lxqt() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_LXDE
+#####################################################################
+
+playbook_lxde() {
+    # installs lxde
+    # functions defined in `lib_lxde.sh`
+    install_lxde
+
+    # post install lxqt fixes
+    fix_lxde
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -238,6 +253,10 @@ playbook_graphical_environment() {
     # LXQT
     [ "$graphical_environment" = "lxqt" ] \
         && playbook_lxqt
+
+    # LXDE
+    [ "$graphical_environment" = "lxde" ] \
+        && playbook_lxde
 
     # installs the selected web browser
     install_browser

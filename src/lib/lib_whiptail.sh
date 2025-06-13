@@ -148,6 +148,10 @@ set_graphical_environment() {
     check_linux_install "rocky" \
         || choices_environment+=("lxqt" "| LXQt Desktop.")
 
+    # Rocky is the only distro that is not yet able to install LXDE
+    check_linux_install "rocky" \
+        || choices_environment+=("lxde" "| LXDE Desktop.")
+
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
         --menu "\\nPlease choose from the following options:" \

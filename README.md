@@ -52,6 +52,7 @@ Some notes on distributions:
 | Xfce                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | Mate                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| LXDE                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 

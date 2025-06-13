@@ -17,6 +17,7 @@ libraries=(
     "src/lib/lib_xfce.sh"
     "src/lib/lib_mate.sh"
     "src/lib/lib_lxqt.sh"
+    "src/lib/lib_lxde.sh"
     "src/lib/lib_graphical-environments.sh"
 )
 
