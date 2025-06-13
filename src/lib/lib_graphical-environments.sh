@@ -212,6 +212,21 @@ playbook_lxde() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_BUDGIE
+#####################################################################
+
+playbook_budgie() {
+    # installs budgie
+    # functions defined in `lib_budgie.sh`
+    install_budgie
+
+    # post install budgie fixes
+    fix_budgie
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -257,6 +272,10 @@ playbook_graphical_environment() {
     # LXDE
     [ "$graphical_environment" = "lxde" ] \
         && playbook_lxde
+
+    # BUDGIE
+    [ "$graphical_environment" = "budgie" ] \
+        && playbook_budgie
 
     # installs the selected web browser
     install_browser
