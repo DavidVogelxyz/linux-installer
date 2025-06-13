@@ -53,6 +53,7 @@ Some notes on distributions:
 | Mate                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | LXDE                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Budgie                     | ✅   | ✅    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 
