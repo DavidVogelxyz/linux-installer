@@ -237,45 +237,18 @@ playbook_graphical_environment() {
     # checks for `whiptail`
     whiptail_check
 
-    # dwm
-    [ "$graphical_environment" = "dwm" ] \
-        && playbook_dwm
-
-    # GNOME
-    [ "$graphical_environment" = "gnome" ] \
-        && playbook_gnome
-
-    # KDE
-    [ "$graphical_environment" = "kde" ] \
-        && playbook_kde
-
-    # COSMIC
-    [ "$graphical_environment" = "cosmic" ] \
-        && playbook_cosmic
-
-    # CINNAMON
-    [ "$graphical_environment" = "cinnamon" ] \
-        && playbook_cinnamon
-
-    # XFCE
-    [ "$graphical_environment" = "xfce" ] \
-        && playbook_xfce
-
-    # MATE
-    [ "$graphical_environment" = "mate" ] \
-        && playbook_mate
-
-    # LXQT
-    [ "$graphical_environment" = "lxqt" ] \
-        && playbook_lxqt
-
-    # LXDE
-    [ "$graphical_environment" = "lxde" ] \
-        && playbook_lxde
-
-    # BUDGIE
-    [ "$graphical_environment" = "budgie" ] \
-        && playbook_budgie
+    case "$graphical_environment" in
+        dwm) playbook_dwm ;;
+        gnome) playbook_gnome ;;
+        kde) playbook_kde ;;
+        cosmic) playbook_cosmic ;;
+        cinnamon) playbook_cinnamon ;;
+        xfce) playbook_xfce ;;
+        mate) playbook_mate ;;
+        lxqt) playbook_lxqt ;;
+        lxde) playbook_lxde ;;
+        budgie) playbook_budgie ;;
+    esac
 
     # installs the selected web browser
     install_browser
