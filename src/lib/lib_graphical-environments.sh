@@ -182,6 +182,21 @@ playbook_mate() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_LXQT
+#####################################################################
+
+playbook_lxqt() {
+    # installs lxqt
+    # functions defined in `lib_lxqt.sh`
+    install_lxqt
+
+    # post install lxqt fixes
+    fix_lxqt
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_GRAPHICAL_ENVIRONMENTS
 #####################################################################
 
@@ -219,6 +234,10 @@ playbook_graphical_environment() {
     # MATE
     [ "$graphical_environment" = "mate" ] \
         && playbook_mate
+
+    # LXQT
+    [ "$graphical_environment" = "lxqt" ] \
+        && playbook_lxqt
 
     # installs the selected web browser
     install_browser

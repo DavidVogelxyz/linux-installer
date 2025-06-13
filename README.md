@@ -51,6 +51,7 @@ Some notes on distributions:
 | Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | Xfce                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | Mate                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 
