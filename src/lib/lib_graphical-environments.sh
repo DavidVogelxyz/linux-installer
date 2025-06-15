@@ -238,16 +238,16 @@ playbook_graphical_environment() {
     whiptail_check
 
     case "$graphical_environment" in
-        dwm) playbook_dwm ;;
-        gnome) playbook_gnome ;;
-        kde) playbook_kde ;;
-        cosmic) playbook_cosmic ;;
-        cinnamon) playbook_cinnamon ;;
-        xfce) playbook_xfce ;;
-        mate) playbook_mate ;;
-        lxqt) playbook_lxqt ;;
-        lxde) playbook_lxde ;;
-        budgie) playbook_budgie ;;
+        dwm)        playbook_dwm ;;
+        gnome)      playbook_gnome ;;
+        kde)        playbook_kde ;;
+        cosmic)     playbook_cosmic ;;
+        cinnamon)   playbook_cinnamon ;;
+        xfce)       playbook_xfce ;;
+        mate)       playbook_mate ;;
+        lxqt)       playbook_lxqt ;;
+        lxde)       playbook_lxde ;;
+        budgie)     playbook_budgie ;;
     esac
 
     # installs the selected web browser

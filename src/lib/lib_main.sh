@@ -278,26 +278,11 @@ playbook_main() {
         || error "Failed to mount file systems."
 
     # now, perform the bootstrap
-    # probably want to use a match (case) function in the future
     # functions defined in `lib_bootstrap.sh`
-
-    # runs debootstrap on Ubuntu images; exit on success
-    check_linux_iso "ubuntu" \
-        && run_debootstrap \
-        && exit 0
-
-    # runs pacstrap on Arch images; exit on success
-    check_linux_iso "arch" \
-        && run_pacstrap \
-        && exit 0
-
-    # runs basestrap on Artix images; exit on success
-    check_linux_iso "artix" \
-        && run_basestrap \
-        && exit 0
-
-    # runs basestrap on Artix images; exit on success
-    check_linux_iso "rocky" \
-        && run_rockystrap \
-        && exit 0
+    case "$linux_iso" in
+        ubuntu)     run_debootstrap && exit 0 ;;
+        arch)       run_pacstrap && exit 0 ;;
+        artix)      run_basestrap && exit 0 ;;
+        rocky)      run_rockystrap && exit 0 ;;
+    esac
 }
