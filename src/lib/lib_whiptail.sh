@@ -101,61 +101,71 @@ set_graphical_environment() {
     export graphical_environment=""
     choices_environment=()
 
-    # all supported distros have support for `server` ("headless")
+    # SERVER
+    # All distros
     choices_environment+=("server" "| No graphical environment.")
 
-    # Rocky is the only distro that is not yet able to install dwm
-    # names of dependencies on Rocky repos still needs to be figured out
+    # dwm
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("dwm" "| DavidVogelxyz's custom build of dwm.")
 
-    # All supported distros have support for GNOME
-    # But, Ubuntu gets a different message
+    # GNOME
+    # All distros except for Ubuntu
     check_linux_install "ubuntu" \
         || choices_environment+=("gnome" "| The GNOME desktop environment.")
 
-    # Ubuntu with GNOME is the default Ubuntu Desktop
+    # GNOME
+    # Ubuntu only
     check_linux_install "ubuntu" \
         && choices_environment+=("gnome" "| The default Ubuntu Desktop running GNOME.")
 
-    # Rocky is the only distro that is not yet able to install KDE
-    # still need to figure out `dnf group install` for KDE
+    # KDE
+    # All distros except for Rocky and Ubuntu
     (check_linux_install "rocky" || check_linux_install "ubuntu") \
         || choices_environment+=("kde" "| The KDE desktop environment.")
 
-    # Rocky is the only distro that is not yet able to install KDE
-    # still need to figure out `dnf group install` for KDE
+    # KDE
+    # Ubuntu only
     check_linux_install "ubuntu" \
         && choices_environment+=("kde" "| Kubuntu (KDE + Ubuntu).")
 
-    # Arch is the only distro that can install COSMIC
+    # COSMIC
+    # Arch only
     check_linux_install "arch" \
         && choices_environment+=("cosmic" "| COSMIC Desktop.")
 
-    # Rocky is the only distro that is not yet able to install Cinnamon
+    # Cinnamon
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("cinnamon" "| Cinnamon Desktop.")
 
-    # Rocky is the only distro that is not yet able to install Xfce
+    # Xfce
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("xfce" "| Xfce Desktop.")
 
-    # Rocky is the only distro that is not yet able to install Mate
+    # Mate
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("mate" "| Mate Desktop.")
 
-    # Rocky is the only distro that is not yet able to install LXQt
+    # LXQt
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("lxqt" "| LXQt Desktop.")
 
-    # Rocky is the only distro that is not yet able to install LXDE
+    # LXDE
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("lxde" "| LXDE Desktop.")
 
-    # Rocky is the only distro that is not yet able to install Budgie
+    # Budgie
+    # All distros except for Rocky
     check_linux_install "rocky" \
         || choices_environment+=("budgie" "| Budgie Desktop.")
 
+    # whiptail menu screen
     graphical_environment=$(whiptail \
         --title "Graphical Environment" \
         --menu "\\nPlease choose from the following options:" \
@@ -177,23 +187,26 @@ set_browser_install() {
     export browser_install=""
     choices_browser=()
 
-    # if AUR is available, LibreWolf is an option
+    # LibreWolf
+    # AUR only (Arch/Artix)
     check_pkgmgr_pacman \
         && choices_browser+=("librewolf" "| Privacy-focused fork of Firefox.")
 
-    # Brave is the only browser able to be installed on all systems
+    # Brave
+    # All distros
     choices_browser+=("brave" "| The Brave web browser (based off of Chromium).")
 
-    # Ubuntu is the only distro that has access to Chromium restricted
-    # this is because Ubuntu forces the snap version of Chromium
+    # Chromium
+    # All distros except for Ubuntu
     check_linux_install "ubuntu" \
         || choices_browser+=("chromium" "| The open-source version of Chrome.")
 
-    # Ubuntu is the only distro that has access to Firefox restricted
-    # this is because Ubuntu forces the snap version of Firefox
+    # Firefox
+    # All distros except for Ubuntu
     check_linux_install "ubuntu" \
         || choices_browser+=("firefox" "| The Firefox web browser.")
 
+    # whiptail menu screen
     browser_install=$(whiptail \
         --title "Web Browser" \
         --menu "\\nPlease choose from the following options:" \
