@@ -49,7 +49,7 @@ Some notes on distributions:
 | KDE                        | ✅   | ✅    | ✅     | ❌    | ✅ (Kubuntu)        |
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
 | Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
-| Xfce                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Xfce                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | Mate                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | LXDE                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
