@@ -136,9 +136,8 @@ set_graphical_environment() {
         && choices_environment+=("cosmic" "| COSMIC Desktop.")
 
     # Cinnamon
-    # All distros except for Rocky
-    check_linux_install "rocky" \
-        || choices_environment+=("cinnamon" "| Cinnamon Desktop.")
+    # All distros
+    choices_environment+=("cinnamon" "| Cinnamon Desktop.")
 
     # Xfce
     # All distros
