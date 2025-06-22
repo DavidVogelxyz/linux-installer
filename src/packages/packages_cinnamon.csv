@@ -2,5 +2,6 @@
 ,noto-fonts,"is a fonts package.",fonts-noto,,fonts-noto,skip,google-noto-fonts-common
 ,cinnamon,"is a desktop environment.",cinnamon,cinnamon,cinnamon,cinnamon,cinnamon
 ,sddm,"is an alternate display manager.",skip,,sddm-runit,skip,skip
-,lightdm,"is a package for Rocky Mate.",skip,skip,skip,skip,
-,lightdm-settings,"is a package for Rocky Mate.",skip,skip,skip,skip,
+,initial-setup-gui,"is a package for Rocky Cinnamon.",skip,skip,skip,skip,
+,lightdm,"is a package for Rocky Cinnamon.",skip,skip,skip,skip,
+,lightdm-settings,"is a package for Rocky Cinnamon.",skip,skip,skip,skip,
