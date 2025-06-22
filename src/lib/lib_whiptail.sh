@@ -141,9 +141,8 @@ set_graphical_environment() {
         || choices_environment+=("cinnamon" "| Cinnamon Desktop.")
 
     # Xfce
-    # All distros except for Rocky
-    check_linux_install "rocky" \
-        || choices_environment+=("xfce" "| Xfce Desktop.")
+    # All distros
+    choices_environment+=("xfce" "| Xfce Desktop.")
 
     # Mate
     # All distros
