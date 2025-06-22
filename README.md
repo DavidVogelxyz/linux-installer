@@ -50,7 +50,7 @@ Some notes on distributions:
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
 | Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | Xfce                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
-| Mate                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Mate                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | LXDE                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | Budgie                     | ✅   | ✅    | ✅     | ❌    | ✅                  |

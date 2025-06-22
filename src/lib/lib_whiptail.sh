@@ -146,9 +146,8 @@ set_graphical_environment() {
         || choices_environment+=("xfce" "| Xfce Desktop.")
 
     # Mate
-    # All distros except for Rocky
-    check_linux_install "rocky" \
-        || choices_environment+=("mate" "| Mate Desktop.")
+    # All distros
+    choices_environment+=("mate" "| Mate Desktop.")
 
     # LXQt
     # All distros except for Rocky
