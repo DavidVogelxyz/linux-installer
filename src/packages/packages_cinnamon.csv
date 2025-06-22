@@ -1,4 +1,5 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
+,noto-fonts,"is a fonts package.",fonts-noto,,fonts-noto,skip,google-noto-fonts-common
 ,cinnamon,"is a desktop environment.",cinnamon,cinnamon,cinnamon,cinnamon,cinnamon
 ,sddm,"is an alternate display manager.",skip,,sddm-runit,skip,skip
 ,lightdm,"is a package for Rocky Mate.",skip,skip,skip,skip,
