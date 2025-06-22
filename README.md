@@ -48,7 +48,7 @@ Some notes on distributions:
 | GNOME                      | ✅   | ✅    | ✅     | ✅    | ✅ (Ubuntu Desktop) |
 | KDE                        | ✅   | ✅    | ✅     | ❌    | ✅ (Kubuntu)        |
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
-| Cinnamon                   | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Cinnamon                   | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | Xfce                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | Mate                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
