@@ -122,6 +122,21 @@ playbook_dwm() {
 }
 
 #####################################################################
+# FUNCTIONS - PLAYBOOK_HYPRLAND
+#####################################################################
+
+playbook_hyprland() {
+    # installs hyprland
+    # functions defined in `lib_hyprland.sh`
+    install_hyprland
+
+    # post install hyprland fixes
+    fix_hyprland
+
+    return 0
+}
+
+#####################################################################
 # FUNCTIONS - PLAYBOOK_COSMIC
 #####################################################################
 
@@ -241,6 +256,7 @@ playbook_graphical_environment() {
         dwm)        playbook_dwm ;;
         gnome)      playbook_gnome ;;
         kde)        playbook_kde ;;
+        hyprland)   playbook_hyprland ;;
         cosmic)     playbook_cosmic ;;
         cinnamon)   playbook_cinnamon ;;
         xfce)       playbook_xfce ;;

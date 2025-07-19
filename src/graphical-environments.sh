@@ -12,6 +12,7 @@ libraries=(
     "src/lib/lib_dwm.sh"
     "src/lib/lib_gnome.sh"
     "src/lib/lib_kde.sh"
+    "src/lib/lib_hyprland.sh"
     "src/lib/lib_cosmic.sh"
     "src/lib/lib_cinnamon.sh"
     "src/lib/lib_xfce.sh"

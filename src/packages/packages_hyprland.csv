@@ -1,0 +1,4 @@
+#TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
+,noto-fonts,"is a fonts package.",fonts-noto,,fonts-noto,skip,google-noto-fonts-common
+,hyprland,"is a Hyprland window manager.",skip,,,skip,skip
+,kitty,"is a terminal program.",,,,,
