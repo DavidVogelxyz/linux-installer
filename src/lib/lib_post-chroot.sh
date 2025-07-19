@@ -599,12 +599,13 @@ doconfigs() {
     do_zsh_setup \
         || error "Failed during \`zsh\` setup."
 
-    # Rocky doesn't have `chsh`...
+    # on Rocky, install `util-linux-user` for `chsh`
     check_linux_install "rocky" \
-        || {
-            sudo chsh -s /bin/zsh "$username" \
-                || error "Failed when changing shell."
-        }
+        && install_pkg_dnf util-linux-user
+
+    # change shell to zsh
+    sudo chsh -s /bin/zsh "$username" \
+        || error "Failed when changing shell."
 
     # make sure all files in user's home dir are owned by them
     chown -R "$username": "/home/$username"
