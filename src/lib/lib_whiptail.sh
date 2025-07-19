@@ -129,6 +129,11 @@ set_graphical_environment() {
     check_linux_install "ubuntu" \
         && choices_environment+=("kde" "| Kubuntu (KDE + Ubuntu).")
 
+    # HYPRLAND
+    # Arch and Artix only
+    check_pkgmgr_pacman \
+        && choices_environment+=("hyprland" "| Hyprland (Wayland window manager).")
+
     # COSMIC
     # Arch only
     check_linux_install "arch" \
