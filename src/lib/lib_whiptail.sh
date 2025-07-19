@@ -106,9 +106,8 @@ set_graphical_environment() {
     choices_environment+=("server" "| No graphical environment.")
 
     # dwm
-    # All distros except for Rocky
-    check_linux_install "rocky" \
-        || choices_environment+=("dwm" "| DavidVogelxyz's custom build of dwm.")
+    # All distros
+    choices_environment+=("dwm" "| DavidVogelxyz's custom build of dwm.")
 
     # GNOME
     # All distros except for Ubuntu

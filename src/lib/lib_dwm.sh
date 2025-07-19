@@ -22,6 +22,21 @@ install_dwm() {
                 || error_install "$pkg"
         done
 
+    check_linux_install "rocky" \
+        && dependencies=(
+            "cmake"
+            "gcc"
+            "libX11-devel"
+            "libXinerama-devel"
+            "libXft-devel"
+            "fastfetch"
+            "google-noto-fonts-common"
+        ) \
+        && for pkg in "${dependencies[@]}" ; do
+            install_pkg_dnf "$pkg" \
+                || error_install "$pkg"
+        done
+
     install_loop \
         || error "Failed during the install loop."
 }
@@ -162,7 +177,9 @@ enable_dwm_autologin() {
         && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
 
     # enables autologin on Arch and Debian and Ubuntu
-    (check_linux_install "arch" || check_linux_install "debian" || check_linux_install "ubuntu") \
+    # this is getting cumbersome
+    # TASK: find a way to check for `systemd`
+    (check_linux_install "rocky" || check_linux_install "arch" || check_linux_install "debian" || check_linux_install "ubuntu") \
         && sudo mkdir -p /etc/systemd/system/getty@tty1.service.d \
         && sudo tee -a /etc/systemd/system/getty@tty1.service.d/override.conf &>/dev/null <<EOF
 [Service]
@@ -218,7 +235,7 @@ fix_browser_dwm() {
             "/home/$username/.dotfiles/.config/shell/profile"
 
     # if Debian-based, and browser is set to Brave, change default browser to `brave-browser`
-    check_pkgmgr_apt \
+    (check_pkgmgr_apt || check_linux_install "rocky" ) \
         && [ "$browser_install" = "brave" ] \
         && sed -i \
             's/^export BROWSER="librewolf"/export BROWSER="brave-browser"/g' \
