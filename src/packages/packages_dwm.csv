@@ -13,25 +13,25 @@
 ,polkit,"manages user policies.",polkitd,,,polkitd,skip
 ,otf-libertinus,"provides the sans and serif fonts for LARBS.",fonts-linuxlibertine,,,fonts-linuxlibertine,skip
 ,ttf-dejavu,"properly displays emojis.",fonts-dejavu,,,fonts-dejavu,skip
-,ttf-font-awesome,"provides extended glyph support.",fonts-font-awesome,,,fonts-font-awesome,skip
+,ttf-font-awesome,"provides extended glyph support.",fonts-font-awesome,,,fonts-font-awesome,fontawesome-fonts
 ,pipewire-pulse,"gives pipewire compatibility with PulseAudio programs.",,,,,skip
-,pulsemixer,"is an audio controller.",,,,,skip
+,pulsemixer,"is an audio controller.",,,,,pulseaudio
 ,arandr,"allows the user to customize monitor arrangements.",,,,,skip
-,atool,"manages and gives information about archives.",,,,,skip
+,atool,"manages and gives information about archives.",,,,,
 ,bat,"can highlight code output and display files and is used to generate previews in the file browser.",,,,,skip
-,bc,"is a mathematics language used for the dropdown calculator.",,,,,skip
+,bc,"is a mathematics language used for the dropdown calculator.",,,,,
 ,calcurse,"terminal-based organizer for interactive and command line use",,,,,skip
-,dosfstools,"allows your computer to access dos-like filesystems.",,,,,skip
+,dosfstools,"allows your computer to access dos-like filesystems.",,,,,
 ,dunst,"is a suckless notification system.",,,,,skip
-,exfat-utils,"allows management of FAT drives.",exfatprogs,,,exfatprogs,skip
+,exfat-utils,"allows management of FAT drives.",exfatprogs,,,exfatprogs,exfatprogs
 ,ffmpeg,"can record and splice video and audio on the command line.",,,,,skip
 ,ffmpegthumbnailer,"creates thumbnail previews of video files.",,,,,skip
-,gnome-keyring,"serves as the system keyring.",,,,,skip
+,gnome-keyring,"serves as the system keyring.",,,,,
 ,libnotify,"allows desktop notifications.",libnotify-bin,,,libnotify-bin,skip
-,lynx,"is a terminal browser also used in LARBS for generating in-terminal previews of websites.",,,,,skip
-,maim,"can take quick screenshots at your request.",,,,,skip
+,lynx,"is a terminal browser also used in LARBS for generating in-terminal previews of websites.",,,,,
+,maim,"can take quick screenshots at your request.",,,,,
 ,man-db,"lets you read man pages of programs.",,,,,skip
-,mediainfo,"shows audio and video information and is used in the file browser.",,,,,skip
+,mediainfo,"shows audio and video information and is used in the file browser.",,,,,
 ,moreutils,"is a collection of useful unix tools.",,,,,skip
 ,mpc,"is a terminal interface for mpd.",,,,,skip
 ,mpd,"is a lightweight music daemon.",,,,,skip
@@ -41,26 +41,26 @@
 ,noto-fonts,"is an expansive font package.",fonts-noto,,,fonts-noto,skip
 ,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,fonts-noto-color-emoji,skip
 ,nsxiv,"is a minimalist image viewer.",,,,,skip
-,ntfs-3g,"allows accessing NTFS partitions.",,,,,skip
+,ntfs-3g,"allows accessing NTFS partitions.",,,,,
 ,poppler,"manipulates .pdfs and gives .pdf previews and other .pdf functions.",poppler-utils,,,poppler-utils,skip
 ,python-qdarkstyle,"provides a dark Qt theme.",python3-qdarkstyle,,,python3-qdarkstyle,skip
 ,slock,"allows you to lock your computer and quickly unlock with your password.",suckless-tools,,,suckless-tools,skip
-,socat,"is a utility which establishes two byte streams and transfers data between them.",,,,,skip
-,tesseract,"command-line OCR engine for advance maimpick",skip,,,skip,skip
+,socat,"is a utility which establishes two byte streams and transfers data between them.",,,,,
+,tesseract,"command-line OCR engine for advance maimpick",skip,,,skip,
 ,tesseract-data-eng,"english language pack for OCR",skip,,,skip,skip
 ,unclutter,"hides an inactive mouse.",,,,,skip
-,unzip,"unzips zips.",,,,,skip
+,unzip,"unzips zips.",,,,,
 ,wireplumber,"is the audio system.",,,,,skip
 ,yt-dlp,"can download any YouTube video (or playlist or channel) when given the link.",,,,,skip
 ,zathura,"is a pdf viewer with vim-like bindings.",,,,,skip
-,zathura-pdf-mupdf,"allows mupdf pdf compatibility in zathura.",zathura-pdf-poppler,,,zathura-pdf-poppler,skip
+,zathura-pdf-mupdf,"allows mupdf pdf compatibility in zathura.",zathura-pdf-poppler,,,zathura-pdf-poppler,zathura-pdf-poppler
 A,abook,"is an offline addressbook usable by neomutt.",,,,,skip
 A,arkenfox-user.js,"provides hardened security settings for Firefox and Librewolf to avoid Mozilla spyware and general web fingerprinting.",skip,,,skip,skip
 A,gtk-theme-arc-gruvbox-git,"gives the dark GTK theme used in LARBS.",arc-theme,,,arc-theme,skip
 A,mutt-wizard-git,"is a light-weight terminal-based email system.",skip,,,skip,skip
 A,sc-im,"is an Excel-like terminal spreadsheet manager.",sc,,,sc,skip
 A,simple-mtpfs,"enables the mounting of cell phones.",skip,,,skip,skip
-A,task-spooler,"queues commands or files for download.",,,,,skip
+A,task-spooler,"queues commands or files for download.",,,,,
 G,https://github.com/DavidVogelxyz/dmenu,"runs commands and provides a UI for selection.",,,,,
 G,https://github.com/DavidVogelxyz/dwm,"is the window manager.",,,,,
 G,https://github.com/DavidVogelxyz/dwmblocks,"serves as the modular status bar.",,,,,
