@@ -1,3 +1,18 @@
+## v0.1.2
+
+New features:
+- added Xfce desktop to all distros
+- added Mate desktop to all distros
+- added LXQt desktop to all distros except Rocky
+- added LXDE desktop to all distros except Rocky
+- added Budgie desktop to all distros except Rocky
+- added Cinnamon desktop
+- added Hyprland to Arch and Artix
+
+Bug fixes:
+- added LightDM to Rocky Cinnamon
+- added `util-linux-user` to Rocky installs (for `chsh`)
+
 ## v0.1.1
 
 New features:

@@ -44,9 +44,10 @@ Some notes on distributions:
 | GE / Distros               | Arch | Artix | Debian | Rocky | Ubuntu              |
 | ---                        | ---  | ---   | ---    | ---   | ---                 |
 | None ("headless"/"server") | ✅   | ✅    | ✅     | ✅    | ✅                  |
-| dwm                        | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| dwm                        | ✅   | ✅    | ✅     | 🟠    | ✅                  |
 | GNOME                      | ✅   | ✅    | ✅     | ✅    | ✅ (Ubuntu Desktop) |
 | KDE                        | ✅   | ✅    | ✅     | ❌    | ✅ (Kubuntu)        |
+| Hyprland                   | ✅   | ✅    | ❌     | ❌    | ❌                  |
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
 | Cinnamon                   | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | Xfce                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
@@ -63,6 +64,8 @@ Some notes on graphical environments:
         - [dmenu](https://github.com/DavidVogelxyz/dmenu)
         - [dwmblocks](https://github.com/DavidVogelxyz/dwmblocks)
         - [st](https://github.com/DavidVogelxyz/st)
+    - While Rocky dwm installs and boots, RHEL repos are missing a lot of crucial packages (such as `xwallpaper` and `noto-fonts`).
+        - The version of `noto-fonts` that is installable breaks dwm entirely.
 - GNOME:
     - On Ubuntu, choosing `gnome` will install Ubuntu's version of GNOME (the standard Ubuntu Desktop).
     - All distributions install `gnome-tweaks`.
