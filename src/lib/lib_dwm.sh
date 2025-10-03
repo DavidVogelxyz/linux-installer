@@ -99,27 +99,11 @@ fix_dwm_additional_dotfiles() {
         "$repodir/voidrice" \
         > /dev/null 2>&1
 
-    mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
+    # clone `bin-dwm` repo for systems running dwm
+    run_git-clone "https://github.com/DavidVogelxyz/bin-dwm" "$repodir/bin-dwm"
 
-    for file in "${list_of_files[@]}"; do
-        file=$(basename "$file")
-
-        [ -e "$file" ] \
-            || sudo -u "$username" ln -s "../src/voidrice/.local/bin/${file}" .
-    done
-
-    # getting extra progs into `~/.local/bin/statusbar`
-    cd "/home/${username}/.local/bin/statusbar" \
-        || error "Failed to change directory to \`/home/${username}/.local/bin/statusbar\` for additional dotfile deployment."
-
-    mapfile -t list_of_files < <(find "$repodir/voidrice/.local/bin/statusbar" -maxdepth 1 -type f | sed 's/^\.\///g' | sort)
-
-    for file in "${list_of_files[@]}"; do
-        file=$(basename "$file")
-
-        [ -e "$file" ] \
-            || sudo -u "$username" ln -s "../../src/voidrice/.local/bin/statusbar/${file}" .
-    done
+    # do symlink for `bin-dwm`
+    ln -s "/home/$username/.local/src/bin-dwm/bin-dwm" "/home/$username/.local/bin/bin-dwm"
 
     # getting extra dotfiles into `~/.config`
     cd "/home/${username}/.config" \

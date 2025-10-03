@@ -296,9 +296,10 @@ create_useful_directories() {
         "/home/$username/.cache/bash" \
         "/home/$username/.cache/zsh" \
         "/home/$username/.config" \
-        "/home/$username/.local/bin/cron" \
-        "/home/$username/.local/bin/statusbar" \
+        "/home/$username/.local/bin" \
         "/home/$username/.local/share" \
+        "/home/$username/.local/src" \
+        "/home/$username/.local/state" \
         /root/.cache/bash \
         /root/.cache/zsh \
         /root/.config/lf \
@@ -498,11 +499,14 @@ doconfigs() {
     # create directories that should exist before deploying dotfiles with stow
     create_useful_directories
 
-    # clone `dotfiles` into home dir for all
+    # clone `dotfiles` into homedir for all distros
     run_git-clone "https://github.com/DavidVogelxyz/dotfiles" "/home/$username/.dotfiles"
 
-    # clone `vim` configs for all
+    # clone `vim` configs for all distros
     run_git-clone "https://github.com/DavidVogelxyz/vim" "$repodir/vim"
+
+    # clone `bin-linux` repo for all distros
+    run_git-clone "https://github.com/DavidVogelxyz/bin-linux" "$repodir/bin-linux"
 
     # clone `nvim` configs only on Arch and Artix (for now)
     check_pkgmgr_pacman \
@@ -536,6 +540,7 @@ doconfigs() {
         "/home/$username/.dotfiles/.config/shell/aliasrc" "/root/.config/shell/aliasrc"
         "/home/$username/.dotfiles/.config/shell/profile" "/root/.profile"
         "/home/$username/.dotfiles/.config/shell/profile" "/home/$username/.profile"
+        "/home/$username/.local/src/bin-linux/bin-linux" "/home/$username/.local/bin/bin-linux"
     )
 
     # specific to Debian and Ubuntu
