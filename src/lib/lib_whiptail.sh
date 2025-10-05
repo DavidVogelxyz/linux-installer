@@ -110,8 +110,8 @@ set_graphical_environment() {
     choices_environment+=("dwm" "| DavidVogelxyz's custom build of dwm.")
 
     # GNOME
-    # All distros except for Ubuntu
-    check_linux_install "ubuntu" \
+    # All distros except for Ubuntu and Artix
+    (check_linux_install "ubuntu" || check_linux_install "artix") \
         || choices_environment+=("gnome" "| The GNOME desktop environment.")
 
     # GNOME
@@ -162,8 +162,8 @@ set_graphical_environment() {
         || choices_environment+=("lxde" "| LXDE Desktop.")
 
     # Budgie
-    # All distros except for Rocky
-    check_linux_install "rocky" \
+    # All distros except for Rocky and Artix
+    (check_linux_install "rocky" || check_linux_install "artix") \
         || choices_environment+=("budgie" "| Budgie Desktop.")
 
     # whiptail menu screen

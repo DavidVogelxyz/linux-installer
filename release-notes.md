@@ -1,3 +1,11 @@
+## v0.1.3
+
+Removed features:
+- removed GNOME and Budgie from Artix
+
+New features:
+- added support for `bin-linux` and `bin-dwm`
+
 ## v0.1.2
 
 New features:
