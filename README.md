@@ -45,7 +45,7 @@ Some notes on distributions:
 | ---                        | ---  | ---   | ---    | ---   | ---                 |
 | None ("headless"/"server") | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | dwm                        | ✅   | ✅    | ✅     | 🟠    | ✅                  |
-| GNOME                      | ✅   | ✅    | ✅     | ✅    | ✅ (Ubuntu Desktop) |
+| GNOME                      | ✅   | ❌    | ✅     | ✅    | ✅ (Ubuntu Desktop) |
 | KDE                        | ✅   | ✅    | ✅     | ❌    | ✅ (Kubuntu)        |
 | Hyprland                   | ✅   | ✅    | ❌     | ❌    | ❌                  |
 | COSMIC                     | ✅   | ❌    | ❌     | ❌    | ❌                  |
@@ -54,7 +54,7 @@ Some notes on distributions:
 | Mate                       | ✅   | ✅    | ✅     | ✅    | ✅                  |
 | LXQt                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
 | LXDE                       | ✅   | ✅    | ✅     | ❌    | ✅                  |
-| Budgie                     | ✅   | ✅    | ✅     | ❌    | ✅                  |
+| Budgie                     | ✅   | ❌    | ✅     | ❌    | ✅                  |
 
 Some notes on graphical environments:
 
