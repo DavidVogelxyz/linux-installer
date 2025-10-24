@@ -543,20 +543,11 @@ doconfigs() {
         "/home/$username/.local/src/bin-linux/bin-linux" "/home/$username/.local/bin/bin-linux"
     )
 
-    # specific to Debian and Ubuntu
-    check_pkgmgr_apt \
-        && links_to_sym+=(
-        "/home/$username/.dotfiles/.config/lf/scope-debian" "/root/.config/lf/scope"
-        "/home/$username/.dotfiles/.config/lf/scope-debian" "/home/$username/.config/lf/scope"
-    )
-
     # specific to Arch and Artix
     check_pkgmgr_pacman \
         && links_to_sym+=(
         "$repodir/nvim" "/root/.config/"
         "$repodir/nvim" "/home/$username/.config/"
-        "/home/$username/.dotfiles/.config/lf/scope-arch" "/root/.config/lf/scope"
-        "/home/$username/.dotfiles/.config/lf/scope-arch" "/home/$username/.config/lf/scope"
     )
 
     # loop through `links_to_sym` and creates the symlinks
@@ -595,11 +586,6 @@ doconfigs() {
         && sed -i \
             's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/g' \
             '/etc/sudoers'
-
-    # this can probably be deleted; only using zsh now
-    echo -e \
-        "\nsource ~/.bashrc" \
-        >> "/home/$username/.dotfiles/.config/shell/profile"
 
     do_zsh_setup \
         || error "Failed during \`zsh\` setup."
