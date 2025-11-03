@@ -1,5 +1,5 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
-,noto-fonts,"is a fonts package.",fonts-noto,,fonts-noto,skip,skip
+,noto-fonts,"is a font package.",fonts-noto,,,skip,google-noto-fonts-common
 ,budgie-desktop,"is the Budgie desktop package.",,budgie,budgie,,skip
 ,gdm,"is the GNOME display manager.",gdm3,skip,skip,gdm3,skip
 ,sddm,"is an alternate display manager.",skip,,sddm-runit,skip,skip
