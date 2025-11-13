@@ -1,8 +1,10 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
 ,noto-fonts,"is a font package.",fonts-noto,,,skip,google-noto-fonts-common
 ,cinnamon,"is a desktop environment.",cinnamon,cinnamon,cinnamon,cinnamon,cinnamon
+,kitty,"is a terminal program.",,,,,
 ,sddm,"is an alternate display manager.",skip,,sddm-runit,skip,skip
 ,artix-cinnamon-presets,"is a package for Artix Cinnamon that sets sane defaults.",skip,skip,,skip,skip
 ,initial-setup-gui,"is a package for Rocky Cinnamon.",skip,skip,skip,skip,
 ,lightdm,"is a package for Rocky Cinnamon.",skip,skip,skip,skip,
 ,lightdm-settings,"is a package for Rocky Cinnamon.",skip,skip,skip,skip,
+G,https://github.com/DavidVogelxyz/st,"is my custom build of suckless's terminal emulator.",,,,,
