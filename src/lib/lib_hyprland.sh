@@ -13,5 +13,10 @@ install_hyprland() {
 }
 
 fix_hyprland() {
-    return 0
+    # clone `hyprland-dotfiles` repo for systems running Hyprland
+    run_git-clone "https://github.com/DavidVogelxyz/hyprland-dotfiles" "$repodir/hyprland-dotfiles"
+
+    # do symlinks for `hyprland-dotfiles`
+    ln -s "/home/$username/.local/src/hyprland-dotfiles/hypr" "/home/$username/.config/hypr"
+    ln -s "/home/$username/.local/src/hyprland-dotfiles/waybar" "/home/$username/.config/waybar"
 }
