@@ -432,13 +432,6 @@ fstab_rocky_prep() {
     run_fstab_rocky
 }
 
-run_git-clone() {
-    # add some error correction:
-    # - what if the repo already exists?
-    # - possible to check the hashes and only clone if not a repo?
-    git clone "$1" "$2" > /dev/null 2>&1
-}
-
 vimplugininstall() {
     # Installs vim plugins.
     whiptail --infobox "Installing \`vim\` plugins..." 7 60
