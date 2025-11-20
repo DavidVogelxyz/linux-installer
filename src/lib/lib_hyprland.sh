@@ -19,4 +19,7 @@ fix_hyprland() {
     # do symlinks for `hyprland-dotfiles`
     ln -s "/home/$username/.local/src/hyprland-dotfiles/hypr" "/home/$username/.config/hypr"
     ln -s "/home/$username/.local/src/hyprland-dotfiles/waybar" "/home/$username/.config/waybar"
+
+    # make sure all files in user's home dir are owned by them
+    chown -R "$username": "/home/$username"
 }
