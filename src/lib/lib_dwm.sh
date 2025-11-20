@@ -105,6 +105,9 @@ fix_dwm_additional_dotfiles() {
     # do symlink for `bin-dwm`
     ln -s "/home/$username/.local/src/bin-dwm/bin-dwm" "/home/$username/.local/bin/bin-dwm"
 
+    # make sure all files in user's home dir are owned by them
+    chown -R "$username": "/home/$username"
+
     # getting extra dotfiles into `~/.config`
     cd "/home/${username}/.config" \
         || error "Failed to change directory to \`/home/${username}/.config\` for additional dotfile deployment."
