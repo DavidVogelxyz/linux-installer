@@ -207,7 +207,7 @@ playbook_main() {
     # if `linux_iso` is `artix`, install `whiptail`
     # function defined in `lib_main.sh`
     check_linux_iso "artix" \
-        && (pacman -S --noconfirm --needed libnewt || error "Are you sure you're running as root?")
+        && (pacman -S --noconfirm --needed libnewt glibc || error "Are you sure you're running as root?")
 
     # if `linux_iso` is `rocky`, disable SELinux
     check_linux_iso "rocky" \

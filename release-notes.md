@@ -1,3 +1,15 @@
+## v0.1.4
+
+New features:
+- Hyprland now installs `waybar`
+- Artix Cinnamon now installs `artix-cinnamon-presets`
+- Hyprland now installs `hyprland-dotfiles` repo
+- Artix ISOs now update `glibc` when installing `libnewt`
+
+Bug fixes:
+- Artix now installs `noto-fonts`, instead of `fonts-noto`
+- repos cloned during graphical installs are now owned by the user
+
 ## v0.1.3
 
 Removed features:
