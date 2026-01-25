@@ -161,7 +161,8 @@ enable_dwm_autologin() {
 
     # enables autologin on Artix
     check_linux_install "artix" \
-        && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf"
+        && sed -i "s/noclear/noclear --autologin ${username}/g" "/etc/runit/sv/agetty-tty1/conf" \
+        && unlink /run/runit/service/logind
 
     # enables autologin on Arch and Debian and Ubuntu
     # this is getting cumbersome
