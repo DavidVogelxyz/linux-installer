@@ -443,8 +443,7 @@ vimplugininstall() {
 nvimplugininstall() {
     # Installs neovim plugins.
     whiptail --infobox "Installing neovim plugins..." 7 60
-    sudo -u "$username" mkdir -p "/home/${username}/.config/nvim/autoload"
-    curl -Ls "https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim" >  "/home/$name/.config/nvim/autoload/plug.vim"
+    install_pkg_pacman "tree-sitter-cli"
     sudo -u "$username" nvim -c "q"
 }
 
