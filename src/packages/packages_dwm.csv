@@ -3,9 +3,10 @@
 ,xorg-xbacklight,"enables changing screen brightness levels.",xbacklight,,,xbacklight,skip
 ,xorg-xinit,"starts the graphical server.",skip,,,skip,xorg-x11-xinit
 ,xorg-xprop,"is a tool for detecting window properties.",skip,,,skip,skip
-,xorg-xset,"utility for configuring and ajusting X server",skip,,,skip,skip
+,xorg-xset,"is a utility for configuring and adjusting X server.",skip,,,skip,skip
+,setxkbmap,"sets the keyboard using the X Keyboard Extension.",skip,skip,skip,skip,
 ,xorg-xwininfo,"allows querying information about windows.",skip,,,skip,skip
-,xcape,"gives the special escape/super mappings of LARBS.",,,,,skip
+,xcape,"gives the special escape/super mappings.",,,,,skip
 ,xclip,"allows for copying and pasting from the command line.",,,,,
 ,xcompmgr,"is for transparency and removing screen-tearing.",,,,,
 ,xdotool,"provides window action utilities on the command line.",,,,,
@@ -20,7 +21,8 @@
 ,atool,"manages and gives information about archives.",,,,,
 ,bat,"can highlight code output and display files and is used to generate previews in the file browser.",,,,,skip
 ,bc,"is a mathematics language used for the dropdown calculator.",,,,,
-,calcurse,"terminal-based organizer for interactive and command line use",,,,,skip
+,calcurse,"is a terminal-based organizer for interactive and command line use.",,,,,skip
+,ncal,"is a terminal-based organizer for interactive and command line use.",skip,skip,skip,,skip
 ,dosfstools,"allows your computer to access dos-like filesystems.",,,,,
 ,dunst,"is a suckless notification system.",,,,,skip
 ,exfat-utils,"allows management of FAT drives.",exfatprogs,,,exfatprogs,exfatprogs
@@ -39,15 +41,15 @@
 ,ncmpcpp,"a ncurses interface for music with multiple formats and a powerful tag editor.",,,,,skip
 ,newsboat,"is a terminal RSS client.",,,,skip,skip
 ,noto-fonts,"is a font package.",fonts-noto,,,skip,google-noto-fonts-common
-,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,fonts-noto-color-emoji,skip
+,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,fonts-noto-color-emoji,google-noto-emoji-fonts
 ,nsxiv,"is a minimalist image viewer.",,,,,skip
 ,ntfs-3g,"allows accessing NTFS partitions.",,,,,
 ,poppler,"manipulates .pdfs and gives .pdf previews and other .pdf functions.",poppler-utils,,,poppler-utils,skip
 ,python-qdarkstyle,"provides a dark Qt theme.",python3-qdarkstyle,,,python3-qdarkstyle,skip
 ,slock,"allows you to lock your computer and quickly unlock with your password.",suckless-tools,,,suckless-tools,skip
 ,socat,"is a utility which establishes two byte streams and transfers data between them.",,,,,
-,tesseract,"command-line OCR engine for advance maimpick",skip,,,skip,
-,tesseract-data-eng,"english language pack for OCR",skip,,,skip,skip
+,tesseract,"is a command-line OCR engine for advance maimpick.",skip,,,skip,
+,tesseract-data-eng,"is an english language pack for OCR.",skip,,,skip,skip
 ,unclutter,"hides an inactive mouse.",,,,,skip
 ,unzip,"unzips zips.",,,,,
 ,wireplumber,"is the audio system.",,,,,skip
