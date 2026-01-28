@@ -12,8 +12,8 @@
 ,xdotool,"provides window action utilities on the command line.",,,,,
 ,xwallpaper,"sets the wallpaper.",,,,,skip
 ,polkit,"manages user policies.",polkitd,,,polkitd,skip
-,otf-libertinus,"provides the sans and serif fonts for LARBS.",fonts-linuxlibertine,,,fonts-linuxlibertine,skip
-,ttf-dejavu,"properly displays emojis.",fonts-dejavu,,,fonts-dejavu,skip
+,otf-libertinus,"provides the sans and serif fonts for LARBS.",fonts-linuxlibertine,,,fonts-linuxlibertine,liberation-fonts
+,ttf-dejavu,"properly displays emojis.",fonts-dejavu,,,fonts-dejavu,dejavu-serif-fonts
 ,ttf-font-awesome,"provides extended glyph support.",fonts-font-awesome,,,fonts-font-awesome,fontawesome-fonts
 ,pipewire-pulse,"gives pipewire compatibility with PulseAudio programs.",,,,,skip
 ,pulsemixer,"is an audio controller.",,,,,pulseaudio
@@ -40,7 +40,7 @@
 ,mpv,"is the patrician's choice video player.",,,,,skip
 ,ncmpcpp,"a ncurses interface for music with multiple formats and a powerful tag editor.",,,,,skip
 ,newsboat,"is a terminal RSS client.",,,,skip,skip
-,noto-fonts,"is a font package.",fonts-noto,,,skip,google-noto-fonts-common
+,noto-fonts,"is a font package.",fonts-noto,,,fonts-noto,google-noto-fonts-common
 ,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,fonts-noto-color-emoji,google-noto-emoji-fonts
 ,nsxiv,"is a minimalist image viewer.",,,,,skip
 ,ntfs-3g,"allows accessing NTFS partitions.",,,,,
