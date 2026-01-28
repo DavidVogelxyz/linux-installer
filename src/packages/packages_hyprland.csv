@@ -1,5 +1,5 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
-,noto-fonts,"is a font package.",fonts-noto,,,skip,google-noto-fonts-common
+,noto-fonts,"is a font package.",fonts-noto,,,fonts-noto,google-noto-fonts-common
 ,hyprland,"is a Hyprland window manager.",skip,,,skip,skip
 ,kitty,"is a terminal program.",,,,,
 ,pipewire-pulse,"gives pipewire compatibility with PulseAudio programs.",,,,,skip
