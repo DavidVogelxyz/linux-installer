@@ -1,5 +1,5 @@
 #TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
-,xorg-server,"is the graphical server. This first one may take a while as it pulls many other dependencies first on clean installs.",xorg,,,xorg,xorg-x11-server-Xorg
+,xorg-server,"is the graphical server. This first one may take a while as it pulls many other dependencies first on clean installs.",xorg,,xlibre-xserver,xorg,xorg-x11-server-Xorg
 ,xorg-xbacklight,"enables changing screen brightness levels.",xbacklight,,,xbacklight,skip
 ,xorg-xinit,"starts the graphical server.",skip,,,skip,xorg-x11-xinit
 ,xorg-xprop,"is a tool for detecting window properties.",skip,,,skip,skip
