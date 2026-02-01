@@ -60,28 +60,6 @@ fix_dwm_existing_dotfiles() {
     # the zprofile file
     file_zprofile="$(readlink .dotfiles/.zprofile)"
 
-    # undo a commented out line in zprofile
-    # FUTURE: add check to see if line should be commented in the first place
-    check_path_file "$file_zprofile" \
-        && sed -i \
-            's/^#\[ \"\$(tty)\"/[ "$(tty)"/g' \
-            "$file_zprofile"
-
-    # undo a commented out line in zprofile
-    # FUTURE: add check to see if line should be commented in the first place
-    check_path_file "$file_zprofile" \
-        && sed -i \
-            's/^#sudo -n loadkeys "$XDG_DATA_HOME/sudo -n loadkeys "$XDG_DATA_HOME/g' \
-            "$file_zprofile"
-
-    # xinitrc should have a change
-    # this is due to stow - the file is a link, not a file
-    # FUTURE: change should be upstream in `dotfiles` repo
-    check_path_file "$file_xinitrc" \
-        && sed -i \
-            's/^if \[ -f/if \[ -e/g' \
-            "$file_xinitrc"
-
     # since testing on VM, fix the resolution
     check_path_file "$file_xprofile" \
         && sed -i \
@@ -105,40 +83,21 @@ fix_dwm_additional_dotfiles() {
     # do symlink for `bin-dwm`
     ln -s "/home/$username/.local/src/bin-dwm/bin-dwm" "/home/$username/.local/bin/bin-dwm"
 
-    # make sure all files in user's home dir are owned by them
-    chown -R "$username": "/home/$username"
-
     # getting extra dotfiles into `~/.config`
     cd "/home/${username}/.config" \
         || error "Failed to change directory to \`/home/${username}/.config\` for additional dotfile deployment."
 
     list_of_dirs=(
-        "dunst"
-        "firefox"
-        "fontconfig"
-        "gtk-2.0"
-        "gtk-3.0"
-        "mimeapps.list"
-        "mpd"
-        "mpv"
-        "newsboat"
-        "pipewire"
-        "pulse"
-        "sxiv"
-        "user-dirs.dirs"
         "wal"
-        "wget"
-        "zathura"
-        )
+    )
 
     for dir in "${list_of_dirs[@]}"; do
         [ -e "$dir" ] \
             || sudo -u "$username" ln -s "../.local/src/voidrice/.config/${dir}" .
     done
 
-    # set the `.gtkrc-2.0` symlink
-    cd "/home/${username}" \
-        && sudo -u "$username" ln -s .local/src/voidrice/.gtkrc-2.0 .
+    # make sure all files in user's home dir are owned by them
+    chown -R "$username": "/home/$username"
 }
 
 fix_dwm_wallpaper() {
@@ -197,7 +156,7 @@ larbs_fixes() {
     #ln -sfT /bin/dash /bin/sh >/dev/null 2>&1
 
     # dbus UUID must be generated for Artix runit.
-    #dbus-uuidgen >/var/lib/dbus/machine-id
+    dbus-uuidgen > /var/lib/dbus/machine-id
 
     # Use system notifications for Brave on Artix
     # Only do it when systemd is not present
@@ -205,13 +164,13 @@ larbs_fixes() {
 
     # Enable tap to click
     [ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
-        Identifier "libinput touchpad catchall"
-        MatchIsTouchpad "on"
-        MatchDevicePath "/dev/input/event*"
-        Driver "libinput"
-        # Enable left mouse button by tapping
-        Option "Tapping" "on"
-    EndSection' >/etc/X11/xorg.conf.d/40-libinput.conf
+    Identifier "libinput touchpad catchall"
+    MatchIsTouchpad "on"
+    MatchDevicePath "/dev/input/event*"
+    Driver "libinput"
+    # Enable left mouse button by tapping
+    Option "Tapping" "on"
+EndSection' > /etc/X11/xorg.conf.d/40-libinput.conf
 }
 
 fix_browser_dwm() {

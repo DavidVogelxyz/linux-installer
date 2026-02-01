@@ -561,18 +561,6 @@ doconfigs() {
         ((nn+=2))
     done <<< "${links_to_sym[@]}"
 
-    # small edits to `~/.config/shell/profile` for SERVERS
-    # dwm and others will want these on
-    sed -i \
-        's/^\[ \! -f \"\$XDG_CONFIG_HOME/#[ \! -f \"\$XDG_CONFIG_HOME/g' \
-        "/home/$username/.dotfiles/.config/shell/profile"
-    sed -i \
-        's/^\[ "\$(tty)"/#[ "$(tty)"/g' \
-        "/home/$username/.dotfiles/.config/shell/profile"
-    sed -i \
-        's/^sudo -n loadkeys "$XDG_DATA_HOME/#sudo -n loadkeys "$XDG_DATA_HOME/g' \
-        "/home/$username/.dotfiles/.config/shell/profile"
-
     # on Arch and Artix, allow for members of `wheel` group to `sudo`, after providing a password
     check_pkgmgr_pacman \
         && sed -i \
