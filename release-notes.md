@@ -1,3 +1,13 @@
+## v0.1.5
+
+New features:
+- added `setxkbmap` to Rocky dwm
+- added `ncal` to Ubuntu dwm
+- Artix dwm now installs `xlibre` instead of `xorg`
+
+Bug fixes:
+- Artix dwm no longer encounters the `dbus` / `elogind` issue when autologin is enabled
+
 ## v0.1.4
 
 New features:
