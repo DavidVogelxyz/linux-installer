@@ -40,7 +40,7 @@
 ,mpv,"is the patrician's choice video player.",,,,,skip
 ,ncmpcpp,"a ncurses interface for music with multiple formats and a powerful tag editor.",,,,,skip
 ,newsboat,"is a terminal RSS client.",,,,skip,skip
-,noto-fonts,"is a font package.",fonts-noto,,,fonts-noto,google-noto-fonts-common
+,noto-fonts,"is a font package.",fonts-noto,,,,google-noto-fonts-common
 ,noto-fonts-emoji,"is an emoji font.",fonts-noto-color-emoji,,,fonts-noto-color-emoji,google-noto-emoji-fonts
 ,nsxiv,"is a minimalist image viewer.",,,,,skip
 ,ntfs-3g,"allows accessing NTFS partitions.",,,,,
