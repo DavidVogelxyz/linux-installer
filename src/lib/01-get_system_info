@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+get_os_release() {
+    while read -r line; do
+        case $line in
+            "ID="* )
+                export iso_distro="${line##*=}"
+                iso_distro="${iso_distro//\"}"
+                ;;
+            "BUILD_ID="* | "VERSION_CODENAME="* | "VERSION_ID="* )
+                export iso_release="${line##*=}"
+                iso_release="${iso_release//\"}"
+                ;;
+        esac
+
+        # return, if all values are set
+        if [[ "$iso_release" ]] && [[ "$iso_distro" ]]; then
+            return 0
+        fi
+    done < "/etc/os-release"
+}
+
+get_ram_size() {
+    while read -r line; do
+        if [[ "$line" =~ ^"Mem:" ]]; then
+            read -r mem total excess <<< "$line"
+            export ram_size="$total"
+            return 0
+        fi
+    done < <(free -g --si)
+}
+
+get_firmware() {
+    if [[ -f "/sys/firmware/efi" ]]; then
+        export firmware=uefi
+    #elif [[ $(mount | grep -q "efi") ]]; then
+    #    export firmware=uefi
+    else
+        export firmware=bios
+    fi
+}
+
+get_available_disks() {
+    export available_disks=()
+
+    while read -r line; do
+        if [[ "$line" =~ "disk" ]]; then
+            read -r dev a b size c <<< "$line"
+            local unit="${size//[0-9]}"
+            local num="${size//[^0-9]}"
+            available_disks+=("$dev | $num ${unit}B")
+        fi
+    done < <(lsblk)
+}
+
+get_system_info() {
+    get_os_release
+    get_ram_size
+    get_firmware
+    get_available_disks
+}

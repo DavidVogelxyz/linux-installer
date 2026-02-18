@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+setup_aur() {
+    case "$install_distro" in
+        "artix" | "arch")
+            export aur_helper="yay"
+
+            echo "[INFO]: Configuring the AUR (\`${aur_helper}\`) for \`$install_distro\`."
+
+            # Use all cores for AUR compilation.
+            sed -i "s/-j2/-j$(nproc)/;/^#MAKEFLAGS/s/^#//" /etc/makepkg.conf
+
+            if [[ "$(pacman -Q "$aur_helper" > /dev/null 2>&1)" ]]; then
+                return 0
+            fi
+
+            sudo -u "$user_name" mkdir -p "${REPODIR}/${aur_helper}"
+
+            sudo -u "$user_name" git -C "$REPODIR" clone \
+                --depth 1 \
+                --single-branch \
+                --no-tags \
+                -q \
+                "https://aur.archlinux.org/${aur_helper}.git" \
+                "${REPODIR}/${aur_helper}" \
+                > /dev/null 2>&1
+
+            local ERROR_CODE="$?"
+
+            cd "${REPODIR}/${aur_helper}"
+
+            if (( "$ERROR_CODE" != 0 )); then
+                echo "[WARN]: \`${aur_helper}\` required a force pull."
+                sudo -u "$user_name" git pull -f > /dev/null 2>&1
+            fi
+
+            sudo -u "$user_name" makepkg --noconfirm -si > /dev/null 2>&1
+
+            cd - > /dev/null 2>&1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}

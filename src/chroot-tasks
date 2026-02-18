@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+REPO_NAME="linux-installer"
+
+LIBRARIES=(
+    "00-install_pkgs"
+    "51-basic_configs"
+    "53-config_pkgmgr"
+    "55-install_base_pkgs"
+    "57-setup_distro"
+    "59-setup_aur"
+    "60-deploy_dotfiles"
+    "61-setup_htop"
+    "63-setup_lf"
+    "65-setup_vim"
+    "67-setup_zsh"
+    "69-setup_nvim"
+    "71-setup_service_mgr"
+    "73-setup_fstab"
+    "75-setup_cryptsetup"
+    "77-setup_initramfs"
+    "79-setup_grub"
+    "82-install_graphical_environment"
+    "83-setup_graphical_environment"
+    "86-install_web_browser"
+    "87-setup_web_browser"
+    "99-completion_screen"
+)
+
+# Prints provided message to STDERR; then, exits with return code `1`
+error() {
+    echo -e "$1" >&2 \
+        && exit 1
+}
+
+check_working_directory() {
+    local arg="$0"
+    local arg_path="$(realpath $arg)"
+    local arg_dir="${arg_path%/*}"
+    export WORK_DIR="${arg_dir%%/$REPO_NAME*}/$REPO_NAME"
+
+    # If not in the correct directory, change directory
+    if ! [[ "$pwd" == "$WORK_DIR" ]]; then
+        cd "$WORK_DIR"
+    fi
+}
+
+source_libraries() {
+    for ((i=0; i<"${#LIBRARIES[@]}"; i++)); do
+        local file="${WORK_DIR}/src/lib/${LIBRARIES[i]}"
+
+        if [[ -f "$file" ]]; then
+            source "$file"
+        else
+            error "[ERROR]: File not found -- $file"
+        fi
+    done
+}
+
+check_prog_deps() {
+    if ! [[ "$(command -v bash)" ]]; then
+        install_pkg "bash"
+    fi
+
+    return 0
+}
+
+main() {
+    # FUNCTION                          # PROVIDED BY
+    check_working_directory             # chroot-tasks
+    source_libraries                    # chroot-tasks
+
+    set_pkgmgr "$install_distro"        # 00-install_pkgs
+    update_pkgmgr                       # 00-install_pkgs
+    upgrade_pkgs                        # 00-install_pkgs
+    check_prog_deps                     # chroot-tasks
+
+    basic_configs                       # 51-basic_configs
+    config_pkgmgr                       # 53-config_pkgmgr
+    install_base_pkgs                   # 55-install_base_pkgs
+    setup_distro                        # 57-setup_distro
+    setup_aur                           # 59-setup_aur
+    deploy_dotfiles                     # 60-deploy_dotfiles
+    setup_htop                          # 61-setup_htop
+    setup_lf                            # 63-setup_lf
+    setup_vim                           # 65-setup_vim
+    setup_zsh                           # 67-setup_zsh
+    setup_nvim                          # 69-setup_nvim
+    setup_service_mgr                   # 71-setup_service_mgr
+    setup_fstab                         # 73-setup_fstab
+    setup_cryptsetup                    # 75-setup_cryptsetup
+    setup_initramfs                     # 77-setup_initramfs
+    setup_grub                          # 79-setup_grub
+    install_graphical_environment       # 82-install_graphical_environment
+    setup_graphical_environment         # 83-setup_graphical_environment
+    install_web_browser                 # 86-install_web_browser
+    setup_web_browser                   # 87-setup_web_browser
+    completion_screen                   # 99-completion_screen
+}
+
+main

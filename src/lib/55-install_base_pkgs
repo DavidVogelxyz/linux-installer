@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+
+install_kernel() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # `linux` and `linux-firmware` have already been installed
+            return 0
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=("linux-image-generic")
+            ;;
+        "rocky")
+            local pkgs=("kernel")
+            ;;
+    esac
+
+    echo "[INFO]: Installing the Linux kernel for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_build_tools() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # `base-devel` has already been installed
+            return 0
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=("build-essential")
+            ;;
+        "rocky")
+            echo "[INFO]: Installing \"Development Tools\"."
+            dnf group install -y "Development Tools"
+            return 0
+            ;;
+    esac
+
+    echo "[INFO]: Installing compilers for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_network_manager() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # `networkmanager` has already been installed
+            return 0
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=("network-manager")
+            ;;
+        "rocky")
+            local pkgs=("NetworkManager")
+            ;;
+    esac
+
+    echo "[INFO]: Installing network manager for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_gpg() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # `gnupg` is installed as a dependency of `pacman`
+            return 0
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            local pkgs=("gpg")
+            ;;
+    esac
+
+    echo "[INFO]: Installing GPG for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_lvm() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # `lvm2` has already been installed
+            return 0
+            ;;
+        *)
+            local pkgs=("lvm2")
+            ;;
+    esac
+
+    echo "[INFO]: Installing LVM for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_ssh() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # `openssh` has already been installed
+            return 0
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            local pkgs=("openssh-server")
+            ;;
+    esac
+
+    echo "[INFO]: Installing SSH for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_cryptsetup() {
+    case "$encryption" in
+        "no")
+            return 0
+            ;;
+        "yes")
+            case "$install_distro" in
+                "artix" | "arch")
+                    local pkgs=("cryptsetup")
+                    ;;
+                "debian" | "ubuntu")
+                    local pkgs=("cryptsetup" "cryptsetup-initramfs")
+                    ;;
+                "rocky")
+                    local pkgs=("cryptsetup")
+                    ;;
+            esac
+            ;;
+    esac
+
+    echo "[INFO]: Installing encryption tools for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_ntp() {
+    case "$install_distro" in
+        "artix")
+            local pkgs=("ntp" "ntp-${service_mgr}")
+            ;;
+        "arch")
+            local pkgs=("ntp")
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            local pkgs=("ntpsec")
+            ;;
+    esac
+
+    echo "[INFO]: Installing NTP for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_other_packages() {
+    local pkgs=(
+        "bat"
+        "fzf"
+        "git"
+        "rsync"
+        "stow"
+        "sudo"
+        "tmux"
+        "tree"
+    )
+
+    echo "[INFO]: Installing other base packages (bundle #2)."
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_base_pkgs() {
+    install_kernel
+    install_build_tools
+    install_network_manager
+    install_gpg
+    install_lvm
+    install_ssh
+    install_cryptsetup
+    install_ntp
+    install_other_packages
+}

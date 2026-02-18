@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+setup_htop() {
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=("htop-vim")
+            loop_install_aur_pkg "${pkgs[@]}"
+            return 0
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            local pkgs=("htop")
+            ;;
+    esac
+
+    loop_install_pkg "${pkgs[@]}"
+}

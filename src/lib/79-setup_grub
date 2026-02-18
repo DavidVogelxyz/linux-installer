@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+install_grub() {
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=("grub")
+
+            case "$firmware" in
+                "uefi")
+                    pkgs+=("efibootmgr")
+                    ;;
+            esac
+            ;;
+        "debian" | "ubuntu")
+            case "$firmware" in
+                "bios")
+                    local pkgs=("grub-pc")
+                    ;;
+                "uefi")
+                    local pkgs=("grub-efi")
+                    ;;
+            esac
+            ;;
+        "rocky")
+            case "$firmware" in
+                "bios")
+                    local pkgs=("grub2-pc" "grub2-pc-modules")
+                    ;;
+                "uefi")
+                    local pkgs=("grub2-efi-x64" "grub2-efi-x64-modules" "shim" "efibootmgr")
+                    ;;
+            esac
+            ;;
+    esac
+
+    loop_install_pkg "${pkgs[@]}"
+}
+
+config_grub() {
+    echo "[INFO]: Configuring GRUB."
+
+    case "$install_distro" in
+        "artix" | "arch")
+            case "$firmware" in
+                "bios")
+                    grub-install --target=i386-pc "/dev/$install_disk" > /dev/null 2>&1
+                    grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
+                    ;;
+                "uefi")
+                    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB > /dev/null 2>&1
+                    grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
+                    ;;
+            esac
+            ;;
+        "debian" | "ubuntu")
+            case "$firmware" in
+                "bios")
+                    grub-install --target=i386-pc "/dev/$install_disk" > /dev/null 2>&1
+                    update-grub > /dev/null 2>&1
+                    ;;
+                "uefi")
+                    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB > /dev/null 2>&1
+                    update-grub > /dev/null 2>&1
+                    ;;
+            esac
+            ;;
+        "rocky")
+            case "$firmware" in
+                "bios")
+                    grub2-install "/dev/$install_disk" > /dev/null 2>&1
+                    grub2-mkconfig -o /boot/grub2/grub.cfg > /dev/null 2>&1
+                    ;;
+                "uefi")
+                    grub2-mkconfig -o /boot/efi/EFI/rocky/grub.cfg > /dev/null 2>&1
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+setup_grub() {
+    install_grub
+    config_grub
+}

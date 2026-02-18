@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+
+ask_lvm_name() {
+    # Skip if no encryption
+    if [[ "$encryption" == "no" ]]; then
+        return 0
+    fi
+
+    export lvm_name=""
+    clear
+    cat << EOF
+LVM NAME:
+
+Please enter the name for the encrypted LVM.
+
+If no name is given, then the script will set \`cryptlvm\` as the LVM's name.
+EOF
+    read -p "> " lvm_name
+
+    if ! [[ "$lvm_name" ]]; then
+        lvm_name="cryptlvm"
+        return 0
+    fi
+
+    # put user in loop until the LVM name is compliant
+    while ! [[ "$lvm_name" =~ ^[a-z]*$ ]]; do
+        clear
+        cat << EOF
+LVM NAME:
+
+Invalid LVM name.
+
+Please provide a LVM name using lowercase letters only.
+EOF
+        read -p "> " lvm_name
+    done
+}
+
+ask_encryption_pass() {
+    # Skip if no encryption
+    if [[ "$encryption" == "no" ]]; then
+        return 0
+    fi
+
+    export encryption_pass=""
+    clear
+    cat << EOF
+ENCRYPTION PASSWORD:
+
+Please enter an encryption password.
+EOF
+    read -s -p "> " encryption_pass
+    echo -e "\n\nPlease retype the encryption password."
+    read -s -p "> " encryption_pass_check
+
+    # put user in loop until the two "encryption pass" entries agree
+    while ! [[ "$encryption_pass" == "$encryption_pass_check" ]] || ! [[ "$encryption_pass" ]]; do
+        clear
+        cat << EOF
+ENCRYPTION PASSWORD:
+
+The passwords entered do not match each other, or were left blank.
+
+Please enter the encryption password again.
+EOF
+        read -s -p "> " encryption_pass
+        echo -e "\n\nPlease retype the encryption password for the root user."
+        read -s -p "> " encryption_pass_check
+    done
+}
+
+ask_root_pass() {
+    export root_pass=""
+    clear
+    cat << EOF
+ROOT USER PASSWORD:
+
+Please enter a password for the root user.
+EOF
+    read -s -p "> " root_pass
+    echo -e "\n\nPlease retype the password for the root user."
+    read -s -p "> " root_pass_check
+
+    # put user in loop until the two "root pass" entries agree
+    while ! [[ "$root_pass" == "$root_pass_check" ]] || ! [[ "$root_pass" ]]; do
+        clear
+        cat << EOF
+ROOT USER PASSWORD:
+
+The passwords entered do not match each other, or were left blank.
+
+Please enter the root user's password again.
+EOF
+        read -s -p "> " root_pass
+        echo -e "\n\nPlease retype the password for the root user."
+        read -s -p "> " root_pass_check
+    done
+}
+
+ask_user_name() {
+    export user_name=""
+    clear
+    cat << EOF
+USERNAME:
+
+Please enter a name for the user.
+EOF
+    read -p "> " user_name
+
+    # put user in loop until the username is compliant
+    while ! [[ "$user_name" =~ ^[A-Za-z][A-Za-z_.-]*[A-Za-z]*$ ]] || ! [[ "$user_name" ]]; do
+        clear
+        cat << EOF
+USERNAME:
+
+Invalid username.
+
+Please provide a username using letters only.
+
+\`-\`, \`_\`, and \`.\` can be used for any character but the first and last.
+EOF
+        read -p "> " user_name
+    done
+}
+
+ask_user_pass() {
+    export user_pass=""
+    clear
+    cat << EOF
+USER PASSWORD:
+
+Please enter a password for the user \`${user_name}\`.
+EOF
+    read -s -p "> " user_pass
+    echo -e "\n\nPlease retype the password for the user \`${user_name}\`."
+    read -s -p "> " user_pass_check
+
+    # put user in loop until the two "user pass" entries agree
+    while ! [[ "$user_pass" == "$user_pass_check" ]] || ! [[ "$user_pass" ]]; do
+        clear
+        cat << EOF
+USER PASSWORD:
+
+The passwords entered do not match each other, or were left blank.
+
+Please enter the user's password again.
+EOF
+        read -s -p "> " user_pass
+        echo -e "\n\nPlease retype the password for the user \`${user_name}\`."
+        read -s -p "> " user_pass_check
+    done
+}
+
+ask_hostname() {
+    export host_name=""
+    clear
+    cat << EOF
+HOSTNAME:
+
+Please enter a hostname.
+EOF
+    read -p "> " host_name
+
+    # put user in loop until the hostname is compliant
+    while ! [[ "$host_name" =~ ^[a-z][a-z0-9_.-]*[a-z0-9]*$ ]] || ! [[ "$host_name" ]]; do
+        clear
+        cat << EOF
+HOSTNAME:
+
+Invalid hostname.
+
+Please provide a hostname using lowercase letters only.
+
+Numbers can be used for any character except the first.
+
+\`-\`, \`_\`, and \`.\` can be used for any character but the first and last.
+EOF
+        read -p "> " host_name
+    done
+}
+
+ask_local_domain() {
+    export local_domain=""
+    clear
+    cat << EOF
+LOCAL DOMAIN:
+
+Please enter a local domain.
+
+If no domain is given, then the script will set \`local\` as the local domain name.
+EOF
+    read -p "> " local_domain
+
+    if ! [[ "$local_domain" ]]; then
+        local_domain="local"
+        return 0
+    fi
+
+    # put user in loop until the local domain is compliant
+    while ! [[ "$local_domain" =~ ^[a-z]*$ ]] || ! [[ "$local_domain" ]]; do
+        clear
+        cat << EOF
+LOCAL DOMAIN:
+
+Invalid local domain.
+
+Please provide a domain using lowercase letters only.
+EOF
+        read -p "> " local_domain
+    done
+}
+
+get_user_input() {
+    ask_lvm_name
+    ask_encryption_pass
+    ask_root_pass
+    ask_user_name
+    ask_user_pass
+    ask_hostname
+    ask_local_domain
+}

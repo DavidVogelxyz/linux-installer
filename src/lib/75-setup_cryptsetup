@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+setup_cryptsetup() {
+    case "$encryption" in
+        "no")
+            return 0
+            ;;
+        "yes")
+            echo "[INFO]: Configuring disk encryption so the system can boot properly."
+
+            case "$install_distro" in
+                "artix" | "arch")
+                    # add `encrypt` and `lvm2` to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
+                    sed -i "s/^\(HOOKS.*block\) filesystems/\1 encrypt lvm2 filesystems/g" "/etc/mkinitcpio.conf"
+
+                    case "$install_swap" in
+                        "yes")
+                            # add `resume` to `/etc/mkinitcpio.conf`, between `filesystems` and `fsck`
+                            sed -i "s/^\(HOOKS.*filesystems\) fsck/\1 filesystems resume fsck/g" "/etc/mkinitcpio.conf"
+
+                            # lay down the foundation for the UUID substitution
+                            sed -i "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}\"|g" "/etc/default/grub"
+
+                            local partitions=(
+                                "$partition_rootfs"
+                                "$volume_logical_root"
+                                "$volume_logical_swap"
+                            )
+                            ;;
+                        "no")
+                            # lay down the foundation for the UUID substitution
+                            sed -i "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${partition_crypt}\"|g" "/etc/default/grub"
+
+                            local partitions=(
+                                "$partition_rootfs"
+                                "$partition_crypt"
+                            )
+                            ;;
+                    esac
+
+                    # substitute partition names for their UUIDs
+                    while read -r dev uuid block_size type partuuid ; do
+                        for ((p=0; p < "${#partitions[@]}"; p++)); do
+                            if [[ "$dev" =~ "${partitions[p]}" ]]; then
+                                # remove the `"` from the UUID
+                                local uuid="${uuid//\"}"
+
+                                # replace `partitions[p]` with `uuid`
+                                sed -i "s|${partitions[p]}|${uuid}|g" /etc/default/grub
+
+                                # don't look for `partitions[p]` again
+                                unset partitions[p]
+
+                                # reindex the array
+                                partitions=("${partitions[@]}")
+
+                                # stop reviewing this line
+                                break
+                            fi
+                        done
+                    done < <(blkid)
+                    ;;
+                "debian" | "ubuntu")
+                    while read -r dev uuid type ; do
+                        if [[ "$type" =~ "crypto" ]]; then
+                            local uuid="${uuid//\"}"
+                            echo "${lvm_name} ${uuid} none luks" >> /etc/crypttab
+                            break
+                        fi
+                    done < <(blkid)
+                    ;;
+            esac
+            ;;
+    esac
+}

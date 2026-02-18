@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+deploy_dotfiles() {
+    echo "[INFO]: Deploying dotfiles."
+
+    sudo -u "$user_name" mkdir -p "$REPODIR"
+    sudo -u "$user_name" git clone https://github.com/DavidVogelxyz/bin-linux "$REPODIR/bin-linux" > /dev/null 2>&1
+    sudo -u "$user_name" bash "$REPODIR/bin-linux/bin-linux/dotfile-deploy" > /dev/null 2>&1
+
+    local files=(
+        "/root/.bashrc"
+        "/root/.profile"
+        "/home/$user_name/.bashrc"
+        "/home/$user_name/.profile"
+    )
+
+    for ((j=0; j < "${#files[@]}"; j++)); do
+        f="${files[j]}"
+
+        if [[ -f "$f" ]]; then
+            rm -rf "$f"
+        fi
+    done
+
+    if [[ "$(command -v stow)" ]]; then
+        cd "/home/${user_name}/.dotfiles"
+        sudo -u "$user_name" stow .
+        cd - > /dev/null 2>&1
+    else
+        echo "[WARN]: \`stow\` not present. Configuring alternate symlinks."
+        sudo -u "$user_name" ln -s "/home/$user_name/.dotfiles/.bashrc" "/home/$user_name"
+        sudo -u "$user_name" ln -s "/home/$user_name/.dotfiles/.config/shell/aliasrc" "/home/$user_name/.config/shell"
+        sudo -u "$user_name" ln -s "/home/$user_name/.dotfiles/.config/shell/profile" "/home/$user_name"
+    fi
+
+    # Configs for root user
+    mkdir -p \
+        /root/.cache/bash \
+        /root/.cache/zsh \
+        /root/.config/shell
+
+    ln -s "/home/$user_name/.dotfiles/.bashrc" "/root"
+    ln -s "/home/$user_name/.dotfiles/.config/shell/aliasrc" "/root/.config/shell/"
+    ln -s "/home/$user_name/.dotfiles/.config/shell/profile" "/root"
+
+    case "$graphical_environment" in
+        "none")
+            # no "server-specific" configs
+            ;;
+        *)
+            # the `sshd_config` template denies password auth, and assumes the user can access console
+            cp "${WORK_DIR}/src/templates/etc/ssh/sshd_config" "/etc/ssh/sshd_config"
+            ;;
+    esac
+}

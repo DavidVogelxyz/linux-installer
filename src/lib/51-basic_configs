@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+create_user() {
+    echo "[INFO]: Creating new user account for \`${user_name}\`."
+
+    # change root password and unset the password
+    echo "root:${root_pass}" | chpasswd
+    unset root_pass
+
+    # create the user account
+    case "$install_distro" in
+        "artix" | "arch" | "rocky")
+            useradd -G wheel -s /bin/bash -m "$user_name"
+            ;;
+        "debian" | "ubuntu")
+            useradd -G sudo -s /bin/bash -m "$user_name"
+            ;;
+    esac
+
+    # change user password and unset the password
+    echo "${user_name}:${user_pass}" | chpasswd
+    unset user_pass
+
+    export REPODIR="/home/${user_name}/.local/src"
+}
+
+config_hostname() {
+    case "$install_distro" in
+        "rocky")
+            # Rocky does not need its hostname set this way
+            return 0
+            ;;
+        *)
+            echo "[INFO]: Setting hostname for \`${install_distro}\`."
+
+            echo "$host_name" > /etc/hostname
+            ;;
+    esac
+}
+
+config_hosts_file() {
+    echo "[INFO]: Configuring hosts file."
+
+    cat << EOF > /etc/hosts
+127.0.0.1       localhost
+::1             localhost
+127.0.1.1       $host_name ${host_name}.${local_domain}
+EOF
+}
+
+config_timezone() {
+    echo "[INFO]: Configuring timezone."
+
+    # If US timezones aren't available, convert to America
+    if ! [[ "/usr/share/zoneinfo/US" ]]; then
+        case "$timezone" in
+            "US/Pacific")
+                timezone="America/Los_Angeles"
+                ;;
+            "US/Mountain")
+                timezone="America/Denver"
+                ;;
+            "US/Central")
+                timezone="America/Chicago"
+                ;;
+            "US/Eastern")
+                timezone="America/New_York"
+                ;;
+        esac
+    fi
+
+    if [[ -e /etc/localtime ]]; then
+        unlink "/etc/localtime"
+    fi
+
+    ln -s "/usr/share/zoneinfo/$timezone" /etc/localtime
+}
+
+config_clock() {
+    case "$install_distro" in
+        "ubuntu")
+            return 0
+            ;;
+        *)
+            echo "[INFO]: Configuring system clock."
+            hwclock --systohc
+            ;;
+    esac
+}
+
+package_bundle_one() {
+    echo "[INFO]: Installing the most basic packages (bundle #1)."
+
+    local pkgs=(
+        "curl"
+        "git"
+    )
+
+    case "$install_distro" in
+        # Install `locales` and `nala` on Debian and Ubuntu
+        "debian" | "ubuntu")
+            pkgs+=(
+                "locales"
+                "nala"
+            )
+            ;;
+        # Install language pack on Rocky
+        "rocky")
+            pkgs+=(
+                "glibc-langpack-en"
+            )
+            ;;
+        *)
+            ;;
+    esac
+
+    loop_install_pkg "${pkgs[@]}"
+}
+
+config_locale() {
+    echo "[INFO]: Configuring locale (\"region\")."
+
+    # set the `/etc/locale.conf` file
+    cp "${WORK_DIR}/src/templates/etc/locale.conf" "/etc/locale.conf"
+
+    case "$install_distro" in
+        # Rocky doesn't seem to have `/etc/locale.gen`; so, bail here
+        "rocky")
+            return 0
+            ;;
+        *)
+            # uncomment language files in `/etc/locale.gen`
+            sed -i "s/^#.*${region}/${region}/g" /etc/locale.gen
+
+            # run `locale-gen`
+            locale-gen > /dev/null 2>&1
+            ;;
+    esac
+}
+
+basic_configs() {
+    create_user
+    config_hostname
+    config_hosts_file
+    config_timezone
+    config_clock
+    package_bundle_one
+    config_locale
+}

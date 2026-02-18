@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+install_librewolf() {
+    case "$pkgmgr" in
+        "pacman")
+            local pkgs=(
+                "librewolf-bin"
+                "librewolf-extension-istilldontcareaboutcookies-bin"
+                "librewolf-extension-localcdn-bin"
+                "librewolf-extension-tridactyl-bin"
+                "librewolf-extension-ublock-origin-bin"
+            )
+
+            loop_install_aur_pkg "${pkgs[@]}"
+            ;;
+        *)
+            # Librewolf requires AUR (or, Nix package manager).
+    esac
+}
+
+install_brave() {
+    case "$pkgmgr" in
+        "pacman")
+            local pkgs=("brave-bin")
+            loop_install_aur_pkg "${pkgs[@]}"
+            ;;
+        "apt")
+            curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+            echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+
+            update_pkgmgr
+
+            local pkgs=("brave-browser")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+        "dnf")
+            local pkgs=("dnf-plugins-core")
+            loop_install_pkg "${pkgs[@]}"
+
+            dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
+
+            local pkgs=("brave-browser")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+    esac
+}
+
+install_firefox() {
+    case "$install_distro" in
+        "artix" | "arch" | "debian")
+            local pkgs=("firefox-esr")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+        "ubuntu")
+            # This is not allowed, because Ubuntu's `firefox` is a snap package.
+            ;;
+        "rocky")
+            local pkgs=("firefox")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+    esac
+}
+
+install_chromium() {
+    case "$install_distro" in
+        "artix" | "arch" | "debian" | "rocky")
+            local pkgs=("firefox")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+        "ubuntu")
+            # This is not allowed, because Ubuntu's `chromium` is a snap package.
+            ;;
+    esac
+}
+
+install_web_browser() {
+    # Return if no web browser
+    case "$install_browser" in
+        "none")
+            return 0
+            ;;
+        *)
+            # Continue for all web browsers
+            ;;
+    esac
+
+    echo "[INFO]: Installing the \`${install_browser}\` web browser on \`${install_distro}\`."
+
+    case "$install_browser" in
+        "librewolf")
+            install_librewolf
+            ;;
+        "brave")
+            install_brave
+            ;;
+        "firefox")
+            install_firefox
+            ;;
+        "chromium")
+            install_chromium
+            ;;
+    esac
+}

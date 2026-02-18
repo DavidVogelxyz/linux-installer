@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+setup_service_mgr() {
+    echo "[INFO]: Configuring the \`${service_mgr}\` service manager for \`${install_distro}\`."
+
+    case "$service_mgr" in
+        "runit")
+            local services=(
+                "NetworkManager"
+                "ntpd"
+                "sshd"
+            )
+
+            for ((i=0; i < "${#services[@]}"; i++)); do
+                ln -s "/etc/runit/sv/${services[i]}" "/etc/runit/runsvdir/current"
+            done
+
+            case "$install_distro" in
+                "artix")
+                    # dbus UUID must be generated for Artix runit.
+                    dbus-uuidgen > /var/lib/dbus/machine-id
+                    ;;
+                *)
+                    # no other `runit` systems right now
+                    ;;
+            esac
+
+            return 0
+            ;;
+        "systemd")
+            local services=(
+                "NetworkManager"
+                "ntpd"
+                "sshd"
+            )
+
+            # `systemd`, but distro-specific
+            case "$install_distro" in
+                "arch")
+                    services+=("dhcpcd")
+                    ;;
+                *)
+                    ;;
+            esac
+
+            for ((i=0; i < "${#services[@]}"; i++)); do
+                systemctl enable "${services[i]}" > /dev/null 2>&1
+            done
+            ;;
+        *)
+            ;;
+    esac
+}

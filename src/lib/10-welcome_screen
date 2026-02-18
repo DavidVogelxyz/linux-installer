@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+welcome_screen() {
+    readarray banner < "${WORK_DIR}/src/banner.txt"
+    clear
+
+    cat << EOF
+
+ ${banner[@]}
+
+    Hello, and welcome to DavidVogelxyz's Linux installer program!
+
+    On the next few screens, you will be asked some configuration questions.
+
+    The script will configure and install Linux based on the provided answers.
+
+    You will have a chance to exit out of the script before any changes are made.
+
+EOF
+
+read -p "    Press \"Enter\" to continue..."
+echo
+}

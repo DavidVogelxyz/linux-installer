@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+temp_allow_sudo() {
+    local temp="/etc/sudoers.d/setup-temp"
+
+    # Allow user to run sudo without entering a password.
+    cat << EOF > "$temp"
+%wheel ALL=(ALL) NOPASSWD: ALL
+Defaults:%wheel,root runcwd=*
+EOF
+
+    # `trap` command to remove the file when the program completes
+    trap "rm -f $temp" HUP INT QUIT TERM PWR EXIT
+}
+
+setup_distro() {
+    echo "[INFO]: Configuring certain files for \`${install_distro}\`."
+
+    case "$install_distro" in
+        "artix" | "arch")
+            # Since AUR programs must be installed in a fakeroot environment,
+            # this is required for all builds with AUR packages.
+            temp_allow_sudo
+
+            # on Arch and Artix, allow for members of `wheel` group to `sudo`, after providing a password
+            sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/g' '/etc/sudoers'
+
+            # Most important command! Get rid of the beep! (`pcspkr` = PC speaker)
+            rmmod pcspkr
+            echo "blacklist pcspkr" > "/etc/modprobe.d/nobeep.conf"
+            ;;
+        "debian")
+            # currently, no Debian specific changed
+            ;;
+        "ubuntu")
+            cp "${WORK_DIR}/src/templates/etc/kernel-img_ubuntu.conf" "/etc/kernel-img.conf"
+            cp "${WORK_DIR}/src/templates/etc/netplan/networkmanager_ubuntu.yaml" "/etc/netplan/networkmanager.yaml"
+            ;;
+        "rocky")
+            # Rocky requires this for certain tasks
+            temp_allow_sudo
+
+            local pkgs=("util-linux-user")
+            loop_install_pkg "${pkgs[@]}"
+
+            sed -i 's/^SELINUX=/SELINUX=disabled/g' "/etc/sysconfig/selinux"
+            ;;
+    esac
+}

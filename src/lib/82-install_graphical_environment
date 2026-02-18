@@ -1,0 +1,701 @@
+#!/usr/bin/env bash
+
+install_dwm() {
+    local pkgs=()
+
+    # add `dwm` dependencies
+    case "$install_distro" in
+        "artix" | "arch")
+            # no dependencies required for `artix` or `arch`
+            ;;
+        "debian" | "ubuntu")
+            pkgs+=(
+                "libharfbuzz-dev"
+                "libx11-dev"
+                "libx11-xcb-dev"
+                "libxcb-res0-dev"
+                "libxft-dev"
+                "libxinerama-dev"
+            )
+            ;;
+        "rocky")
+            pkgs+=(
+                "libX11-devel"
+                "libXft-devel"
+                "libXinerama-devel"
+            )
+            ;;
+    esac
+
+    # add `xlibre` or `xorg`
+    case "$install_distro" in
+        "artix")
+            pkgs+=("xlibre-xserver")
+            ;;
+        "arch")
+            pkgs+=("xorg-server")
+            ;;
+        "debian" | "ubuntu")
+            pkgs+=("xorg")
+            ;;
+        "rocky")
+            pkgs+=("xorg-x11-server-Xorg")
+            ;;
+    esac
+
+    # add other X utils
+    case "$install_distro" in
+        "artix" | "arch")
+            pkgs+=(
+                "xorg-xbacklight"
+                "xorg-xinit"
+                "xorg-xprop"
+                "xorg-xset"
+                "xorg-xwininfo"
+                "xautolock"
+                "xcape"
+                "xclip"
+                "xcompmgr"
+                "xdotool"
+                "xwallpaper"
+            )
+            ;;
+        "debian" | "ubuntu")
+            pkgs+=(
+                "xbacklight"
+                "xcape"
+                "xclip"
+                "xcompmgr"
+                "xdotool"
+                "xwallpaper"
+            )
+            ;;
+        "rocky")
+            pkgs+=(
+                "xorg-x11-xinit"
+                "setxkbmap"
+                "xclip"
+                "xcompmgr"
+                "xdotool"
+                "dbus-x11"
+            )
+            ;;
+    esac
+
+    # add fonts
+    case "$install_distro" in
+        "artix" | "arch")
+            pkgs+=(
+                "otf-libertinus"
+                "ttf-dejavu"
+                "ttf-font-awesome"
+                "noto-fonts"
+                "noto-fonts-emoji"
+            )
+            ;;
+        "debian" | "ubuntu")
+            pkgs+=(
+                "fonts-linuxlibertine"
+                "fonts-dejavu"
+                "fonts-font-awesome"
+                "fonts-noto"
+                "fonts-noto-color-emoji"
+            )
+            ;;
+        "rocky")
+            pkgs+=(
+                "liberation-fonts"
+                "dejavu-serif-fonts"
+                "google-noto-fonts-common"
+                "google-noto-emoji-fonts"
+            )
+            ;;
+    esac
+
+    # add everything else
+    case "$install_distro" in
+        "artix" | "arch")
+            pkgs+=(
+                "arandr"
+                "atool"
+                "bat"
+                "bc"
+                "calcurse"
+                "dosfstools"
+                "dunst"
+                "exfat-utils"
+                "ffmpeg"
+                "ffmpegthumbnailer"
+                "gnome-keyring"
+                "libnotify"
+                "lynx"
+                "maim"
+                "man-db"
+                "mediainfo"
+                "moreutils"
+                "mpc"
+                "mpd"
+                "mpv"
+                "ncmpcpp"
+                "newsboat"
+                "nsxiv"
+                "ntfs-3g"
+                "pipewire-pulse"
+                "polkit"
+                "poppler"
+                "pulsemixer"
+                "python-qdarkstyle"
+                "slock"
+                "socat"
+                "tesseract"
+                "tesseract-data-eng"
+                "unclutter"
+                "unzip"
+                "wireplumber"
+                "yt-dlp"
+                "zathura"
+                "zathura-pdf-mupdf"
+            )
+            ;;
+        "debian" | "ubuntu")
+            pkgs+=(
+                "abook"
+                "arandr"
+                "arc-theme"
+                "atool"
+                "bat"
+                "bc"
+                "calcurse"
+                "dosfstools"
+                "dunst"
+                "exfatprogs"
+                "ffmpeg"
+                "ffmpegthumbnailer"
+                "gnome-keyring"
+                "libnotify-bin"
+                "lynx"
+                "maim"
+                "man-db"
+                "mediainfo"
+                "moreutils"
+                "mpc"
+                "mpd"
+                "mpv"
+                "ncmpcpp"
+                "nsxiv"
+                "ntfs-3g"
+                "pipewire-pulse"
+                "polkitd"
+                "poppler-utils"
+                "pulsemixer"
+                "python3-qdarkstyle"
+                "sc"
+                "socat"
+                "suckless-tools"
+                "task-spooler"
+                "unclutter"
+                "unzip"
+                "wireplumber"
+                "yt-dlp"
+                "zathura"
+                "zathura-pdf-poppler"
+            )
+            ;;
+        "rocky")
+            pkgs+=(
+                "atool"
+                "bc"
+                "dosfstools"
+                "exfatprogs"
+                "gnome-keyring"
+                "lynx"
+                "maim"
+                "mediainfo"
+                "ntfs-3g"
+                "pulseaudio"
+                "socat"
+                "task-spooler"
+                "tesseract"
+                "unzip"
+                "zathura-pdf-poppler"
+            )
+            ;;
+    esac
+
+    # add missing packages
+    case "$install_distro" in
+        "debian")
+            pkgs+=(
+                "newsboat"
+            )
+            ;;
+        "ubuntu")
+            pkgs+=(
+                "ncal"
+            )
+            ;;
+        *)
+            # no other missing packages
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+
+    # install AUR packages
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=(
+                "abook"
+                "arkenfox-user.js"
+                "gtk-theme-arc-gruvbox-git"
+                "mutt-wizard-git"
+                "sc-im"
+                "simple-mtpfs"
+                "task-spooler"
+            )
+
+            loop_install_aur_pkg "${pkgs[@]}"
+            ;;
+        *)
+            # no other distros have AUR
+            ;;
+    esac
+
+    # actually install `dwm`
+    local pkgs=(
+        "bin-dwm"
+        "dmenu"
+        "dwm"
+        "dwmblocks"
+        "st"
+    )
+
+    # clone Git repos for `dwm`
+    for ((p=0; p<"${#pkgs[@]}"; p++)); do
+        echo "[INFO]: Cloning the git repo for \`$[pkgs[p]]\`."
+        sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/${pkgs[p]}" "${REPODIR}/${pkgs[p]}" > /dev/null 2>&1 \
+            || echo "[ERROR]: Failed to \`git clone\` the \`${pkgs[p]}\` repo." >> "${WORK_DIR}/pkg_fail.txt"
+    done
+
+    # add `bin-dwm` symlink to user's `~/.local/bin`
+    sudo -u "$user_name" ln -s "../src/bin-dwm/bin-dwm" "/home/${user_name}/.local/bin"
+
+    # Compile `dwm`
+    sudo -u "$user_name" bash "${REPODIR}/bin-dwm/bin-dwm/recompile-wm"
+}
+
+install_gnome() {
+    # Special considerations for GNOME
+    case "$install_distro" in
+        "artix")
+            # No GNOME for Artix, because `systemd` is required
+            # Read more at: https://forum.artixlinux.org/index.php/topic,8700.0.html
+            return 0
+            ;;
+        "rocky")
+            # Rocky installs GNOME differently
+            echo "[INFO]: Installing \`$graphical_environment\` on \`$install_distro\`."
+            dnf group install -y gnome > /dev/null 2>&1
+            ;;
+        *)
+            ;;
+    esac
+
+    # add GNOME packages for all other systems
+    case "$install_distro" in
+        "arch")
+            local pkgs=(
+                "noto-fonts"
+                "gnome"
+                "gdm"
+                "gnome-tweaks"
+                "gnome-shell-extension-dash-to-panel"
+                "gnome-shell-extension-arc-menu"
+            )
+            ;;
+        "debian")
+            local pkgs=(
+                "fonts-noto"
+                "gnome-core"
+                "gnome-tweaks"
+                "gnome-shell-extension-dashtodock"
+                "gnome-shell-extension-dash-to-panel"
+                "gnome-shell-extension-arc-menu"
+                "gnome-shell-extension-top-icons-plus"
+            )
+            ;;
+        "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "ubuntu-desktop-minimal"
+            )
+            ;;
+        "rocky")
+            local pkgs=(
+                "google-noto-fonts-common"
+                "gnome-tweaks"
+                "gnome-shell-extension-dash-to-dock"
+                "gnome-shell-extension-dash-to-panel"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_kde() {
+    # Special considerations for KDE
+    case "$install_distro" in
+        "rocky")
+            # No KDE for Rocky
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    # add KDE packages for all other systems
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=(
+                "noto-fonts"
+                "plasma-desktop"
+                "kscreen"
+                "dolphin"
+            )
+            ;;
+        "debian")
+            local pkgs=(
+                "fonts-noto"
+                "kde-plasma-desktop"
+            )
+            ;;
+        "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "kubuntu-desktop"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_hyprland() {
+    # Special considerations for Hyprland
+    case "$pkgmgr" in
+        "pacman")
+            ;;
+        *)
+            # No Hyprland for distros without `pacman`
+            ;;
+    esac
+
+    # add Hyprland packages
+    case "$pkgmgr" in
+        "pacman")
+            local pkgs=(
+                "noto-fonts"
+                "hyprland"
+                "pipewire-pulse"
+                "pulsemixer"
+                "ttf-jetbrains-mono-nerd"
+                "xcape"
+                "waybar"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_cosmic() {
+    # Special considerations for COSMIC
+    case "$install_distro" in
+        "arch")
+            ;;
+        *)
+            # Only Arch can install COSMIC; requires `systemd`
+            ;;
+    esac
+
+    # add COSMIC packages
+    case "$install_distro" in
+        "arch")
+            local pkgs=(
+                "cosmic"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_cinnamon() {
+    # add Cinnamon packages for all systems
+    case "$install_distro" in
+        "artix")
+            local pkgs=(
+                "noto-fonts"
+                "cinnamon"
+                "artix-cinnamon-presets"
+            )
+            ;;
+        "arch")
+            local pkgs=(
+                "noto-fonts"
+                "cinnamon"
+            )
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "cinnamon"
+            )
+            ;;
+        "rocky")
+            local pkgs=(
+                "google-noto-fonts-common"
+                "cinnamon"
+                "initial-setup-gui"
+                "lightdm"
+                "lightdm-settings"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_xfce() {
+    # Special considerations for Xfce
+    case "$install_distro" in
+        "rocky")
+            # Rocky installs Xfce differently
+            echo "[INFO]: Installing \`$graphical_environment\` on \`$install_distro\`."
+            dnf group install -y xfce > /dev/null 2>&1
+            ;;
+        *)
+            ;;
+    esac
+
+    # add Xfce packages for all other systems
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=(
+                "noto-fonts"
+                "noto-fonts-emoji"
+                "xfce4"
+                "pulseaudio"
+                "xfce4-pulseaudio-plugin"
+                "xfce4-screensaver"
+            )
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "xfce4"
+            )
+            ;;
+        "rocky")
+            local pkgs=(
+                "google-noto-fonts-common"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_mate() {
+    # Special considerations for Mate
+    case "$install_distro" in
+        "rocky")
+            # Rocky installs Mate differently
+            echo "[INFO]: Installing \`$graphical_environment\` on \`$install_distro\`."
+            dnf group install -y "MATE Desktop" > /dev/null 2>&1
+            ;;
+        *)
+            ;;
+    esac
+
+    # add Mate packages for all systems
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=(
+                "noto-fonts"
+                "mate"
+            )
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "mate-desktop-environment-core"
+                "gdm3"
+            )
+            ;;
+        "rocky")
+            local pkgs=(
+                "google-noto-fonts-common"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_lxqt() {
+    # Special considerations for LXQt
+    case "$install_distro" in
+        "rocky")
+            # No LXQt for Rocky
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    # add LXQt packages for all other systems
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=(
+                "noto-fonts"
+                "lxqt"
+            )
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "lxqt-core"
+                "gdm3"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_lxde() {
+    # Special considerations for LXDE
+    case "$install_distro" in
+        "rocky")
+            # No LXDE for Rocky
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    # add LXDE packages for all other systems
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=(
+                "noto-fonts"
+                "lxde-core"
+            )
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "lxde-common"
+                "gdm3"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_budgie() {
+    # Special considerations for Budgie
+    case "$install_distro" in
+        "artix" | "rocky")
+            # No Budgie for Artix or Rocky
+            # Re: Artix, read more at: https://forum.artixlinux.org/index.php/topic,8700.msg53186.html#msg53186
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    # add Budgie packages for all other systems
+    case "$install_distro" in
+        "arch")
+            local pkgs=(
+                "noto-fonts"
+                "budgie-desktop"
+            )
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=(
+                "fonts-noto"
+                "budgie"
+                "gdm3"
+            )
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+}
+
+install_graphical_environment() {
+    # Return if no graphical environment
+    case "$graphical_environment" in
+        "none")
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    echo "[INFO]: Installing the \`${graphical_environment}\` graphical environment on \`${install_distro}\`."
+
+    case "$graphical_environment" in
+        "dwm")
+            install_dwm
+            ;;
+        "gnome")
+            install_gnome
+            ;;
+        "kde")
+            install_kde
+            ;;
+        "hyprland")
+            install_hyprland
+            ;;
+        "cosmic")
+            install_cosmic
+            ;;
+        "cinnamon")
+            install_cinnamon
+            ;;
+        "xfce")
+            install_xfce
+            ;;
+        "mate")
+            install_mate
+            ;;
+        "lxqt")
+            install_lxqt
+            ;;
+        "lxde")
+            install_lxde
+            ;;
+        "budgie")
+            install_budgie
+            ;;
+        *)
+            ;;
+    esac
+}

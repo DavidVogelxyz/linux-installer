@@ -1,6 +1,0 @@
-#TAG,NAME (or Git URL),DESCRIPTION,PKG_DEBIAN,PKG_ARCH,PKG_ARTIX,PKG_UBUNTU,PKG_ROCKY
-A,librewolf-bin,"is the default browser of LARBS which also comes with ad-blocking and other sensible and necessary features by default.",skip,,,skip,
-A,librewolf-extension-istilldontcareaboutcookies-bin,"removes annoying cookie banners",skip,,,skip,
-A,librewolf-extension-localcdn-bin,"local emulation of Content Delivery Networks.",skip,,,skip,
-A,librewolf-extension-tridactyl-bin,"vim bindings in your browser.",skip,,,skip,
-A,librewolf-extension-ublock-origin-bin,"the best ad blocker in town.",skip,,,skip,
