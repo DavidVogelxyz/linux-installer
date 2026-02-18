@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+
+format_disk_confirmation_step() {
+    echo -e "\nAre you sure you want to do this? (Answer \"Y\" or \"N\")"
+    read -p "> " -r
+
+    case $REPLY in
+        [Yy]*)
+            ;;
+        [Nn]*)
+            echo -e "\nOk, exiting the program!\n"
+            exit 0
+            ;;
+        *)
+            echo -e "\nAsking again...\n"
+            format_disk_confirmation_step
+            ;;
+    esac
+}
+
+format_disk_warning_screen() {
+    clear
+    cat << EOF
+Format Disk - WARNING!
+
+[WARN]: This script is about to format \`/dev/${install_disk}\`.
+[WARN]: This will irrevocably wipe the data on this disk.
+[WARN]: The utility SHOULD be able to detect a "disk in use", and fail before wiping.
+[WARN]: But, this is not a guarantee!
+[WARN]: THIS IS THE LAST CHANCE TO BACK OUT!
+EOF
+
+    format_disk_confirmation_step
+
+    # For displaying "time to completion" at end of script
+    export SECONDS=0
+}
+
+format_disk() {
+    clear
+    echo "[INFO]: Formatting the disk."
+
+    sfdisk "/dev/${install_disk}" < "${WORK_DIR}/src/templates/format_disk/${firmware}_standard" > /dev/null 2>&1
+}
+
+set_partition_names() {
+    echo "[INFO]: Setting partition names."
+
+    local c=0
+
+    # set the encryption partition
+    if [[ "$encryption" == "yes" ]]; then
+        export partition_crypt="/dev/mapper/${lvm_name}"
+    fi
+
+    while read -r line; do
+        if [[ "$line" =~ ^"/dev/${install_disk}" ]]; then
+            if ((c == 0)); then
+                # set the first partition as "/boot"
+                export partition_boot="${line%% *}"
+                c="$((c + 1))"
+            else
+                # set the last partition as "rootfs"
+                export partition_rootfs="${line%% *}"
+            fi
+        fi
+    done < <(sfdisk -d "/dev/${install_disk}")
+}
+
+encrypt_drive() {
+    case "$encryption" in
+        "no")
+            return 0
+            ;;
+        "yes")
+            echo "[INFO]: Encrypting the root partition."
+            echo "${encryption_pass}" | cryptsetup -q luksFormat "$partition_rootfs"
+            echo "${encryption_pass}" | cryptsetup open "$partition_rootfs" "$lvm_name"
+            unset encryption_pass
+            ;;
+    esac
+}
+
+create_swap_partition() {
+    case "$install_swap" in
+        "no")
+            return 0
+            ;;
+        "yes")
+            case "$encryption" in
+                "no")
+                    export volume_physical="${partition_rootfs}"
+                    ;;
+                "yes")
+                    export volume_physical="${partition_crypt}"
+                    ;;
+            esac
+            ;;
+    esac
+
+    echo "[INFO]: Creating swap partition."
+
+    export group_volume="vg${install_distro}"
+    export swap_name="swap_1"
+    export volume_logical_swap="/dev/mapper/${group_volume}-${swap_name}"
+    export volume_logical_root="/dev/mapper/${group_volume}-root"
+
+    pvcreate "${volume_physical}" > /dev/null 2>&1
+    vgcreate "${group_volume}" "${volume_physical}" > /dev/null 2>&1
+    lvcreate -L "${ram_size}" -n "${swap_name}" "${group_volume}" > /dev/null 2>&1
+    lvcreate -l 100%FREE -n root "${group_volume}" > /dev/null 2>&1
+}
+
+create_file_systems() {
+    echo "[INFO]: Creating and mounting file systems."
+
+    mkfs.fat -F32 "$partition_boot" > /dev/null 2>&1
+
+    case "$install_swap" in
+        "yes")
+            mkfs.ext4 "$volume_logical_root" > /dev/null 2>&1
+            mkswap "$volume_logical_swap" > /dev/null 2>&1
+            mount "$volume_logical_root" /mnt
+            ;;
+        "no")
+            case "$encryption" in
+                "yes")
+                    mkfs.ext4 "$partition_crypt" > /dev/null 2>&1
+                    mount "$partition_crypt" /mnt
+                    ;;
+                "no")
+                    mkfs.ext4 "$partition_rootfs" > /dev/null 2>&1
+                    mount "$partition_rootfs" /mnt
+                    ;;
+            esac
+            ;;
+    esac
+
+    # had to remove `mount -m` because Rocky can't handle it
+    #mount -m "$partition_boot" /mnt/boot
+    mkdir -p /mnt/boot
+    mount "$partition_boot" /mnt/boot
+}
+
+partitions_and_file_systems() {
+    format_disk_warning_screen
+
+    format_disk \
+        || error "[ERROR]: Failed to format disk! Is the disk currently in use?"
+
+    set_partition_names
+
+    encrypt_drive \
+        || error "[ERROR]: Failed to encrypt the drive."
+
+    create_swap_partition \
+        || error "[ERROR]: Failed to create the swap partition."
+
+    create_file_systems \
+        || error "[ERROR]: Failed to create and mount file systems."
+}

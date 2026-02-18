@@ -1,0 +1,332 @@
+#!/usr/bin/env bash
+
+get_debootstrap_scripts() {
+    local scripts_dir="/usr/share/debootstrap/scripts"
+
+    case "$install_distro" in
+        "debian")
+            local debian_options=(
+                "bookworm | Debian 12"
+                "trixie | Debian 13"
+            )
+
+            for ((j=0; j<"${#debian_options[@]}"; j++)); do
+                if [[ -f "${scripts_dir}/${debian_options[j]%% |*}" ]]; then
+                    OPTIONS+=("${debian_options[j]}")
+                fi
+            done
+            ;;
+        "ubuntu")
+            local ubuntu_options=(
+                "focal | Ubuntu 20 LTS"
+                "jammy | Ubuntu 22 LTS"
+                "noble | Ubuntu 24 LTS"
+            )
+
+            for ((j=0; j<"${#ubuntu_options[@]}"; j++)); do
+                if [[ -f "${scripts_dir}/${ubuntu_options[j]%% |*}" ]]; then
+                    OPTIONS+=("${ubuntu_options[j]}")
+                fi
+            done
+            ;;
+    esac
+}
+
+get_question_settings() {
+    local QUESTION="$1"
+    ! [[ "$QUESTION" ]] && exit 1
+
+    OPTIONS=()
+    PROMPT=""
+
+    case "$QUESTION" in
+        "install_distro")
+            PROMPT="Choose a Linux distro to install."
+
+            case "$iso_distro" in
+                "artix")
+                    #OPTIONS=("artix" "debian" "ubuntu")
+                    export install_distro="artix"
+                    ;;
+                "arch")
+                    #OPTIONS=("arch" "debian" "ubuntu")
+                    export install_distro="arch"
+                    ;;
+                "debian")
+                    OPTIONS=("debian" "ubuntu")
+                    ;;
+                "ubuntu")
+                    OPTIONS=("ubuntu" "debian")
+                    ;;
+                "rocky")
+                    #OPTIONS=("rocky" "debian" "ubuntu")
+                    export install_distro="rocky"
+                    ;;
+            esac
+            ;;
+        "install_release")
+            PROMPT="Choose a release version to install for \`${install_distro}\`."
+
+            case "$install_distro" in
+                "artix" | "arch")
+                    export install_release="rolling"
+                    ;;
+                "debian" | "ubuntu")
+                    if ! [[ $(command -v "debootstrap") ]]; then
+                        echo "[INFO]: \`${install_distro}\` was selected, but user is running a \`${iso_distro}\` ISO."
+                        echo "[INFO]: Please wait one moment while \`debootstrap\` is installed."
+                        install_pkg "debootstrap"
+                        clear
+                    fi
+
+                    get_debootstrap_scripts
+                    ;;
+                "rocky")
+                    export install_release="${iso_release%%.*}"
+                    ;;
+            esac
+            ;;
+        "service_mgr")
+            PROMPT="Choose a service manager for \`${install_distro}\`."
+
+            case "$install_distro" in
+                "artix")
+                    OPTIONS=("runit" "openrc")
+                    ;;
+                "arch" | "debian" | "ubuntu" | "rocky")
+                    export service_mgr="systemd"
+                    ;;
+            esac
+            ;;
+        "graphical_environment")
+            PROMPT="Choose a graphical environment to install."
+            OPTIONS=("none | No graphical environment" "dwm | DavidVogelxyz's custom build of dwm")
+
+            # GNOME
+            case "$install_distro" in
+                "artix")
+                    # No GNOME for Artix, because `systemd` is required
+                    # Read more at: https://forum.artixlinux.org/index.php/topic,8700.0.html
+                    ;;
+                "ubuntu")
+                    OPTIONS+=("gnome | The default Ubuntu Desktop running GNOME")
+                    ;;
+                *)
+                    OPTIONS+=("gnome | The GNOME desktop environment")
+                    ;;
+            esac
+
+            # KDE
+            case "$install_distro" in
+                "rocky")
+                    # No KDE for Rocky
+                    ;;
+                "ubuntu")
+                    OPTIONS+=("kde | Kubuntu (KDE + Ubuntu)")
+                    ;;
+                *)
+                    OPTIONS+=("kde | The KDE desktop environment")
+                    ;;
+            esac
+
+            # Hyprland
+            case "$pkgmgr" in
+                "pacman")
+                    OPTIONS+=("hyprland | Hyprland (Wayland window manager)")
+                    ;;
+                *)
+                    # No Hyprland for distros without `pacman`
+                    ;;
+            esac
+
+            # COSMIC
+            case "$install_distro" in
+                "arch")
+                    OPTIONS+=("cosmic | COSMIC Desktop")
+                    ;;
+                *)
+                    # Only Arch can install COSMIC; requires `systemd`
+                    ;;
+            esac
+
+            # Cinnamon, Xfce, Mate
+            OPTIONS+=("cinnamon | Cinnamon Desktop" "xfce | Xfce Desktop" "mate | Mate Desktop")
+
+            # LXQt, LXDE
+            case "$install_distro" in
+                "rocky")
+                    # These graphical environment are not available on Rocky
+                    ;;
+                *)
+                    OPTIONS+=("lxqt | LXQt Desktop" "lxde | LXDE Desktop")
+                    ;;
+            esac
+
+            # Budgie
+            case "$install_distro" in
+                "artix" | "rocky")
+                    # These distro do not have Budgie available
+                    # Re: Artix, read more at: https://forum.artixlinux.org/index.php/topic,8700.msg53186.html#msg53186
+                    ;;
+                *)
+                    OPTIONS+=("budgie | Budgie Desktop")
+                    ;;
+            esac
+            ;;
+        "install_browser")
+            PROMPT="Please choose a browser to install."
+
+            # Skip if no graphical environment (server)
+            case "$graphical_environment" in
+                "none")
+                    return 0
+                    ;;
+                *)
+                    ;;
+            esac
+
+            # Librewolf
+            case "$install_distro" in
+                "artix" | "arch")
+                    OPTIONS+=("librewolf | Privacy-focused fork of Firefox")
+                    ;;
+                *)
+                    # Librewolf is not available for any other distro (requires AUR)
+                    ;;
+            esac
+
+            # Brave
+            OPTIONS+=("brave | The Brave web browser (based off of Chromium)")
+
+            # Firefox, Chromium
+            case "$install_distro" in
+                "ubuntu")
+                    # Not an option, because snap packages are refused
+                    ;;
+                *)
+                    OPTIONS+=("firefox | The Firefox web browser" "chromium | The open-source version of Chrome")
+                    ;;
+            esac
+            ;;
+        "firmware")
+            PROMPT="BIOS or UEFI?"
+
+            case "$firmware" in
+                "bios")
+                    return 0
+                    ;;
+                "uefi")
+                    OPTIONS=("UEFI" "BIOS | Legacy boot options must be enabled, or this will fail!")
+                    ;;
+            esac
+            ;;
+        "install_disk")
+            PROMPT="Choose a disk onto which to install \`${install_distro}\`."
+            OPTIONS=("${available_disks[@]}")
+            ;;
+        "encryption")
+            # Rocky (`dracut`) still has issues with encryption; so, skip
+            if [[ "$install_distro" == "rocky" ]]; then
+                export encryption="no"
+                return 0
+            fi
+
+            PROMPT="Encrypt the drive?"
+            OPTIONS=("Yes - encrypt the drive" "No - do not encrypt the drive")
+            ;;
+        "region")
+            PROMPT="Choose a region."
+            OPTIONS=("en_US")
+            ;;
+        "timezone")
+            PROMPT="Choose a timezone."
+            OPTIONS=("US/Pacific" "US/Mountain" "US/Central" "US/Eastern")
+            ;;
+        "install_swap")
+            PROMPT="Do you want to create a swap partition of the same size as total RAM? ($ram_size GB)"
+            OPTIONS=("Yes - create swap" "No - do not create swap")
+            ;;
+    esac
+
+    ! [[ "$PROMPT" ]] && exit 1
+}
+
+parse_response() {
+    local QUESTION="$1"
+    ! [[ "$QUESTION" ]] && exit 1
+
+    choice=$(printf "%s\n" "${OPTIONS[@]}" | fzf)
+
+    if ! [[ "$choice" ]]; then
+        echo -e "\n[WARN]: Unknown response. Please select a valid option.\n"
+        return 1
+    fi
+
+    case "$QUESTION" in
+        "timezone" | "region")
+            # do not parse these choices
+            ;;
+        *)
+            # Remove all but the first word; then, make it lowercase
+            choice="${choice%% *}"
+            choice="${choice@L}"
+            ;;
+    esac
+
+    export "$QUESTION"="$choice"
+
+    #select choice in "${OPTIONS[@]}"; do
+    #    if ! [[ "$choice" ]]; then
+    #        echo -e "\n[WARN]: Unknown response. Please select a valid option.\n"
+    #        return 1
+    #    fi
+
+    #    # Parse `install_release` and `encryption`
+    #    if [[ "$QUESTION" == "install_release" ]] || [[ "$QUESTION" == "encryption" ]]; then
+    #        choice="${choice%% *}"
+    #        choice="${choice@L}"
+    #    fi
+
+    #    #declare -g "${QUESTION}=$choice"
+    #    export "$QUESTION"="$choice"
+
+    #    return 0
+    #done
+}
+
+ask_user() {
+    local QUESTION="$1"
+    ! [[ "$QUESTION" ]] && exit 1
+
+    # Get settings for question
+    get_question_settings "$QUESTION"
+    ! [[ "${OPTIONS[@]}" ]] && return 0
+
+    # Ask question
+    echo -e "$PROMPT"
+    PS3="Please choose a number: "
+
+    # Parse a valid answer, or ask the question again
+    parse_response "$QUESTION" || $FUNCNAME "$QUESTION"
+}
+
+ask_user_questions() {
+    QUESTIONS=(
+        "install_distro"
+        "install_release"
+        "service_mgr"
+        "graphical_environment"
+        "install_browser"
+        "firmware"
+        "install_disk"
+        "encryption"
+        "region"
+        "timezone"
+        "install_swap"
+    )
+
+    for ((i=0; i<"${#QUESTIONS[@]}"; i++)); do
+        clear
+        ask_user "${QUESTIONS[i]}"
+    done
+}

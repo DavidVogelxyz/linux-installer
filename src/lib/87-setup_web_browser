@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+setup_librewolf() {
+    # All this below to get Librewolf installed with add-ons and non-bad settings.
+    browserdir="/home/${user_name}/.librewolf"
+    profilesini="${browserdir}/profiles.ini"
+
+    # Start librewolf headless so it generates a profile. Then get that profile in a variable.
+    sudo -u "$user_name" librewolf --headless > /dev/null 2>&1 &
+    sleep 7
+    profile="$(sed -n "/Default=.*.default-default/ s/.*=//p" "$profilesini")"
+    pdir="${browserdir}/${profile}"
+
+    if [[ -d "$pdir" ]]; then
+        # Get the Arkenfox user.js and prepare it.
+        arkenfox="${pdir}/arkenfox.js"
+        overrides="${pdir}/user-overrides.js"
+        userjs="${pdir}/user.js"
+        sudo -u "$user_name" ln -fs "/home/${user_name}/.config/firefox/larbs.js" "$overrides"
+
+        if ! [[ -f "$arkenfox" ]]; then
+            sudo -u "$user_name" curl -sL "https://raw.githubusercontent.com/arkenfox/user.js/master/user.js" > "$arkenfox"
+        fi
+
+        sudo -u "$user_name" cat "$arkenfox" "$overrides" > "$userjs"
+        #chown "$user_name:" "$arkenfox" "$userjs"
+    fi
+
+    # Kill the now unnecessary Librewolf instance.
+    pkill -u "$user_name" librewolf \
+        || return 0
+}
+
+setup_web_browser() {
+    # Return if no web browser
+    case "$install_browser" in
+        "none")
+            return 0
+            ;;
+        *)
+            # Continue for all web browsers
+            ;;
+    esac
+
+    # Perform additional setup for Librewolf
+    case "$install_browser" in
+        "librewolf")
+            echo "[INFO]: Configuring the \`${install_browser}\` web browser on \`${install_distro}\`."
+
+            setup_librewolf
+
+            # Reset the terminal, because "Librewolf headless" can be funky
+            reset
+            ;;
+        *)
+            ;;
+    esac
+
+    # add step to reconfigure `~/.config/shell/profile`
+    # and, in case of `dwm`, `~/.local/src/dwm/config.h`
+}

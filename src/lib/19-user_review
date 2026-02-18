@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+user_review_confirmation_step() {
+    echo -e "\nDoes everything look correct? (Answer \"Y\" or \"N\")"
+    read -p "> " -r
+
+    case $REPLY in
+        [Yy]*)
+            ;;
+        [Nn]*)
+            echo -e "\nOk, exiting the program!\n"
+            exit 0
+            ;;
+        *)
+            echo -e "\nAsking again...\n"
+            user_review_confirmation_step
+            ;;
+    esac
+}
+
+user_review() {
+    clear
+    cat << EOF
+PLEASE REVIEW THE FOLLOWING:
+
+Image OS                =   $iso_distro and $iso_release
+Install OS & release    =   $install_distro and $install_release
+Service manager         =   $service_mgr
+Graphical environment   =   $graphical_environment
+Web browser             =   ${install_browser:-none}
+Firmware                =   $firmware
+Disk selected           =   /dev/${install_disk}
+Encryption              =   $encryption
+LVM name                =   ${lvm_name:-none}
+user@hostname.domain    =   ${user_name}@${host_name}.${local_domain}
+Timezone                =   $timezone
+Region                  =   $region
+RAM                     =   $ram_size
+swapanswer              =   $install_swap
+EOF
+
+    user_review_confirmation_step
+}

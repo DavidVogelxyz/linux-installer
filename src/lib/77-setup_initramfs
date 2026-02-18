@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+setup_initramfs() {
+    case "$install_distro" in
+        "artix" | "arch")
+            echo "[INFO]: Running \`mkinitcpio\` on \`${install_distro}\`."
+            mkinitcpio -p linux > /dev/null 2>&1
+            ;;
+        "debian" | "ubuntu")
+            echo "[INFO]: Running \`update-initramfs\` on \`${install_distro}\`."
+            update-initramfs -u -k all > /dev/null 2>&1
+            ;;
+        "rocky")
+            return 0
+            ;;
+    esac
+}

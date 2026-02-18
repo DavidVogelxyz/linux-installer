@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+setup_lf() {
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=("lf-git")
+            loop_install_aur_pkg "${pkgs[@]}"
+
+            local pkgs=("ueberzugpp")
+            ;;
+        "debian" | "ubuntu")
+            local pkgs=("lf" "ueberzug")
+            ;;
+        "rocky")
+            return 0
+            ;;
+    esac
+
+    loop_install_pkg "${pkgs[@]}"
+}

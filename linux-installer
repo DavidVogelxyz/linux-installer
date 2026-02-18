@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+export REPO_NAME="linux-installer"
+
+LIBRARIES=(
+    "00-install_pkgs"
+    "01-get_system_info"
+    "10-welcome_screen"
+    "11-ask_user_questions"
+    "12-get_user_input"
+    "19-user_review"
+    "30-partitions_and_file_systems"
+    "40-do_bootstrap"
+)
+
+# Prints provided message to STDERR; then, exits with return code `1`
+error() {
+    echo -e "$1" >&2 \
+        && exit 1
+}
+
+check_working_directory() {
+    local arg="$0"
+    local arg_path="$(realpath $arg)"
+    local arg_dir="${arg_path%/*}"
+    export WORK_DIR="${arg_dir%%/$REPO_NAME*}/$REPO_NAME"
+
+    # If not in the correct directory, change directory
+    if ! [[ "$pwd" == "$WORK_DIR" ]]; then
+        cd "$WORK_DIR"
+    fi
+}
+
+source_libraries() {
+    for ((i=0; i<"${#LIBRARIES[@]}"; i++)); do
+        local file="${WORK_DIR}/src/lib/${LIBRARIES[i]}"
+
+        if [[ -f "$file" ]]; then
+            source "$file"
+        else
+            error "[ERROR]: File not found -- $file"
+        fi
+    done
+}
+
+check_prog_deps() {
+    local pkgs=("bash" "fzf")
+
+    echo "[INFO]: Please wait one moment while the program checks for essential packages."
+
+    for ((i=0; i < "${#pkgs[@]}"; i++)); do
+        local pkg="${pkgs[i]}"
+
+        # First check -- if package isn't installed, attempt to install it
+        if [[ "$(command -v "$pkg")" ]]; then
+            continue
+        else
+            # Rocky requires EPEL for `fzf`
+            if [[ "$iso_distro" == "rocky" ]] && [[ "$pkg" = "fzf" ]]; then
+                setenforce 0
+                install_pkg "epel-release"
+            fi
+
+            install_pkg "$pkg"
+        fi
+
+        # If package fails to install, it's likely because the package manager wasn't updated
+        # So, update the package manager and re-attempt the package install
+        if [[ "$(command -v "$pkg")" ]]; then
+            continue
+        else
+            update_pkgmgr > /dev/null 2>&1
+            install_pkg "$pkg" > /dev/null 2>&1
+        fi
+
+        # If the package isn't install by this point, error
+        if [[ "$(command -v "$pkg")" ]]; then
+            continue
+        else
+            echo "[ERROR]: Essential packages are missing."
+            error "[ERROR]: Please manually install \`${pkg}\` and run the program again."
+        fi
+    done
+
+    export FZF_DEFAULT_OPTS="--layout=reverse --height 40%"
+
+    return 0
+}
+
+main() {
+    # FUNCTION                          # PROVIDED BY
+    check_working_directory             # linux-installer
+    source_libraries                    # linux-installer
+
+    get_system_info                     # 01-get_system_info
+    set_pkgmgr "$iso_distro"            # 00-install_pkgs
+    welcome_screen                      # 10-welcome_screen
+    check_prog_deps                     # linux-installer
+
+    ask_user_questions                  # 11-ask_user_questions
+    get_user_input                      # 12-get_user_input
+    user_review                         # 19-user_review
+
+    partitions_and_file_systems         # 30-partitions_and_file_systems
+    do_bootstrap                        # 40-do_bootstrap
+
+    # `do_bootstrap` completes by running the `chroot` command
+    # `chroot` will call the `chroot-tasks` script
+    # the remainder of the program runs through `chroot-tasks`
+}
+
+main

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+setup_nvim() {
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=("neovim" "ripgrep" "tree-sitter-cli")
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+
+    loop_install_pkg "${pkgs[@]}"
+
+    echo "[INFO]: Configuring \`nvim\`."
+    sudo -u "$user_name" git clone https://github.com/DavidVogelxyz/nvim "$REPODIR/nvim" > /dev/null 2>&1
+    sudo -u "$user_name" nvim -c "q"
+
+    # Symlink the Neovim configs into the user's directory
+    sudo -u "$user_name" ln -s "/home/${user_name}/.local/src/nvim" "/home/${user_name}/.config/nvim"
+
+    # Symlink the Neovim configs into the root user's directory
+    mkdir -p /root/.config
+    ln -s "/home/${user_name}/.local/src/nvim" "/root/.config/nvim"
+}

@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+
+run_bootstrap() {
+    echo -e "\n[INFO]: Running the bootstrap command for \`$install_distro\`.\n"
+    echo -e "[INFO]: This command will display output, so the user can observe the process.\n"
+
+    case "$install_distro" in
+        "artix" | "arch")
+            local mirrorlist_src="${WORK_DIR}/src/templates/pacman/${install_distro}_mirrorlist"
+            local mirrorlist_dest="/etc/pacman.d/mirrorlist"
+
+            cp "$mirrorlist_src" "$mirrorlist_dest"
+
+            # Adds Pacman eye-candy to `pacman`.
+            grep -q "ILoveCandy" /etc/pacman.conf \
+                || sed -i "/#VerbosePkgLists/a ILoveCandy" /etc/pacman.conf
+
+            # Adds color, and concurrent downloads, to `pacman`.
+            sed -Ei "s/^#(ParallelDownloads).*/\1 = 5/;/^#Color$/s/#//" /etc/pacman.conf
+            ;;
+        *)
+            # No pre-bootstrap config for other distros
+            ;;
+    esac
+
+    case "$install_distro" in
+        "artix")
+            # `mkinitcpio` and `iptables` were added explicitly to avoid user prompts
+            local pkgs="base base-devel linux linux-firmware mkinitcpio iptables grub lvm2 networkmanager openssh $service_mgr elogind-${service_mgr} lvm2-${service_mgr} networkmanager-${service_mgr} openssh-${service_mgr}"
+
+            basestrap /mnt $pkgs --noconfirm --needed
+            ;;
+        "arch")
+            # `mkinitcpio` and `iptables` were added explicitly to avoid user prompts
+            local pkgs="base base-devel linux linux-firmware mkinitcpio iptables grub lvm2 networkmanager openssh dhcpcd"
+
+            pacstrap -K /mnt $pkgs --noconfirm --needed
+            ;;
+        "debian" | "ubuntu")
+            debootstrap "$install_release" /mnt
+            ;;
+        "rocky")
+            dnf --releasever=${install_release} --installroot=/mnt -y group install core
+            ;;
+    esac
+}
+
+bind_mounts() {
+    echo "[INFO]: Binding mounts to the \`chroot\` environment."
+
+    for d in sys dev proc; do
+        mount --rbind "/${d}" "/mnt/${d}" \
+            && mount --make-rslave "/mnt/${d}"
+    done
+}
+
+blkid_to_fstab() {
+    while read -r line; do
+        if [[ "$line" =~ "UUID" ]] && ! [[ "$line" =~ ^"/dev/sr0" ]]; then
+            echo "$line" >> /mnt/etc/fstab-helper
+        fi
+    done < <(blkid)
+}
+
+post_bootstrap() {
+    clear
+    echo "[INFO]: Running the \"post-bootstrap\" tasks for \`$install_distro\`."
+
+    case "$install_distro" in
+        "artix" | "arch")
+            # Adds Pacman eye-candy to `pacman`.
+            grep -q "ILoveCandy" /mnt/etc/pacman.conf \
+                || sed -i "/#VerbosePkgLists/a ILoveCandy" /mnt/etc/pacman.conf
+
+            # Adds color, and concurrent downloads, to `pacman`.
+            sed -Ei "s/^#(ParallelDownloads).*/\1 = 5/;/^#Color$/s/#//" /mnt/etc/pacman.conf
+
+            if [[ "$install_swap" == "yes" ]]; then
+                blkid_to_fstab
+            fi
+            ;;
+    esac
+
+    case "$install_distro" in
+        "artix")
+            fstabgen -U /mnt >> /mnt/etc/fstab
+            ;;
+        "arch")
+            genfstab -U /mnt >> /mnt/etc/fstab
+            ;;
+        "debian" | "ubuntu")
+            local mirrorlist_src="${WORK_DIR}/src/templates/apt/${install_distro}_${install_release}_sources.list"
+            local mirrorlist_dest="/mnt/etc/apt/sources.list"
+
+            bind_mounts
+            cp "$mirrorlist_src" "$mirrorlist_dest"
+            ;;
+        "rocky")
+            bind_mounts
+            systemd-firstboot --root=/mnt --timezone="America/Chicago" --hostname="${host_name}" --setup-machine-id
+            cp /etc/resolv.conf /mnt/etc/resolv.conf
+            ;;
+    esac
+}
+
+chroot_time() {
+    CHROOT_DIR="/root/.local/src"
+    CHROOT_SCRIPT="${CHROOT_DIR}/${REPO_NAME}/src/chroot-tasks"
+
+    echo "[INFO]: Preparing to \`chroot\` into new \`$install_distro\` install."
+
+    mkdir -p "/mnt${CHROOT_DIR}"
+    cp -r /root/linux-installer "/mnt${CHROOT_DIR}"
+    sed -i '2 i \\' "/mnt${CHROOT_SCRIPT}"
+    sed -i "3 i cd ${CHROOT_DIR}/${REPO_NAME}" "/mnt${CHROOT_SCRIPT}"
+    chmod +x "/mnt${CHROOT_SCRIPT}"
+
+    case "$install_distro" in
+        "artix")
+            artix-chroot /mnt "${CHROOT_SCRIPT}"
+            ;;
+        "arch")
+            arch-chroot /mnt "${CHROOT_SCRIPT}"
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            chroot /mnt "${CHROOT_SCRIPT}"
+            ;;
+    esac
+}
+
+do_bootstrap() {
+    run_bootstrap \
+        || error "[ERROR]: Failed to run the bootstrap command."
+
+    post_bootstrap \
+        || error "[ERROR]: Failed to perform \"post-bootstrap\" tasks."
+
+    chroot_time
+}

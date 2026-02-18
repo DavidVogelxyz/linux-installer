@@ -1,0 +1,266 @@
+#!/usr/bin/env bash
+
+setup_autologin() {
+    case "$encryption" in
+        "no")
+            # autologin is only for encrypted systems
+            ;;
+        "yes")
+            case "$service_mgr" in
+                "runit")
+                    sed -i "s/noclear/noclear --autologin ${user_name}/g" "/etc/runit/sv/agetty-tty1/conf"
+
+                    # this fixes `dmesg` spam, which happens when autologin is configured
+                    unlink "/etc/runit/runsvdir/current/logind"
+                    ;;
+                "systemd")
+                    sudo mkdir -p "/etc/systemd/system/getty@tty1.service.d"
+                    cat << EOF >> "/etc/systemd/system/getty@tty1.service.d/override.conf"
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $user_name --noclear %I 38400 linux
+EOF
+                    ;;
+                *)
+                    # autologin is only for `runit` and `systemd` right now
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+setup_dwm() {
+    # default the resolution to 1920x1080
+    sed -i 's/^#xrandr -s/xrandr -s/g' "/home/${user_name}/.dotfiles/.config/x11/xprofile"
+
+    # default wallpaper
+    local wallpaper="https://raw.githubusercontent.com/DavidVogelxyz/wallpapers/master/artists/muhammad-nafay/wallhaven-g8pmol.jpg"
+
+    # download default wallpaper
+    sudo -u "$user_name" curl \
+        -Ls "$wallpaper" \
+        -o "/home/${user_name}/.local/share/${wallpaper##*/}"
+
+    # set default wallpaper
+    sudo -u "$user_name" ln -s "${wallpaper##*/}" "/home/${user_name}/.local/share/bg"
+
+    # enable autologin; but, only if encrypted
+    setup_autologin
+
+    # Write URLs for `newsboat` if the file doesn't already exist
+    if ! [[ -s "/home/${user_name}/.config/newsboat/urls" ]]; then
+        echo "$rssurls" | sudo -u "$user_name" tee "/home/${user_name}/.config/newsboat/urls" \
+            > /dev/null
+    fi
+
+    sudo -u "$user_name" mkdir -p "/home/${user_name}/.config/abook"
+    sudo -u "$user_name" mkdir -p "/home/${user_name}/.config/mpd/playlists"
+
+    # Enable tap to click
+    if ! [[ -f /etc/X11/xorg.conf.d/40-libinput.conf ]]; then
+        cat << EOF > "/etc/X11/xorg.conf.d/40-libinput.conf"
+Section "InputClass"
+    Identifier "libinput touchpad catchall"
+    MatchIsTouchpad "on"
+    MatchDevicePath "/dev/input/event*"
+    Driver "libinput"
+    # Enable left mouse button by tapping
+    Option "Tapping" "on"
+EndSection
+EOF
+    fi
+}
+
+install_st() {
+    case "$graphical_environment" in
+        "dwm")
+            ;;
+        *)
+            ;;
+    esac
+
+    # clone Git repo for `st`
+    echo "[INFO]: Cloning the git repo for \`st\`."
+    sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/st" "${REPODIR}/st" > /dev/null 2>&1 \
+        || echo "[ERROR]: Failed to \`git clone\` the \`st\` repo." >> "${WORK_DIR}/pkg_fail.txt"
+
+    # compile `st`
+    cd "${REPODIR}/st"
+    sudo make install > /dev/null 2>&1
+    cd - > /dev/null 2>&1
+
+    # create a desktop file for `st`
+    cat << EOF > "/usr/share/applications/st.desktop"
+[Desktop Entry]
+Type=Application
+Name=st
+GenericName=Terminal emulator
+Comment=Terminal emulator
+TryExec=st
+StartupNotify=true
+Exec=st
+Categories=System;TerminalEmulator;
+EOF
+}
+
+install_sddm() {
+    # base install of `sddm` for Artix and Arch
+    case "$install_distro" in
+        "artix")
+            local pkgs=("sddm" "sddm-$service_mgr")
+            ;;
+        "arch")
+            local pkgs=("sddm")
+            ;;
+        *)
+            # Debian and Ubuntu come with `sddm`; Rocky doesn't get `sddm`
+            return 0
+            ;;
+    esac
+
+    # install all packages available through the package manager
+    loop_install_pkg "${pkgs[@]}"
+
+    # enable `sddm` service
+    case "$service_mgr" in
+        "runit")
+            ln -s "/etc/runit/sv/sddm" "/etc/runit/runsvdir/current"
+            ;;
+        "systemd")
+            systemctl enable sddm
+            ;;
+    esac
+
+    # if certain graphical environments, require additional steps
+    case "$graphical_environment" in
+        "cinnamon" | "xfce")
+            local pkgs=("plasma-workspace")
+            loop_install_pkg "${pkgs[@]}"
+
+            if ! [[ -d "/usr/share/sddm/themes/breeze" ]]; then
+                cp -r "${WORK_DIR}/src/configs/sddm-themes/breeze" "/usr/share/sddm/themes/"
+            else
+                echo "[WARN]: There was no need to copy the directory for the Breeze theme."
+            fi
+            ;;
+        *)
+            ;;
+    esac
+
+    # Install `breeze` theme for SDDM
+    mkdir -p /etc/sddm.conf.d
+    cat << EOF > "/etc/sddm.conf.d/sddm.conf"
+[Theme]
+Current=breeze
+EOF
+}
+
+setup_gnome() {
+    install_st
+}
+
+setup_kde() {
+    install_st
+    install_sddm
+}
+
+setup_hyprland() {
+    install_st
+
+    # enable autologin; but, only if encrypted
+    setup_autologin
+
+    # clone `hyprland-dotfiles` repo for systems running Hyprland
+    sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/hyprland-dotfiles" "${REPODIR}/hyprland-dotfiles" > /dev/null 2>&1
+
+    # create symlinks for `hyprland-dotfiles`
+    sudo -u "$user_name" ln -s "/home/${user_name}/.local/src/hyprland-dotfiles/hypr" "/home/${user_name}/.config/hypr"
+    sudo -u "$user_name" ln -s "/home/${user_name}/.local/src/hyprland-dotfiles/waybar" "/home/${user_name}/.config/waybar"
+}
+
+setup_cosmic() {
+    install_st
+
+    systemctl enable cosmic-greeter
+}
+
+setup_cinnamon() {
+    install_st
+    install_sddm
+}
+
+setup_xfce() {
+    install_st
+    install_sddm
+}
+
+setup_mate() {
+    install_st
+    install_sddm
+}
+
+setup_lxqt() {
+    install_st
+    install_sddm
+}
+
+setup_lxde() {
+    install_st
+    install_sddm
+}
+
+setup_budgie() {
+    install_st
+    install_sddm
+}
+
+setup_graphical_environment() {
+    # Return if no graphical environment
+    case "$graphical_environment" in
+        "none")
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    echo "[INFO]: Configuring the \`${graphical_environment}\` graphical environment on \`${install_distro}\`."
+
+    case "$graphical_environment" in
+        "dwm")
+            setup_dwm
+            ;;
+        "gnome")
+            setup_gnome
+            ;;
+        "kde")
+            setup_kde
+            ;;
+        "hyprland")
+            setup_hyprland
+            ;;
+        "cosmic")
+            setup_cosmic
+            ;;
+        "cinnamon")
+            setup_cinnamon
+            ;;
+        "xfce")
+            setup_xfce
+            ;;
+        "mate")
+            setup_mate
+            ;;
+        "lxqt")
+            setup_lxqt
+            ;;
+        "lxde")
+            setup_lxde
+            ;;
+        "budgie")
+            setup_budgie
+            ;;
+        *)
+            ;;
+    esac
+}

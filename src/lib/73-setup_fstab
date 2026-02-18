@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+substitute_fstab_uuid() {
+    while read -r dev uuid block_size type partuuid ; do
+        for ((p=0; p < "${#partitions[@]}"; p++)); do
+            if [[ "$dev" =~ "${partitions[p]}" ]]; then
+                # remove the `"` from the UUID
+                local uuid="${uuid//\"}"
+
+                # replace `partitions[p]` with `uuid`
+                sed -i "s|${partitions[p]}|${uuid}|g" /etc/fstab
+
+                # don't look for `partitions[p]` again
+                unset partitions[p]
+
+                # reindex the array
+                partitions=("${partitions[@]}")
+
+                # stop reviewing this line
+                break
+            fi
+        done
+    done
+}
+
+setup_fstab() {
+    echo "[INFO]: Configuring \`/etc/fstab\`."
+
+    # append to `/etc/fstab` any line from `/proc/mounts` beginning with `/dev`
+    case "$install_distro" in
+        "artix" | "arch")
+            # Artix and Arch don't require this
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            while read -r line; do
+                if [[ "$line" =~ ^"/dev" ]]; then
+                    echo "$line" >> "/etc/fstab"
+                fi
+            done < "/proc/mounts"
+            ;;
+    esac
+
+    # set `partitions`, depending on whether swap was configured
+    case "$install_swap" in
+        "no")
+            local partitions=(
+                "$partition_boot"
+                "$partition_rootfs"
+            )
+            ;;
+        "yes")
+            local partitions=(
+                "$partition_boot"
+                "$volume_logical_swap"
+                "$volume_logical_root"
+            )
+
+            # if a swap partition was created, add a line to `/etc/fstab`
+            echo "${volume_logical_swap} none swap defaults 0 0" >> /etc/fstab
+            ;;
+    esac
+
+
+    # append to `/etc/fstab` any line from `/proc/mounts` beginning with `tmp`
+    case "$install_distro" in
+        "artix" | "arch")
+            # Artix and Arch don't require this
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            while read -r line; do
+                if [[ "$line" =~ ^"tmp" ]]; then
+                    echo "${line//dev\/shm/tmp}" >> "/etc/fstab"
+                fi
+            done < "/proc/mounts"
+            ;;
+    esac
+
+    # substitute partition names in `/etc/fstab` for their UUIDs
+    case "$install_distro" in
+        "artix" | "arch")
+            case "$install_swap" in
+                "no")
+                    # if no swap, nothing else to do on `artix` and `arch`
+                    return 0
+                    ;;
+                "yes")
+                    # Artix and Arch intentionally overwrite `partitions` array
+                    local partitions=("$volume_logical_swap")
+
+                    substitute_fstab_uuid < "/etc/fstab-helper"
+                    rm "/etc/fstab-helper"
+                    ;;
+            esac
+            ;;
+        "debian" | "ubuntu" | "rocky")
+            substitute_fstab_uuid < <(blkid)
+            ;;
+    esac
+}

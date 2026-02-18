@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+config_pacman() {
+    case "$pkgmgr" in
+        "pacman")
+            echo "[INFO]: Configuring \`pacman\` for \`${install_distro}\`."
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+
+    case "$install_distro" in
+        "artix")
+            local pkgs=("artix-archlinux-support")
+            loop_install_pkg "${pkgs[@]}"
+
+            if ! [[ "$(grep -q "^\[extra\]" /etc/pacman.conf)" ]]; then
+                cat << EOF >> /etc/pacman.conf
+
+[extra]
+Include = /etc/pacman.d/mirrorlist-arch
+EOF
+            fi
+
+            update_pkgmgr
+            pacman-key --populate archlinux > /dev/null 2>&1
+            ;;
+        "arch")
+            local pkgs=("archlinux-keyring")
+            loop_install_pkg "${pkgs[@]}"
+            update_pkgmgr
+            ;;
+    esac
+}
+
+config_epel() {
+    case "$install_distro" in
+        "rocky")
+            echo "[INFO]: Configuring EPEL for \`${install_distro}\`."
+            local pkgs=("epel-release")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+config_pkgmgr() {
+    config_pacman
+    config_epel
+}
