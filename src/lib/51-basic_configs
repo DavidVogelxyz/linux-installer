@@ -52,7 +52,7 @@ config_timezone() {
     echo "[INFO]: Configuring timezone."
 
     # If US timezones aren't available, convert to America
-    if ! [[ "/usr/share/zoneinfo/US" ]]; then
+    if ! [[ -d "/usr/share/zoneinfo/US" ]]; then
         case "$timezone" in
             "US/Pacific")
                 timezone="America/Los_Angeles"
