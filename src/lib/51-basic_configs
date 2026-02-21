@@ -77,15 +77,12 @@ config_timezone() {
 }
 
 config_clock() {
-    case "$install_distro" in
-        "ubuntu")
-            return 0
-            ;;
-        *)
-            echo "[INFO]: Configuring system clock."
-            hwclock --systohc
-            ;;
-    esac
+    if [[ "$(command -v hwclock)" ]]; then
+        echo "[INFO]: Configuring system clock."
+        hwclock --systohc
+    else
+        return 0
+    fi
 }
 
 package_bundle_one() {
