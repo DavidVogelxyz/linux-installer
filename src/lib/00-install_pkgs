@@ -52,7 +52,7 @@ upgrade_pkgs() {
             pacman -Syy
             ;;
         "apt")
-            apt upgrade
+            apt upgrade -y
             ;;
         "dnf")
             dnf update
