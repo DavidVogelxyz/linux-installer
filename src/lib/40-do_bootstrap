@@ -87,6 +87,9 @@ post_bootstrap() {
             ;;
         "arch")
             genfstab -U /mnt >> /mnt/etc/fstab
+
+            # As of 2025 Nov, new requirement for Arch and `systemd`
+            cp /etc/vconsole.conf /mnt/etc/vconsole.conf
             ;;
         "debian" | "ubuntu")
             local mirrorlist_src="${WORK_DIR}/src/templates/apt/${install_distro}_${install_release}_sources.list"
