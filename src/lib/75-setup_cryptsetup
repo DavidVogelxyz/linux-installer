@@ -10,16 +10,29 @@ setup_cryptsetup() {
 
             case "$install_distro" in
                 "artix" | "arch")
-                    # add `encrypt` and `lvm2` to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
-                    sed -i "s/^\(HOOKS.*block\) filesystems/\1 encrypt lvm2 filesystems/g" "/etc/mkinitcpio.conf"
+                    local mkinitcpio_hooks_encrypt
+                    local grub_kernel_params
 
+                    # encryption hooks are different between Artix and Arch
+                    case "$install_distro" in
+                        "artix")
+                            # add `encrypt` and `lvm2` to `/etc/mkinitcpio.conf`
+                            mkinitcpio_hooks_encrypt="encrypt lvm2"
+                            ;;
+                        "arch")
+                            # add `sd-encrypt` and `lvm2` to `/etc/mkinitcpio.conf`
+                            mkinitcpio_hooks_encrypt="sd-encrypt lvm2"
+                            ;;
+                    esac
+
+                    # add encryption hooks to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
+                    sed -i "s/^\(HOOKS.*block\) filesystems/\1 ${mkinitcpio_hooks_encrypt} filesystems/g" "/etc/mkinitcpio.conf"
+
+                    # the `partitions` array is set differently, depending on "swap" or "no swap"
                     case "$install_swap" in
                         "yes")
                             # add `resume` to `/etc/mkinitcpio.conf`, between `filesystems` and `fsck`
                             sed -i "s/^\(HOOKS.*filesystems\) fsck/\1 filesystems resume fsck/g" "/etc/mkinitcpio.conf"
-
-                            # lay down the foundation for the UUID substitution
-                            sed -i "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}\"|g" "/etc/default/grub"
 
                             local partitions=(
                                 "$partition_rootfs"
@@ -28,15 +41,39 @@ setup_cryptsetup() {
                             )
                             ;;
                         "no")
-                            # lay down the foundation for the UUID substitution
-                            sed -i "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 cryptdevice=${partition_rootfs}:${lvm_name} root=${partition_crypt}\"|g" "/etc/default/grub"
-
                             local partitions=(
                                 "$partition_rootfs"
                                 "$partition_crypt"
                             )
                             ;;
                     esac
+
+                    # GRUB kernel parameters are different between Artix and Artix; also, between "swap" and "no swap"
+                    case "$install_distro" in
+                        "artix")
+                            case "$install_swap" in
+                                "no")
+                                    grub_kernel_params="cryptdevice=${partition_rootfs}:${lvm_name} root=${partition_crypt}"
+                                    ;;
+                                "yes")
+                                    grub_kernel_params="cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}"
+                                    ;;
+                            esac
+                            ;;
+                        "arch")
+                            case "$install_swap" in
+                                "no")
+                                    grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=${partition_crypt}"
+                                    ;;
+                                "yes")
+                                    grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}"
+                                    ;;
+                            esac
+                            ;;
+                    esac
+
+                    # add kernel parameters to `/etc/default/grub`
+                    sed -i "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 ${grub_kernel_params}\"|g" "/etc/default/grub"
 
                     # substitute partition names for their UUIDs
                     while read -r dev uuid block_size type partuuid ; do
