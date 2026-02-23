@@ -68,6 +68,7 @@ install_dwm() {
                 "xcompmgr"
                 "xdotool"
                 "xwallpaper"
+                "dbus-x11"
             )
             ;;
         "rocky")
