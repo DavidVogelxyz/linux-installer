@@ -2,20 +2,21 @@
 
 setup_librewolf() {
     # All this below to get Librewolf installed with add-ons and non-bad settings.
-    browserdir="/home/${user_name}/.librewolf"
-    profilesini="${browserdir}/profiles.ini"
+    local dir_browser="/home/${user_name}/.config/librewolf/librewolf"
+    local profiles_ini="${dir_browser}/profiles.ini"
 
     # Start librewolf headless so it generates a profile. Then get that profile in a variable.
     sudo -u "$user_name" librewolf --headless > /dev/null 2>&1 &
     sleep 7
-    profile="$(sed -n "/Default=.*.default-default/ s/.*=//p" "$profilesini")"
-    pdir="${browserdir}/${profile}"
+    local profile="$(sed -n "/Default=.*.default-default/ s/.*=//p" "$profiles_ini")"
+    local dir_profile="${dir_browser}/${profile}"
 
-    if [[ -d "$pdir" ]]; then
+    if [[ -d "$dir_profile" ]]; then
         # Get the Arkenfox user.js and prepare it.
-        arkenfox="${pdir}/arkenfox.js"
-        overrides="${pdir}/user-overrides.js"
-        userjs="${pdir}/user.js"
+        local arkenfox="${dir_profile}/arkenfox.js"
+        local overrides="${dir_profile}/user-overrides.js"
+        local userjs="${dir_profile}/user.js"
+
         sudo -u "$user_name" ln -fs "/home/${user_name}/.config/firefox/larbs.js" "$overrides"
 
         if ! [[ -f "$arkenfox" ]]; then
