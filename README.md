@@ -102,14 +102,14 @@ The following table shows the available graphical environment (vertical) for eac
 
 |          | Artix | Arch | Debian | Ubuntu | Rocky |
 | ---      | ---   | ---  | ---    | ---    | ---   |
-| None     | ✅    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
+| None     | ✅    | ✅   | ✅     | ✅     | ✅    |
 | dwm      | ✅    | 🏗️   | 🏗️     | 🏗️     | ☢️    |
 | GNOME    | ⛔    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
 | KDE      | 🏗️    | 🏗️   | 🏗️     | 🏗️     | ⛔    |
 | Hyprland | ✅    | 🏗️   | ⛔     | ⛔     | ⛔    |
 | COSMIC   | ⛔    | 🏗️   | ⛔     | ⛔     | ⛔    |
 | Cinnamon | 🏗️    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
-| Xfce     | 🏗️    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
+| Xfce     | ✅    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
 | Mate     | 🏗️    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
 | LXQt     | 🏗️    | 🏗️   | 🏗️     | 🏗️     | ⛔    |
 | LXDE     | 🏗️    | 🏗️   | 🏗️     | 🏗️     | ⛔    |
