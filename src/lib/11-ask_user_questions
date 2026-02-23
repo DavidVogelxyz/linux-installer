@@ -179,6 +179,7 @@ get_question_settings() {
             # Skip if no graphical environment (server)
             case "$graphical_environment" in
                 "none")
+                    export install_browser="none"
                     return 0
                     ;;
                 *)
