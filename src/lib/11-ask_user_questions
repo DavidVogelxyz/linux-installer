@@ -11,7 +11,7 @@ get_debootstrap_scripts() {
             )
 
             for ((j=0; j<"${#debian_options[@]}"; j++)); do
-                if [[ -f "${scripts_dir}/${debian_options[j]%% |*}" ]]; then
+                if [[ -e "${scripts_dir}/${debian_options[j]%% |*}" ]]; then
                     OPTIONS+=("${debian_options[j]}")
                 fi
             done
@@ -24,7 +24,7 @@ get_debootstrap_scripts() {
             )
 
             for ((j=0; j<"${#ubuntu_options[@]}"; j++)); do
-                if [[ -f "${scripts_dir}/${ubuntu_options[j]%% |*}" ]]; then
+                if [[ -e "${scripts_dir}/${ubuntu_options[j]%% |*}" ]]; then
                     OPTIONS+=("${ubuntu_options[j]}")
                 fi
             done
@@ -72,7 +72,7 @@ get_question_settings() {
                     export install_release="rolling"
                     ;;
                 "debian" | "ubuntu")
-                    if ! [[ $(command -v "debootstrap") ]]; then
+                    if ! [[ "$(command -v debootstrap)" ]]; then
                         echo "[INFO]: \`${install_distro}\` was selected, but user is running a \`${iso_distro}\` ISO."
                         echo "[INFO]: Please wait one moment while \`debootstrap\` is installed."
                         install_pkg "debootstrap"
