@@ -30,14 +30,18 @@ setup_distro() {
             echo "blacklist pcspkr" > "/etc/modprobe.d/nobeep.conf"
             ;;
         "debian")
-            # currently, no Debian specific changed
+            # Debian requires this for certain tasks (example: Debian dwm hosts, when compiling dwm)
+            temp_allow_sudo
             ;;
         "ubuntu")
+            # Ubuntu requires this for certain tasks (example: Ubuntu dwm hosts, when compiling dwm)
+            temp_allow_sudo
+
             cp "${WORK_DIR}/src/templates/etc/kernel-img_ubuntu.conf" "/etc/kernel-img.conf"
             cp "${WORK_DIR}/src/templates/etc/netplan/networkmanager_ubuntu.yaml" "/etc/netplan/networkmanager.yaml"
             ;;
         "rocky")
-            # Rocky requires this for certain tasks
+            # Rocky requires this for certain tasks (example: Rocky dwm hosts, when compiling dwm)
             temp_allow_sudo
 
             local pkgs=("util-linux-user")
