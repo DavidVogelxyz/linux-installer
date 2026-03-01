@@ -122,6 +122,9 @@ Some notes about available graphical enviroments:
         - It *should* work -- but, there may be bugs.
         - The table will be updated as more combinations are tested and verified.
 - dwm:
+    - Artix:
+        - Artix dwm installs `xlibre-xserver`, as opposed to `xorg-xserver`:
+            - This was implemented in 2026 January, as part of v0.1.5.
     - Rocky:
         - As was true with previous version of `linux-installer`, Rocky dwm is extremely buggy:
             - The Rocky repos are missing many packages.
