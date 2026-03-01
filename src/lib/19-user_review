@@ -23,11 +23,11 @@ user_review() {
     cat << EOF
 PLEASE REVIEW THE FOLLOWING:
 
-Image OS                =   $iso_distro and $iso_release
-Install OS & release    =   $install_distro and $install_release
+ISO distro              =   $iso_distro $iso_release
+Install distro          =   $install_distro $install_release
 Service manager         =   $service_mgr
 Graphical environment   =   $graphical_environment
-Web browser             =   ${install_browser:-none}
+Web browser             =   $install_browser
 Firmware                =   $firmware
 Disk selected           =   /dev/${install_disk}
 Encryption              =   $encryption
