@@ -17,7 +17,7 @@ LIBRARIES=(
     "69-setup_nvim"
     "71-setup_service_mgr"
     "73-setup_fstab"
-    "75-setup_cryptsetup"
+    "75-setup_boot"
     "77-setup_initramfs"
     "79-setup_grub"
     "82-install_graphical_environment"
@@ -88,7 +88,7 @@ main() {
     setup_nvim                          # 69-setup_nvim
     setup_service_mgr                   # 71-setup_service_mgr
     setup_fstab                         # 73-setup_fstab
-    setup_cryptsetup                    # 75-setup_cryptsetup
+    setup_boot                          # 75-setup_boot
     setup_initramfs                     # 77-setup_initramfs
     setup_grub                          # 79-setup_grub
     install_graphical_environment       # 82-install_graphical_environment
