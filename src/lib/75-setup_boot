@@ -59,10 +59,10 @@ set_grub_kernel_params() {
             if [[ "$encryption" == "yes" ]] && [[ "$install_swap" == "yes" ]]; then
                 case "$install_distro" in
                     "artix")
-                        local grub_kernel_params="cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}"
+                        local grub_kernel_params="cryptdevice=UUID=${partition_rootfs}:${lvm_name} root=UUID=${volume_logical_root} resume=UUID=${volume_logical_swap}"
                         ;;
                     "arch")
-                        local grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}"
+                        local grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=UUID=${volume_logical_root} resume=UUID=${volume_logical_swap}"
                         ;;
                 esac
 
@@ -71,17 +71,17 @@ set_grub_kernel_params() {
             elif [[ "$encryption" == "yes" ]]; then
                 case "$install_distro" in
                     "artix")
-                        local grub_kernel_params="cryptdevice=${partition_rootfs}:${lvm_name} root=${partition_crypt}"
+                        local grub_kernel_params="cryptdevice=UUID=${partition_rootfs}:${lvm_name} root=UUID=${partition_crypt}"
                         ;;
                     "arch")
-                        local grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=${partition_crypt}"
+                        local grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=UUID=${partition_crypt}"
                         ;;
                 esac
 
                 local partitions=("$partition_rootfs" "$partition_crypt")
             # GRUB kernel parameters logic when "no encryption"; but, "yes swap"
             elif [[ "$install_swap" == "yes" ]]; then
-                local grub_kernel_params="resume=${volume_logical_swap}"
+                local grub_kernel_params="resume=UUID=${volume_logical_swap}"
                 local partitions=("$volume_logical_swap")
             fi
 
@@ -94,6 +94,9 @@ set_grub_kernel_params() {
                     if [[ "$dev" =~ "${partitions[p]}" ]]; then
                         # remove the `"` from the UUID
                         local uuid="${uuid//\"}"
+
+                        # remove the `UUID=` from the UUID
+                        uuid="${uuid##*UUID=}"
 
                         # replace `partitions[p]` with `uuid`
                         sed -i "s|${partitions[p]}|${uuid}|g" /etc/default/grub
