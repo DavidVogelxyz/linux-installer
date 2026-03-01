@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+set_mkinitcpio_hooks_encrypt() {
+    case "$install_distro" in
+        "artix" | "arch")
+            case "$encryption" in
+                "yes")
+                    # encryption hooks are different between Artix and Arch
+                    case "$install_distro" in
+                        "artix")
+                            local mkinitcpio_hooks_encrypt="encrypt lvm2"
+                            ;;
+                        "arch")
+                            local mkinitcpio_hooks_encrypt="sd-encrypt lvm2"
+                            ;;
+                    esac
+
+                    # add encryption hooks to `/etc/mkinitcpio.conf`, between `block` and `filesystems`
+                    sed -i "s/^\(HOOKS.*block\) filesystems/\1 ${mkinitcpio_hooks_encrypt} filesystems/g" "/etc/mkinitcpio.conf"
+                    ;;
+                "no")
+                    # if no encryption, skip to the next function
+                    return 0
+                    ;;
+            esac
+            ;;
+        *)
+            # Only Artix and Arch require these initramfs hooks for encryption
+            return 0
+            ;;
+    esac
+}
+
+set_mkinitcpio_hooks_swap() {
+    case "$install_distro" in
+        "artix" | "arch")
+            case "$install_swap" in
+                "yes")
+                    # add `resume` hook to `/etc/mkinitcpio.conf`, between `filesystems` and `fsck`
+                    sed -i "s/^\(HOOKS.*filesystems\) fsck/\1 filesystems resume fsck/g" "/etc/mkinitcpio.conf"
+                    ;;
+                "no")
+                    # if no swap, skip to the next function
+                    return 0
+                    ;;
+            esac
+            ;;
+        *)
+            # Only Artix and Arch require these initramfs hooks for swap
+            return 0
+            ;;
+    esac
+}
+
+set_grub_kernel_params() {
+    case "$install_distro" in
+        "artix" | "arch")
+            # GRUB kernel parameters logic when both "yes encryption" and "yes swap"
+            if [[ "$encryption" == "yes" ]] && [[ "$install_swap" == "yes" ]]; then
+                case "$install_distro" in
+                    "artix")
+                        local grub_kernel_params="cryptdevice=${partition_rootfs}:${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}"
+                        ;;
+                    "arch")
+                        local grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=${volume_logical_root} resume=${volume_logical_swap}"
+                        ;;
+                esac
+
+                local partitions=("$partition_rootfs" "$volume_logical_root" "$volume_logical_swap")
+            # GRUB kernel parameters logic when "yes encryption"; but, "no swap"
+            elif [[ "$encryption" == "yes" ]]; then
+                case "$install_distro" in
+                    "artix")
+                        local grub_kernel_params="cryptdevice=${partition_rootfs}:${lvm_name} root=${partition_crypt}"
+                        ;;
+                    "arch")
+                        local grub_kernel_params="rd.luks.name=${partition_rootfs}=${lvm_name} root=${partition_crypt}"
+                        ;;
+                esac
+
+                local partitions=("$partition_rootfs" "$partition_crypt")
+            # GRUB kernel parameters logic when "no encryption"; but, "yes swap"
+            elif [[ "$install_swap" == "yes" ]]; then
+                local grub_kernel_params="resume=${volume_logical_swap}"
+                local partitions=("$volume_logical_swap")
+            fi
+
+            # add kernel parameters to `/etc/default/grub`
+            sed -i "s|^\(GRUB_CMDLINE_LINUX_DEFAULT.*\)\"|\1 ${grub_kernel_params}\"|g" "/etc/default/grub"
+
+            # substitute partition names for their UUIDs
+            while read -r dev uuid block_size type partuuid ; do
+                for ((p=0; p < "${#partitions[@]}"; p++)); do
+                    if [[ "$dev" =~ "${partitions[p]}" ]]; then
+                        # remove the `"` from the UUID
+                        local uuid="${uuid//\"}"
+
+                        # replace `partitions[p]` with `uuid`
+                        sed -i "s|${partitions[p]}|${uuid}|g" /etc/default/grub
+
+                        # don't look for `partitions[p]` again
+                        unset partitions[p]
+
+                        # reindex the array
+                        partitions=("${partitions[@]}")
+
+                        # stop reviewing this line
+                        break
+                    fi
+                done
+            done < <(blkid)
+            ;;
+        *)
+            # Only Artix and Arch require these GRUB kernel params to be set
+            return 0
+            ;;
+    esac
+}
+
+config_crypttab() {
+    case "$encryption" in
+        "no")
+            # if no encryption, skip to the next function
+            ;;
+        "yes")
+            case "$install_distro" in
+                "artix" | "arch")
+                    # Artix and Arch do not require `/etc/crypttab` to be configured
+                    ;;
+                "debian" | "ubuntu")
+                    while read -r dev uuid type ; do
+                        if [[ "$type" =~ "crypto" ]]; then
+                            local uuid="${uuid//\"}"
+                            echo "${lvm_name} ${uuid} none luks" >> /etc/crypttab
+                            break
+                        fi
+                    done < <(blkid)
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+setup_boot() {
+    if [[ "$encryption" == "no" ]] && [[ "$install_swap" == "no" ]]; then
+        return 0
+    else
+        echo "[INFO]: Configuring the system so it can boot properly."
+    fi
+
+    set_mkinitcpio_hooks_encrypt
+    set_mkinitcpio_hooks_swap
+    set_grub_kernel_params
+    config_crypttab
+}
