@@ -169,6 +169,15 @@ EOF
 
 setup_gnome() {
     install_st
+
+    # Arch requires the `systemd` service for `gdm` to be enabled explicitly
+    case "$install_distro" in
+        "arch")
+            systemctl enable gdm
+            ;;
+        *)
+            ;;
+    esac
 }
 
 setup_kde() {
