@@ -47,16 +47,16 @@ install_brave() {
 
 install_firefox() {
     case "$install_distro" in
-        "artix" | "arch" | "debian")
+        "artix" | "arch" | "rocky")
+            local pkgs=("firefox")
+            loop_install_pkg "${pkgs[@]}"
+            ;;
+        "debian")
             local pkgs=("firefox-esr")
             loop_install_pkg "${pkgs[@]}"
             ;;
         "ubuntu")
-            # This is not allowed, because Ubuntu's `firefox` is a snap package.
-            ;;
-        "rocky")
-            local pkgs=("firefox")
-            loop_install_pkg "${pkgs[@]}"
+            # Ubuntu's `firefox` is a snap package, and snap packages are not supported.
             ;;
     esac
 }
