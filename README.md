@@ -103,11 +103,11 @@ The following table shows the available graphical environment (vertical) for eac
 |          | Artix | Arch | Debian | Ubuntu | Rocky |
 | ---      | ---   | ---  | ---    | ---    | ---   |
 | None     | ✅    | ✅   | ✅     | ✅     | ✅    |
-| dwm      | ✅    | 🏗️   | 🏗️     | 🏗️     | ☢️    |
-| GNOME    | ⛔    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
-| KDE      | 🏗️    | 🏗️   | 🏗️     | 🏗️     | ⛔    |
-| Hyprland | ✅    | 🏗️   | ⛔     | ⛔     | ⛔    |
-| COSMIC   | ⛔    | 🏗️   | ⛔     | ⛔     | ⛔    |
+| dwm      | ✅    | ✅   | ☢️     | ✅     | ☢️    |
+| GNOME    | ⛔    | ✅   | ✅     | ✅     | ✅    |
+| KDE      | ✅    | ✅   | ✅     | ✅     | ⛔    |
+| Hyprland | ✅    | ✅   | ⛔     | ⛔     | ⛔    |
+| COSMIC   | ⛔    | ✅   | ⛔     | ⛔     | ⛔    |
 | Cinnamon | 🏗️    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
 | Xfce     | ✅    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
 | Mate     | 🏗️    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
@@ -125,6 +125,9 @@ Some notes about available graphical enviroments:
     - Artix:
         - Artix dwm installs `xlibre-xserver`, as opposed to `xorg-xserver`:
             - This was implemented in 2026 January, as part of v0.1.5.
+    - Debian:
+        - Debian dwm installs fail to start `dwmblocks`, though it compiles successfully:
+            - Browsers (Brave) appear to load much slower on Debian dwm, as compared to other dwm hosts (and other Debian graphical environments).
     - Rocky:
         - As was true with previous version of `linux-installer`, Rocky dwm is extremely buggy:
             - The Rocky repos are missing many packages.
@@ -137,6 +140,10 @@ Some notes about available graphical enviroments:
     - Ubuntu:
         - GNOME on Ubuntu installs as Ubuntu's version of GNOME (`ubuntu-desktop-minimal`), the standard Ubuntu desktop.
 - KDE:
+    - Arch:
+        - Brave appears to have issues with starting when running Wayland as the compositor:
+            - This issue does not appear on KDE when running X11.
+            - Unsure if this issue affects all browsers; or, just Brave.
     - Ubuntu:
         - KDE on Ubuntu installs as Kubuntu (`kubuntu-desktop`).
     - Rocky:
@@ -163,10 +170,10 @@ The following table shows the available web browsers (vertical) for each availab
 
 |           | Artix | Arch | Debian | Ubuntu | Rocky |
 | ---       | ---   | ---  | ---    | ---    | ---   |
-| LibreWolf | ✅    | 🏗️   | ⛔     | ⛔     | ⛔    |
-| Brave     | ✅    | 🏗️   | 🏗️     | 🏗️     | 🏗️    |
-| Chromium  | 🏗️    | 🏗️   | 🏗️     | ⛔     | 🏗️    |
-| Firefox   | 🏗️    | 🏗️   | 🏗️     | ⛔     | 🏗️    |
+| LibreWolf | ✅    | ✅   | ⛔     | ⛔     | ⛔    |
+| Brave     | ✅    | ✅   | ✅     | ✅     | ✅    |
+| Chromium  | ✅    | ✅   | ✅     | ⛔     | ✅    |
+| Firefox   | ✅    | ✅   | ✅     | ⛔     | ✅    |
 
 Some notes about available web browsers:
 - LibreWolf:
