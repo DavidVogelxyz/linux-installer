@@ -244,6 +244,13 @@ get_question_settings() {
             OPTIONS=("US/Pacific" "US/Mountain" "US/Central" "US/Eastern")
             ;;
         "install_swap")
+            # Rocky still has issues with swap; so, skip
+            # Specifically, it appears that `partitions_and_file_systems` --> `lvcreate` is failing
+            if [[ "$install_distro" == "rocky" ]]; then
+                export install_swap="no"
+                return 0
+            fi
+
             PROMPT="Do you want to create a swap partition of the same size as total RAM? ($ram_size GB)"
             OPTIONS=("Yes - create swap" "No - do not create swap")
             ;;
