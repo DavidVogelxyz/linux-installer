@@ -82,6 +82,15 @@ install_st() {
             ;;
     esac
 
+    # Rocky requires a dependency
+    case "$install_distro" in
+        "rocky")
+            install_pkg "libXft-devel"
+            ;;
+        *)
+            ;;
+    esac
+
     # clone Git repo for `st`
     echo "[INFO]: Cloning the git repo for \`st\`."
     sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/st" "${REPODIR}/st" > /dev/null 2>&1 \
