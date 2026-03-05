@@ -74,6 +74,9 @@ EOF
 install_st() {
     case "$graphical_environment" in
         "dwm")
+            # This should never be called by a dwm install
+            # Nor should it ever be necessary to call
+            return 0
             ;;
         *)
             ;;
