@@ -64,11 +64,11 @@ install_firefox() {
 install_chromium() {
     case "$install_distro" in
         "artix" | "arch" | "debian" | "rocky")
-            local pkgs=("firefox")
+            local pkgs=("chromium")
             loop_install_pkg "${pkgs[@]}"
             ;;
         "ubuntu")
-            # This is not allowed, because Ubuntu's `chromium` is a snap package.
+            # Ubuntu's `chromium` is a snap package, and snap packages are not supported.
             ;;
     esac
 }
