@@ -1,5 +1,8 @@
+Release notes
+=============
+
 v0.2.0
-======
+------
 
 Released: 2026 Feb 17, Tue
 
@@ -19,7 +22,7 @@ New features:
 - The program now times itself, and lets the user know the "time to completion" at the end of the install.
 
 v0.1.5
-======
+------
 
 Released: 2026 Feb 1, Sun
 
@@ -32,7 +35,7 @@ Bug fixes:
 - Artix dwm no longer encounters the `dbus` / `elogind` issue when autologin is enabled
 
 v0.1.4
-======
+------
 
 Released: 2025 Nov 20, Thu
 
@@ -47,7 +50,7 @@ Bug fixes:
 - repos cloned during graphical installs are now owned by the user
 
 v0.1.3
-======
+------
 
 Released: 2025 Oct 5, Sun
 
@@ -58,7 +61,7 @@ New features:
 - added support for `bin-linux` and `bin-dwm`
 
 v0.1.2
-======
+------
 
 Released: 2025 Jul 20, Sun
 
@@ -76,7 +79,7 @@ Bug fixes:
 - added `util-linux-user` to Rocky installs (for `chsh`)
 
 v0.1.1
-======
+------
 
 Released: 2025 Jun 11, Wed
 
@@ -96,7 +99,7 @@ Bug fixes:
 - added `DEBIAN_FRONTEND=interactive` to `install_pkg_apt`
 
 v0.1.0
-======
+------
 
 Released: 2025 Apr 30, Wed
 
@@ -115,7 +118,7 @@ Rocky Linux has only been tested in a BIOS environment, with no encryption, and 
 The project has undergone extensive testing by this point, and additional bug fixes have been merged in.
 
 v0.0.9
-======
+------
 
 Released: 2025 Mar 24, Mon
 
@@ -124,7 +127,7 @@ This project has expanded its Arch and Artix capabilities, and can now work with
 Tested on an Artix Linux image, with both encryption and swap partition.
 
 v0.0.8
-======
+------
 
 Released: 2025 Mar 23, Sun
 
@@ -133,7 +136,7 @@ This project has expanded its Arch and Artix capabilities, and can now install A
 Tested on an Arch Linux image, with no encryption or swap partition.
 
 v0.0.7
-======
+------
 
 Released: 2025 Mar 23, Sun
 
@@ -144,7 +147,7 @@ Also, tons of "editing" occurred to clean up dead code and optimizing surviving 
 Tested on an Arch Linux image, with no encryption or swap partition. Also tested using an Ubuntu image installing Debian Bookworm, with encryption and swap partition.
 
 v0.0.6
-======
+------
 
 Released: 2025 Mar 20, Thu
 
@@ -155,7 +158,7 @@ Also, tons of "editing" occurred to clean up dead code and optimizing surviving 
 Tested on Ubuntu image installing Debian Bookworm, with encryption and swap partition.
 
 v0.0.5
-======
+------
 
 Released: 2025 Mar 20, Thu
 
@@ -164,7 +167,7 @@ This project is now able to do basic `rootfs` encryption and pass the necessary 
 Tested on Ubuntu image installing Debian Bookworm; with encryption, but no swap partition.
 
 v0.0.4
-======
+------
 
 Released: 2025 Mar 19, Wed
 
@@ -175,7 +178,7 @@ As referenced in `v0.0.3` release notes, this update handles `/etc/fstab` withou
 Tested on Ubuntu image installing Debian Bookworm, with no encryption or swap partition.
 
 v0.0.3
-======
+------
 
 Released: 2025 Mar 18, Tue
 
@@ -184,7 +187,7 @@ In this update, this project no longer asks for input within the `chroot` enviro
 Tested on Ubuntu image installing Debian Bookworm, with no encryption or swap partition.
 
 v0.0.2
-======
+------
 
 Released: 2025 Mar 17, Mon
 
@@ -193,7 +196,7 @@ Instead of `git clone debian-setup`, this project now includes an updated `debia
 Tested on Ubuntu image installing Debian Bookworm, with no encryption or swap partition.
 
 v0.0.1
-======
+------
 
 Released: 2025 Mar 15, Sat
 
