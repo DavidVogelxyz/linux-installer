@@ -248,7 +248,6 @@ install_dwm() {
         "artix" | "arch")
             local pkgs=(
                 "abook"
-                "arkenfox-user.js"
                 "gtk-theme-arc-gruvbox-git"
                 "mutt-wizard-git"
                 "sc-im"

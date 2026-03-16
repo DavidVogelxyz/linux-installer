@@ -5,6 +5,7 @@ install_librewolf() {
         "pacman")
             local pkgs=(
                 "librewolf-bin"
+                "arkenfox-user.js"
                 "librewolf-extension-istilldontcareaboutcookies-bin"
                 "librewolf-extension-localcdn-bin"
                 "librewolf-extension-tridactyl-bin"
