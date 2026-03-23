@@ -147,6 +147,7 @@ install_other_packages() {
         "bat"
         "fzf"
         "git"
+        "man-db"
         "rsync"
         "stow"
         "sudo"
