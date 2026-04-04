@@ -244,7 +244,7 @@ install_dwm() {
     # install AUR packages
     case "$install_distro" in
         "artix" | "arch")
-            local pkgs=(
+            pkgs=(
                 "abook"
                 "gtk-theme-arc-gruvbox-git"
                 "mutt-wizard-git"
@@ -261,7 +261,7 @@ install_dwm() {
     esac
 
     # actually install `dwm`
-    local pkgs=(
+    pkgs=(
         "bin-dwm"
         "dmenu"
         "dwm"
@@ -284,6 +284,8 @@ install_dwm() {
 }
 
 install_gnome() {
+    local pkgs=()
+
     # Special considerations for GNOME
     case "$install_distro" in
         "artix")
@@ -303,7 +305,7 @@ install_gnome() {
     # add GNOME packages for all other systems
     case "$install_distro" in
         "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "gnome"
                 "gdm"
@@ -313,7 +315,7 @@ install_gnome() {
             )
             ;;
         "debian")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "gnome-core"
                 "gnome-tweaks"
@@ -324,13 +326,13 @@ install_gnome() {
             )
             ;;
         "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "ubuntu-desktop-minimal"
             )
             ;;
         "rocky")
-            local pkgs=(
+            pkgs+=(
                 "google-noto-fonts-common"
                 "gnome-tweaks"
                 "gnome-shell-extension-dash-to-dock"
@@ -344,6 +346,8 @@ install_gnome() {
 }
 
 install_kde() {
+    local pkgs=()
+
     # Special considerations for KDE
     case "$install_distro" in
         "rocky")
@@ -357,7 +361,7 @@ install_kde() {
     # add KDE packages for all other systems
     case "$install_distro" in
         "artix" | "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "plasma-desktop"
                 "kscreen"
@@ -365,13 +369,13 @@ install_kde() {
             )
             ;;
         "debian")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "kde-plasma-desktop"
             )
             ;;
         "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "kubuntu-desktop"
             )
@@ -383,6 +387,8 @@ install_kde() {
 }
 
 install_hyprland() {
+    local pkgs=()
+
     # Special considerations for Hyprland
     case "$pkgmgr" in
         "pacman")
@@ -395,7 +401,7 @@ install_hyprland() {
     # add Hyprland packages
     case "$pkgmgr" in
         "pacman")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "hyprland"
                 "pipewire-pulse"
@@ -412,6 +418,8 @@ install_hyprland() {
 }
 
 install_cosmic() {
+    local pkgs=()
+
     # Special considerations for COSMIC
     case "$install_distro" in
         "arch")
@@ -424,7 +432,7 @@ install_cosmic() {
     # add COSMIC packages
     case "$install_distro" in
         "arch")
-            local pkgs=(
+            pkgs+=(
                 "cosmic"
             )
             ;;
@@ -435,29 +443,31 @@ install_cosmic() {
 }
 
 install_cinnamon() {
+    local pkgs=()
+
     # add Cinnamon packages for all systems
     case "$install_distro" in
         "artix")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "cinnamon"
                 "artix-cinnamon-presets"
             )
             ;;
         "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "cinnamon"
             )
             ;;
         "debian" | "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "cinnamon"
             )
             ;;
         "rocky")
-            local pkgs=(
+            pkgs+=(
                 "google-noto-fonts-common"
                 "cinnamon"
                 "initial-setup-gui"
@@ -472,6 +482,8 @@ install_cinnamon() {
 }
 
 install_xfce() {
+    local pkgs=()
+
     # Special considerations for Xfce
     case "$install_distro" in
         "rocky")
@@ -486,7 +498,7 @@ install_xfce() {
     # add Xfce packages for all other systems
     case "$install_distro" in
         "artix" | "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "noto-fonts-emoji"
                 "xfce4"
@@ -496,13 +508,13 @@ install_xfce() {
             )
             ;;
         "debian" | "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "xfce4"
             )
             ;;
         "rocky")
-            local pkgs=(
+            pkgs+=(
                 "google-noto-fonts-common"
             )
             ;;
@@ -513,6 +525,8 @@ install_xfce() {
 }
 
 install_mate() {
+    local pkgs=()
+
     # Special considerations for Mate
     case "$install_distro" in
         "rocky")
@@ -527,20 +541,20 @@ install_mate() {
     # add Mate packages for all systems
     case "$install_distro" in
         "artix" | "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "mate"
             )
             ;;
         "debian" | "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "mate-desktop-environment-core"
                 "gdm3"
             )
             ;;
         "rocky")
-            local pkgs=(
+            pkgs+=(
                 "google-noto-fonts-common"
             )
             ;;
@@ -551,6 +565,8 @@ install_mate() {
 }
 
 install_lxqt() {
+    local pkgs=()
+
     # Special considerations for LXQt
     case "$install_distro" in
         "rocky")
@@ -564,13 +580,13 @@ install_lxqt() {
     # add LXQt packages for all other systems
     case "$install_distro" in
         "artix" | "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "lxqt"
             )
             ;;
         "debian" | "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "lxqt-core"
                 "gdm3"
@@ -583,6 +599,8 @@ install_lxqt() {
 }
 
 install_lxde() {
+    local pkgs=()
+
     # Special considerations for LXDE
     case "$install_distro" in
         "rocky")
@@ -596,13 +614,13 @@ install_lxde() {
     # add LXDE packages for all other systems
     case "$install_distro" in
         "artix" | "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "lxde-core"
             )
             ;;
         "debian" | "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "lxde-common"
                 "gdm3"
@@ -615,6 +633,8 @@ install_lxde() {
 }
 
 install_budgie() {
+    local pkgs=()
+
     # Special considerations for Budgie
     case "$install_distro" in
         "artix" | "rocky")
@@ -629,13 +649,13 @@ install_budgie() {
     # add Budgie packages for all other systems
     case "$install_distro" in
         "arch")
-            local pkgs=(
+            pkgs+=(
                 "noto-fonts"
                 "budgie-desktop"
             )
             ;;
         "debian" | "ubuntu")
-            local pkgs=(
+            pkgs+=(
                 "fonts-noto"
                 "budgie"
                 "gdm3"
