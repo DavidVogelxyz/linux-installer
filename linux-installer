@@ -48,6 +48,12 @@ check_prog_deps() {
 
     echo "[INFO]: Please wait one moment while the program checks for essential packages."
 
+    # Rocky requires EPEL for `fzf`
+    if [[ "$iso_distro" == "rocky" ]] && [[ "$pkg" = "fzf" ]]; then
+        setenforce 0
+        install_pkg "epel-release"
+    fi
+
     for ((i=0; i < "${#pkgs[@]}"; i++)); do
         local pkg="${pkgs[i]}"
 
@@ -55,12 +61,6 @@ check_prog_deps() {
         if [[ "$(command -v "$pkg")" ]]; then
             continue
         else
-            # Rocky requires EPEL for `fzf`
-            if [[ "$iso_distro" == "rocky" ]] && [[ "$pkg" = "fzf" ]]; then
-                setenforce 0
-                install_pkg "epel-release"
-            fi
-
             install_pkg "$pkg"
         fi
 
@@ -70,10 +70,10 @@ check_prog_deps() {
             continue
         else
             update_pkgmgr > /dev/null 2>&1
-            install_pkg "$pkg" > /dev/null 2>&1
+            install_pkg "$pkg"
         fi
 
-        # If the package isn't install by this point, error
+        # If the package isn't installed by this point, error
         if [[ "$(command -v "$pkg")" ]]; then
             continue
         else
