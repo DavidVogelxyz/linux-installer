@@ -107,7 +107,7 @@ create_swap_partition() {
 
     pvcreate "${volume_physical}" > /dev/null 2>&1
     vgcreate "${group_volume}" "${volume_physical}" > /dev/null 2>&1
-    lvcreate -L "${ram_size}" -n "${swap_name}" "${group_volume}" > /dev/null 2>&1
+    lvcreate -L "${ram_total}" -n "${swap_name}" "${group_volume}" > /dev/null 2>&1
     lvcreate -l 100%FREE -n root "${group_volume}" > /dev/null 2>&1
 }
 

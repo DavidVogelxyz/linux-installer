@@ -20,14 +20,66 @@ get_os_release() {
     done < "/etc/os-release"
 }
 
-get_ram_size() {
+get_ram_total() {
+    export ram_total=0
+
     while read -r line; do
-        if [[ "$line" =~ ^"Mem:" ]]; then
-            read -r mem total excess <<< "$line"
-            export ram_size="$total"
-            return 0
+        # If the line is equal to "Memory Device", flag as a memory device
+        if [[ "$line" == "Memory Device" ]]; then
+            local flag_ram=true
+            continue
         fi
-    done < <(free -g --si)
+
+        # If `flag_ram` is `false`, skip to the next line
+        if [[ "$flag_ram" == false ]]; then
+            continue
+        fi
+
+        # Handle a memory device's size
+        if [[ "$line" =~ "Size:" ]]; then
+            # After this conditional, stop looking at this specific memory device
+            flag_ram=false
+
+            # If the "size" is "No Module Installed", skip to next line
+            if [[ "$line" =~ "No Module Installed" ]]; then
+                continue
+            fi
+
+            # Remove the "left-side" excess
+            local ram_size="${line##*Size: }"
+
+            # Get the RAM unit for the memory device
+            local ram_unit="${line##* }"
+
+            # Remove the "right-side" excess
+            ram_size="${ram_size%% *}"
+
+            # Add `ram_size` for the memory device to the running total
+            ram_total="$((ram_total + ram_size))"
+        fi
+    done < <(dmidecode -t memory)
+
+    # Handle the units of RAM
+    case "$ram_unit" in
+        *G*)
+            ;;
+        *M*)
+            # Define `ram_total` as `ram_in_mb`
+            local ram_in_mb="$ram_total"
+
+            # Divide by 1000:
+            #     8000 will become 8
+            #     7900 will become 7
+            local ram_in_gb="$((ram_in_mb / 1000))"
+
+            # If there was a remainder, increase `ram_in_gb` by 1:
+            if (((ram_in_mb % 1000) > 0)); then
+                ram_in_gb="$((ram_in_gb + 1))"
+            fi
+
+            ram_total="$ram_in_gb"
+            ;;
+    esac
 }
 
 get_firmware() {
@@ -51,11 +103,4 @@ get_available_disks() {
             available_disks+=("$dev | $num ${unit}B")
         fi
     done < <(lsblk)
-}
-
-get_system_info() {
-    get_os_release
-    get_ram_size
-    get_firmware
-    get_available_disks
 }

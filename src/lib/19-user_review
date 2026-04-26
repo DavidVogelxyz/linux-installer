@@ -35,7 +35,7 @@ LVM name                =   ${lvm_name:-none}
 user@hostname.domain    =   ${user_name}@${host_name}.${local_domain}
 Timezone                =   $timezone
 Region                  =   $region
-RAM                     =   $ram_size GB
+RAM                     =   $ram_total GB
 Create swap?            =   $install_swap
 EOF
 

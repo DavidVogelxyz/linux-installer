@@ -44,7 +44,7 @@ source_libraries() {
 }
 
 check_prog_deps() {
-    local pkgs=("bash" "fzf")
+    local pkgs=("bash" "dmidecode" "fzf")
 
     echo "[INFO]: Please wait one moment while the program checks for essential packages."
 
@@ -92,10 +92,14 @@ main() {
     check_working_directory             # linux-installer
     source_libraries                    # linux-installer
 
-    get_system_info                     # 01-get_system_info
+    get_os_release                      # 01-get_system_info
     set_pkgmgr "$iso_distro"            # 00-install_pkgs
     welcome_screen                      # 10-welcome_screen
     check_prog_deps                     # linux-installer
+
+    get_ram_total                       # 01-get_system_info
+    get_firmware                        # 01-get_system_info
+    get_available_disks                 # 01-get_system_info
 
     ask_user_questions                  # 11-ask_user_questions
     get_user_input                      # 12-get_user_input

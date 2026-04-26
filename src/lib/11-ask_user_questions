@@ -251,7 +251,7 @@ get_question_settings() {
                 return 0
             fi
 
-            PROMPT="Do you want to create a swap partition of the same size as total RAM? ($ram_size GB)"
+            PROMPT="Do you want to create a swap partition of the same size as total RAM? ($ram_total GB)"
             OPTIONS=("Yes - create swap" "No - do not create swap")
             ;;
     esac
