@@ -92,14 +92,18 @@ get_firmware() {
     fi
 }
 
+# NB: this handles GB effectively, but will have issues with TB
 get_available_disks() {
     export available_disks=()
 
-    while read -r line; do
-        if [[ "$line" =~ "disk" ]]; then
-            read -r dev a b size c <<< "$line"
-            local unit="${size//[0-9]}"
-            local num="${size//[^0-9]}"
+    while read -r dev majmin rm size ro type mountpoints; do
+        if [[ "$type" == "disk" ]]; then
+            # Remove all numbers and `.` from the string
+            local unit="${size//[0-9.]}"
+
+            # Remove everything BUT the numbers and `.` from the string
+            local num="${size//[^0-9.]}"
+
             available_disks+=("$dev | $num ${unit}B")
         fi
     done < <(lsblk)
