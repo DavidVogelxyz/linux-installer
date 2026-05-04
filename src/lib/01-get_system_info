@@ -83,7 +83,7 @@ get_ram_total() {
 }
 
 get_firmware() {
-    if [[ -f "/sys/firmware/efi" ]]; then
+    if [[ -d "/sys/firmware/efi" ]]; then
         export firmware=uefi
     #elif [[ $(mount | grep -q "efi") ]]; then
     #    export firmware=uefi
