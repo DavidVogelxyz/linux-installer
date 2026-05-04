@@ -37,7 +37,7 @@ set_mkinitcpio_hooks_swap() {
             case "$install_swap" in
                 "yes")
                     # add `resume` hook to `/etc/mkinitcpio.conf`, between `filesystems` and `fsck`
-                    sed -i "s/^\(HOOKS.*filesystems\) fsck/\1 filesystems resume fsck/g" "/etc/mkinitcpio.conf"
+                    sed -i "s/^\(HOOKS.*filesystems\) fsck/\1 resume fsck/g" "/etc/mkinitcpio.conf"
                     ;;
                 "no")
                     # if no swap, skip to the next function
