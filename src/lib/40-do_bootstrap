@@ -1,15 +1,46 @@
 #!/usr/bin/env bash
 
+mirrorlist_date_check() {
+    local file="$1"
+
+    while read -r line; do
+        if [[ "$line" =~ "Generated" ]]; then
+            # Get only the numbers from the line with the date
+            local date="${line//[^0-9]}"
+
+            # Parse the date
+            date="${date:0:4}-${date:4:2}-${date:6:2}"
+
+            # Convert the date to "seconds since epoch time"
+            date="$(date -d "$date" +"%s")"
+
+            # Return the date
+            echo "$date"
+            break
+        fi
+    done < "$file"
+}
+
+mirrorlist_update() {
+    local mirrorlist_iso="/etc/pacman.d/mirrorlist"
+    local date_mirrorlist_iso="$(mirrorlist_date_check ${mirrorlist_iso})"
+
+    local mirrorlist_repo="${WORK_DIR}/src/templates/pacman/${install_distro}_mirrorlist"
+    local date_mirrorlist_repo="$(mirrorlist_date_check ${mirrorlist_repo})"
+
+    # If the ISO `mirrorlist` is older than the repo's version, replace it
+    if ((date_mirrorlist_iso < date_mirrorlist_repo)); then
+        cp "$mirrorlist_repo" "$mirrorlist_iso"
+    fi
+}
+
 run_bootstrap() {
     echo -e "\n[INFO]: Running the bootstrap command for \`$install_distro\`.\n"
     echo -e "[INFO]: This command will display output, so the user can observe the process.\n"
 
     case "$install_distro" in
         "artix" | "arch")
-            local mirrorlist_src="${WORK_DIR}/src/templates/pacman/${install_distro}_mirrorlist"
-            local mirrorlist_dest="/etc/pacman.d/mirrorlist"
-
-            cp "$mirrorlist_src" "$mirrorlist_dest"
+            mirrorlist_update
 
             # Adds Pacman eye-candy to `pacman`.
             grep -q "ILoveCandy" /etc/pacman.conf \
