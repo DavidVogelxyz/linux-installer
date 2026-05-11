@@ -1,6 +1,56 @@
 Release notes
 =============
 
+v0.2.1
+------
+
+Released: 2026 May 10, Sun
+
+v0.2.1 is the first minor release since the 2026 Feb rewrite (v0.2.0).
+
+New features:
+- README - now includes 1st round of "rewrite" testing results
+- `user_review` - changed Linux distribution review messages
+- README - now includes note about Artix dwm running `xlibre`
+- `user_review` - changed RAM and swap review messages
+- Rocky Linux - swap installs have been disabled
+- README - now includes 2nd round of "rewrite" testing results
+- `release-notes.md` - added title to file; reformatted headers
+- LibreWolf - moved installation of `arkenfox-user.js` package
+- packages - `man-db` is now installed on all hosts, in all cases
+- `install_graphical_environment` - improved `local` variables
+- `install_graphical_environment` - all Artix hosts run `xlibre`
+- `linux-installer` - improved `check_prog_deps` function
+- `get_ram_total` - improved RAM check by running `dmidecode`
+- `pacman` - imported mirror lists from 2026 Apr
+- `do_bootstrap` - added new function `mirrorlist_update`
+- "passwords" - combined 3 password prompts into a single prompt
+- `ask_user_questions` - added `UTC` as a timezone option
+- `install_base_pkgs` - `chrony` has been substituted for `ntpd`
+- `install_base_pkgs` - added `dmidecode` to list of base packages
+- `install_base_pkgs` - added `fastfetch` to list of base packages
+
+Bug fixes:
+- `basic_configs` - `config_timezone` correctly checks for directory
+- `basic_configs` - `config_clock` now checks for `hwclock`
+- `install_pkgs` - `apt upgrade` now runs with the `-y` option
+- Arch hosts with encrypted disks now boot correctly on startup
+- `ask_user_questions` - correctly sets `install_browser` when no GE
+- `setup_web_browser` - updated path for `dir_browser`
+- added `dbus-x11` to Debian dwm and Ubuntu dwm installs
+- `ask_user_questions` - corrected `debootstrap` checks
+- `setup_boot` - reconfigured what was originally `setup_cryptsetup`
+- `setup_distro` - all distros now run `temp_allow_sudo`
+- `setup_boot` - Arch hosts with encrypted disks now boot correctly
+- `setup_graphical_environment` - dwm will never call `install_st`
+- `setup_graphical_environment` - Rocky correctly runs `install_st`
+- `install_web_browser` - `chromium` option now installs `chromium`
+- `install_web_browser` - `firefox` now installs correctly
+- `setup_graphical_environment` - Arch now enables `gdm`
+- `get_system_info` - `/sys/firmware/efi` is a directory
+- `get_system_info` - improved how disk sizes are handled
+- `setup_boot` - removed duplicate `filesystems` hook for swap hosts
+
 v0.2.0
 ------
 
