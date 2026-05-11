@@ -241,7 +241,7 @@ get_question_settings() {
             ;;
         "timezone")
             PROMPT="Choose a timezone."
-            OPTIONS=("US/Pacific" "US/Mountain" "US/Central" "US/Eastern")
+            OPTIONS=("UTC" "US/Pacific" "US/Mountain" "US/Central" "US/Eastern")
             ;;
         "install_swap")
             # Rocky still has issues with swap; so, skip
