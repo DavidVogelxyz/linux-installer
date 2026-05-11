@@ -125,20 +125,17 @@ install_cryptsetup() {
     loop_install_pkg "${pkgs[@]}"
 }
 
-install_ntp() {
+install_chrony() {
     case "$install_distro" in
         "artix")
-            local pkgs=("ntp" "ntp-${service_mgr}")
+            local pkgs=("chrony" "chrony-${service_mgr}")
             ;;
-        "arch")
-            local pkgs=("ntp")
-            ;;
-        "debian" | "ubuntu" | "rocky")
-            local pkgs=("ntpsec")
+        *)
+            local pkgs=("chrony")
             ;;
     esac
 
-    echo "[INFO]: Installing NTP for \`$install_distro\`."
+    echo "[INFO]: Installing \`chrony\` (NTP client) for \`$install_distro\`."
     loop_install_pkg "${pkgs[@]}"
 }
 
@@ -167,6 +164,6 @@ install_base_pkgs() {
     install_lvm
     install_ssh
     install_cryptsetup
-    install_ntp
+    install_chrony
     install_other_packages
 }
