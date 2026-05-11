@@ -142,6 +142,7 @@ install_chrony() {
 install_other_packages() {
     local pkgs=(
         "bat"
+        "dmidecode"
         "fzf"
         "git"
         "man-db"
