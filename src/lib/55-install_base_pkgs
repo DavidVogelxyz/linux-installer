@@ -139,6 +139,34 @@ install_chrony() {
     loop_install_pkg "${pkgs[@]}"
 }
 
+install_fastfetch() {
+    case "$install_distro" in
+        "artix" | "arch")
+            local pkgs=("fastfetch")
+            ;;
+        "debian")
+            if [[ "$install_release" == "trixie" ]]; then
+                local pkgs=("fastfetch")
+            else
+                return 0
+            fi
+            ;;
+        "ubuntu")
+            if [[ "$install_release" == "resolute" ]]; then
+                local pkgs=("fastfetch")
+            else
+                return 0
+            fi
+            ;;
+        "rocky")
+            local pkgs=("fastfetch")
+            ;;
+    esac
+
+    echo "[INFO]: Installing \`fastfetch\` for \`$install_distro\`."
+    loop_install_pkg "${pkgs[@]}"
+}
+
 install_other_packages() {
     local pkgs=(
         "bat"
@@ -166,5 +194,6 @@ install_base_pkgs() {
     install_ssh
     install_cryptsetup
     install_chrony
+    install_fastfetch
     install_other_packages
 }
