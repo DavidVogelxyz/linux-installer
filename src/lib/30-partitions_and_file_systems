@@ -74,9 +74,8 @@ encrypt_drive() {
             ;;
         "yes")
             echo "[INFO]: Encrypting the root partition."
-            echo "${encryption_pass}" | cryptsetup -q luksFormat "$partition_rootfs"
-            echo "${encryption_pass}" | cryptsetup open "$partition_rootfs" "$lvm_name"
-            unset encryption_pass
+            echo "${pass_master}" | cryptsetup -q luksFormat "$partition_rootfs"
+            echo "${pass_master}" | cryptsetup open "$partition_rootfs" "$lvm_name"
             ;;
     esac
 }

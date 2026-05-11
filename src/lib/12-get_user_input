@@ -36,67 +36,6 @@ EOF
     done
 }
 
-ask_encryption_pass() {
-    # Skip if no encryption
-    if [[ "$encryption" == "no" ]]; then
-        return 0
-    fi
-
-    export encryption_pass=""
-    clear
-    cat << EOF
-ENCRYPTION PASSWORD:
-
-Please enter an encryption password.
-EOF
-    read -s -p "> " encryption_pass
-    echo -e "\n\nPlease retype the encryption password."
-    read -s -p "> " encryption_pass_check
-
-    # put user in loop until the two "encryption pass" entries agree
-    while ! [[ "$encryption_pass" == "$encryption_pass_check" ]] || ! [[ "$encryption_pass" ]]; do
-        clear
-        cat << EOF
-ENCRYPTION PASSWORD:
-
-The passwords entered do not match each other, or were left blank.
-
-Please enter the encryption password again.
-EOF
-        read -s -p "> " encryption_pass
-        echo -e "\n\nPlease retype the encryption password for the root user."
-        read -s -p "> " encryption_pass_check
-    done
-}
-
-ask_root_pass() {
-    export root_pass=""
-    clear
-    cat << EOF
-ROOT USER PASSWORD:
-
-Please enter a password for the root user.
-EOF
-    read -s -p "> " root_pass
-    echo -e "\n\nPlease retype the password for the root user."
-    read -s -p "> " root_pass_check
-
-    # put user in loop until the two "root pass" entries agree
-    while ! [[ "$root_pass" == "$root_pass_check" ]] || ! [[ "$root_pass" ]]; do
-        clear
-        cat << EOF
-ROOT USER PASSWORD:
-
-The passwords entered do not match each other, or were left blank.
-
-Please enter the root user's password again.
-EOF
-        read -s -p "> " root_pass
-        echo -e "\n\nPlease retype the password for the root user."
-        read -s -p "> " root_pass_check
-    done
-}
-
 ask_user_name() {
     export user_name=""
     clear
@@ -123,31 +62,35 @@ EOF
     done
 }
 
-ask_user_pass() {
-    export user_pass=""
+ask_pass_master() {
+    export pass_master=""
     clear
     cat << EOF
-USER PASSWORD:
+MASTER PASSWORD:
 
-Please enter a password for the user \`${user_name}\`.
+Please enter a master password.
+
+The password entered will become the password for both the user account (\`${user_name}\`) and the \`root\` account.
+
+If disk encryption was selected, it will also be set as the encryption password.
 EOF
-    read -s -p "> " user_pass
-    echo -e "\n\nPlease retype the password for the user \`${user_name}\`."
-    read -s -p "> " user_pass_check
+    read -s -p "> " pass_master
+    echo -e "\n\nPlease retype the master password."
+    read -s -p "> " pass_master_check
 
-    # put user in loop until the two "user pass" entries agree
-    while ! [[ "$user_pass" == "$user_pass_check" ]] || ! [[ "$user_pass" ]]; do
+    # put user in loop until the two "master password" entries agree
+    while ! [[ "$pass_master" == "$pass_master_check" ]] || ! [[ "$pass_master" ]]; do
         clear
         cat << EOF
-USER PASSWORD:
+MASTER PASSWORD:
 
 The passwords entered do not match each other, or were left blank.
 
-Please enter the user's password again.
+Please enter the master password again.
 EOF
-        read -s -p "> " user_pass
-        echo -e "\n\nPlease retype the password for the user \`${user_name}\`."
-        read -s -p "> " user_pass_check
+        read -s -p "> " pass_master
+        echo -e "\n\nPlease retype the master password."
+        read -s -p "> " pass_master_check
     done
 }
 
@@ -212,10 +155,8 @@ EOF
 
 get_user_input() {
     ask_lvm_name
-    ask_encryption_pass
-    ask_root_pass
     ask_user_name
-    ask_user_pass
+    ask_pass_master
     ask_hostname
     ask_local_domain
 }

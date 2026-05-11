@@ -3,9 +3,8 @@
 create_user() {
     echo "[INFO]: Creating new user account for \`${user_name}\`."
 
-    # change root password and unset the password
-    echo "root:${root_pass}" | chpasswd
-    unset root_pass
+    # set password for the `root` account
+    echo "root:${pass_master}" | chpasswd
 
     # create the user account
     case "$install_distro" in
@@ -17,9 +16,9 @@ create_user() {
             ;;
     esac
 
-    # change user password and unset the password
-    echo "${user_name}:${user_pass}" | chpasswd
-    unset user_pass
+    # set user password; then, unset the master password
+    echo "${user_name}:${pass_master}" | chpasswd
+    unset pass_master
 
     export REPODIR="/home/${user_name}/.local/src"
 }
