@@ -119,7 +119,7 @@ install_sddm() {
     # base install of `sddm` for Artix and Arch
     case "$install_distro" in
         "artix")
-            local pkgs=("sddm" "sddm-$service_mgr")
+            local pkgs=("sddm" "sddm-$service_mgr" "artix-sddm-theme")
             ;;
         "arch")
             local pkgs=("sddm")
@@ -143,28 +143,22 @@ install_sddm() {
             ;;
     esac
 
-    # if certain graphical environments, require additional steps
-    case "$graphical_environment" in
-        "cinnamon")
-            local pkgs=("plasma-workspace")
-            loop_install_pkg "${pkgs[@]}"
-
-            if ! [[ -d "/usr/share/sddm/themes/breeze" ]]; then
-                cp -r "${WORK_DIR}/src/configs/sddm-themes/breeze" "/usr/share/sddm/themes/"
-            else
-                echo "[WARN]: There was no need to copy the directory for the Breeze theme."
-            fi
+    # Configure theme for SDDM
+    mkdir -p /etc/sddm.conf.d
+    case "$install_distro" in
+        "artix")
+            cat << EOF > "/etc/sddm.conf.d/sddm.conf"
+[Theme]
+Current=artix
+EOF
             ;;
         *)
-            ;;
-    esac
-
-    # Install `breeze` theme for SDDM
-    mkdir -p /etc/sddm.conf.d
-    cat << EOF > "/etc/sddm.conf.d/sddm.conf"
+            cat << EOF > "/etc/sddm.conf.d/sddm.conf"
 [Theme]
 Current=breeze
 EOF
+            ;;
+    esac
 }
 
 setup_gnome() {

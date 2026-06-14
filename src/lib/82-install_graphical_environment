@@ -492,11 +492,8 @@ install_xfce() {
     # Special considerations for Xfce
     case "$install_distro" in
         "artix")
-            # install `xlibre` and `artix-sddm-theme` on Artix
-            pkgs+=(
-                "xlibre-xserver"
-                "artix-sddm-theme"
-            )
+            # install `xlibre` on Artix
+            pkgs+=("xlibre-xserver")
             ;;
         "rocky")
             # Rocky installs Xfce differently
