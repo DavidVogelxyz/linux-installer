@@ -145,7 +145,7 @@ install_sddm() {
 
     # if certain graphical environments, require additional steps
     case "$graphical_environment" in
-        "cinnamon" | "xfce")
+        "cinnamon")
             local pkgs=("plasma-workspace")
             loop_install_pkg "${pkgs[@]}"
 
@@ -213,6 +213,12 @@ setup_cinnamon() {
 setup_xfce() {
     install_st
     install_sddm
+
+    # clone `xfce-dotfiles` repo for systems running Xfce
+    sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/xfce-dotfiles" "${REPODIR}/xfce-dotfiles" > /dev/null 2>&1
+
+    # create symlink for `xfce-dotfiles`
+    sudo -u "$user_name" ln -s "/home/${user_name}/.local/src/xfce-dotfiles/user-configs" "/home/${user_name}/.config/xfce4"
 }
 
 setup_mate() {

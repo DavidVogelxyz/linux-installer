@@ -492,8 +492,11 @@ install_xfce() {
     # Special considerations for Xfce
     case "$install_distro" in
         "artix")
-            # install `xlibre` on Artix
-            pkgs+=("xlibre-xserver")
+            # install `xlibre` and `artix-sddm-theme` on Artix
+            pkgs+=(
+                "xlibre-xserver"
+                "artix-sddm-theme"
+            )
             ;;
         "rocky")
             # Rocky installs Xfce differently
@@ -511,6 +514,8 @@ install_xfce() {
                 "noto-fonts"
                 "noto-fonts-emoji"
                 "xfce4"
+                "xcape"
+                "xorg-xset"
                 "pulseaudio"
                 "xfce4-pulseaudio-plugin"
                 "xfce4-screensaver"
@@ -520,6 +525,7 @@ install_xfce() {
             pkgs+=(
                 "fonts-noto"
                 "xfce4"
+                "xcape"
             )
             ;;
         "rocky")
