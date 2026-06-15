@@ -4,7 +4,8 @@ deploy_dotfiles() {
     echo "[INFO]: Deploying dotfiles."
 
     sudo -u "$user_name" mkdir -p "$REPODIR"
-    sudo -u "$user_name" git clone https://github.com/DavidVogelxyz/bin-linux "$REPODIR/bin-linux" > /dev/null 2>&1
+    sudo -u "$user_name" git clone -o github https://github.com/DavidVogelxyz/bin-linux "$REPODIR/bin-linux" > /dev/null 2>&1 \
+        || echo "[ERROR]: Failed to \`git clone\` the \`bin-linux\` repo." >> "${WORK_DIR}/pkg_fail.txt"
     sudo -u "$user_name" bash "$REPODIR/bin-linux/bin-linux/dotfile-deploy" > /dev/null 2>&1
 
     local files=(

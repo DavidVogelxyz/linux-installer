@@ -25,10 +25,12 @@ config_zsh() {
     echo "[INFO]: Configuring \`zsh\`."
 
     sudo -u "$user_name" git clone \
+        -o github \
         --depth=1 \
         https://github.com/romkatv/powerlevel10k \
         "$REPODIR/powerlevel10k" \
-        > /dev/null 2>&1
+        > /dev/null 2>&1 \
+        || echo "[ERROR]: Failed to \`git clone\` the \`powerlevel10k\` repo." >> "${WORK_DIR}/pkg_fail.txt"
 
     local fonts=(
         "MesloLGS_NF_Regular.ttf"

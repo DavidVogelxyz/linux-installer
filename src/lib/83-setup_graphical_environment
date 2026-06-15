@@ -93,7 +93,7 @@ install_st() {
 
     # clone Git repo for `st`
     echo "[INFO]: Cloning the git repo for \`st\`."
-    sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/st" "${REPODIR}/st" > /dev/null 2>&1 \
+    sudo -u "$user_name" git clone -o github "https://github.com/DavidVogelxyz/st" "${REPODIR}/st" > /dev/null 2>&1 \
         || echo "[ERROR]: Failed to \`git clone\` the \`st\` repo." >> "${WORK_DIR}/pkg_fail.txt"
 
     # compile `st`
@@ -186,7 +186,8 @@ setup_hyprland() {
     setup_autologin
 
     # clone `hyprland-dotfiles` repo for systems running Hyprland
-    sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/hyprland-dotfiles" "${REPODIR}/hyprland-dotfiles" > /dev/null 2>&1
+    sudo -u "$user_name" git clone -o github "https://github.com/DavidVogelxyz/hyprland-dotfiles" "${REPODIR}/hyprland-dotfiles" > /dev/null 2>&1 \
+        || echo "[ERROR]: Failed to \`git clone\` the \`hyprland-dotfiles\` repo." >> "${WORK_DIR}/pkg_fail.txt"
 
     # create symlinks for `hyprland-dotfiles`
     sudo -u "$user_name" ln -s "/home/${user_name}/.local/src/hyprland-dotfiles/hypr" "/home/${user_name}/.config/hypr"
@@ -209,7 +210,8 @@ setup_xfce() {
     install_sddm
 
     # clone `xfce-dotfiles` repo for systems running Xfce
-    sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/xfce-dotfiles" "${REPODIR}/xfce-dotfiles" > /dev/null 2>&1
+    sudo -u "$user_name" git clone -o github "https://github.com/DavidVogelxyz/xfce-dotfiles" "${REPODIR}/xfce-dotfiles" > /dev/null 2>&1 \
+        || echo "[ERROR]: Failed to \`git clone\` the \`xfce-dotfiles\` repo." >> "${WORK_DIR}/pkg_fail.txt"
 
     # create symlink for `xfce-dotfiles`
     sudo -u "$user_name" ln -s "/home/${user_name}/.local/src/xfce-dotfiles/user-configs" "/home/${user_name}/.config/xfce4"

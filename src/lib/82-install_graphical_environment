@@ -272,7 +272,7 @@ install_dwm() {
     # clone Git repos for `dwm`
     for ((p=0; p<"${#pkgs[@]}"; p++)); do
         echo "[INFO]: Cloning the git repo for \`$[pkgs[p]]\`."
-        sudo -u "$user_name" git clone "https://github.com/DavidVogelxyz/${pkgs[p]}" "${REPODIR}/${pkgs[p]}" > /dev/null 2>&1 \
+        sudo -u "$user_name" git clone -o github "https://github.com/DavidVogelxyz/${pkgs[p]}" "${REPODIR}/${pkgs[p]}" > /dev/null 2>&1 \
             || echo "[ERROR]: Failed to \`git clone\` the \`${pkgs[p]}\` repo." >> "${WORK_DIR}/pkg_fail.txt"
     done
 

@@ -13,7 +13,8 @@ setup_nvim() {
     loop_install_pkg "${pkgs[@]}"
 
     echo "[INFO]: Configuring \`nvim\`."
-    sudo -u "$user_name" git clone https://github.com/DavidVogelxyz/nvim "$REPODIR/nvim" > /dev/null 2>&1
+    sudo -u "$user_name" git clone -o github https://github.com/DavidVogelxyz/nvim "$REPODIR/nvim" > /dev/null 2>&1 \
+        || echo "[ERROR]: Failed to \`git clone\` the \`nvim\` repo." >> "${WORK_DIR}/pkg_fail.txt"
     sudo -u "$user_name" nvim -c "q"
 
     # Symlink the Neovim configs into the user's directory
