@@ -192,7 +192,7 @@ install_dwm() {
                 "socat"
                 "suckless-tools"
                 "task-spooler"
-                "unclutter"
+                "unclutter-xfixes"
                 "unzip"
                 "wireplumber"
                 "yt-dlp"
