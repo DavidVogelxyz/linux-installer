@@ -49,8 +49,9 @@ deploy_dotfiles() {
             # no "server-specific" configs
             ;;
         *)
-            # the `sshd_config` template denies password auth, and assumes the user can access console
-            cp "${WORK_DIR}/src/templates/etc/ssh/sshd_config" "/etc/ssh/sshd_config"
+            # the custom `sshd_config.d` file denies password auth, and assumes the user can access console
+            mkdir -p "/etc/ssh/sshd_config.d"
+            cp "${WORK_DIR}/src/templates/etc/ssh/sshd_config" "/etc/ssh/sshd_config.d/01-custom.conf"
             ;;
     esac
 }
