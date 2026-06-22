@@ -516,6 +516,8 @@ install_xfce() {
                 "pulseaudio"
                 "xfce4-pulseaudio-plugin"
                 "xfce4-screensaver"
+                "xfce4-whiskermenu-plugin"
+                "network-manager-applet"
             )
             ;;
         "debian" | "ubuntu")
