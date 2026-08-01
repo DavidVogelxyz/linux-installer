@@ -41,9 +41,9 @@ config_hosts_file() {
     echo "[INFO]: Configuring hosts file."
 
     cat << EOF > /etc/hosts
-127.0.0.1       localhost
-::1             localhost
-127.0.1.1       $host_name ${host_name}.${local_domain}
+127.0.0.1           localhost
+::1                 localhost
+127.0.1.1           $host_name ${host_name}.${local_domain}
 EOF
 }
 
