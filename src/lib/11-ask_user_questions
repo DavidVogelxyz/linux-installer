@@ -186,13 +186,13 @@ get_question_settings() {
                     ;;
             esac
 
-            # Librewolf
+            # LibreWolf
             case "$install_distro" in
                 "artix" | "arch")
                     OPTIONS+=("librewolf | Privacy-focused fork of Firefox")
                     ;;
                 *)
-                    # Librewolf is not available for any other distro (requires AUR)
+                    # LibreWolf is not available for any other distro (requires AUR)
                     ;;
             esac
 

@@ -3,8 +3,12 @@
 install_librewolf() {
     case "$pkgmgr" in
         "pacman")
+            # Install `librewolf` through the standard package repos
+            local pkgs=("librewolf")
+            loop_install_pkg "${pkgs[@]}"
+
+            # Install LibreWolf extensions through the AUR
             local pkgs=(
-                "librewolf-bin"
                 "arkenfox-user.js"
                 "librewolf-extension-istilldontcareaboutcookies-bin"
                 "librewolf-extension-localcdn-bin"
@@ -15,7 +19,7 @@ install_librewolf() {
             loop_install_aur_pkg "${pkgs[@]}"
             ;;
         *)
-            # Librewolf requires AUR (or, Nix package manager).
+            # LibreWolf requires AUR (or, Nix package manager).
     esac
 }
 

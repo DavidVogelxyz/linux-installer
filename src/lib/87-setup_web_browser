@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 setup_librewolf() {
-    # All this below to get Librewolf installed with add-ons and non-bad settings.
+    # All this below to get LibreWolf installed with add-ons and non-bad settings.
     local dir_browser="/home/${user_name}/.config/librewolf/librewolf"
     local profiles_ini="${dir_browser}/profiles.ini"
 
-    # Start librewolf headless so it generates a profile. Then get that profile in a variable.
+    # Start LibreWolf headless so it generates a profile. Then get that profile in a variable.
     sudo -u "$user_name" librewolf --headless > /dev/null 2>&1 &
     sleep 7
     local profile="$(sed -n "/Default=.*.default-default/ s/.*=//p" "$profiles_ini")"
@@ -27,7 +27,7 @@ setup_librewolf() {
         #chown "$user_name:" "$arkenfox" "$userjs"
     fi
 
-    # Kill the now unnecessary Librewolf instance.
+    # Kill the now unnecessary LibreWolf instance.
     pkill -u "$user_name" librewolf \
         || return 0
 }
