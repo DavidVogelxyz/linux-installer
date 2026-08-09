@@ -197,7 +197,14 @@ get_question_settings() {
             esac
 
             # Brave
-            OPTIONS+=("brave | The Brave web browser (based off of Chromium)")
+            case "$install_distro" in
+                "artix" | "arch")
+                    OPTIONS+=("brave | The Brave Origin web browser (based off of Chromium)")
+                    ;;
+                *)
+                    OPTIONS+=("brave | The Brave web browser (based off of Chromium)")
+                    ;;
+            esac
 
             # Firefox, Chromium
             case "$install_distro" in

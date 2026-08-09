@@ -26,7 +26,7 @@ install_librewolf() {
 install_brave() {
     case "$pkgmgr" in
         "pacman")
-            local pkgs=("brave-bin")
+            local pkgs=("brave-origin-bin")
             loop_install_aur_pkg "${pkgs[@]}"
             ;;
         "apt")
