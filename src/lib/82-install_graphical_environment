@@ -27,12 +27,9 @@ install_dwm() {
             ;;
     esac
 
-    # add `xlibre` or `xorg`
+    # add `xorg`
     case "$install_distro" in
-        "artix")
-            pkgs+=("xlibre-xserver")
-            ;;
-        "arch")
+        "artix" | "arch")
             pkgs+=("xorg-server")
             ;;
         "debian" | "ubuntu")
@@ -350,10 +347,6 @@ install_kde() {
 
     # Special considerations for KDE
     case "$install_distro" in
-        "artix")
-            # install `xlibre` on Artix
-            pkgs+=("xlibre-xserver")
-            ;;
         "rocky")
             # No KDE for Rocky
             return 0
@@ -453,7 +446,6 @@ install_cinnamon() {
     case "$install_distro" in
         "artix")
             pkgs+=(
-                "xlibre-xserver"
                 "noto-fonts"
                 "cinnamon"
                 "artix-cinnamon-presets"
@@ -491,10 +483,6 @@ install_xfce() {
 
     # Special considerations for Xfce
     case "$install_distro" in
-        "artix")
-            # install `xlibre` on Artix
-            pkgs+=("xlibre-xserver")
-            ;;
         "rocky")
             # Rocky installs Xfce differently
             echo "[INFO]: Installing \`$graphical_environment\` on \`$install_distro\`."
@@ -543,10 +531,6 @@ install_mate() {
 
     # Special considerations for Mate
     case "$install_distro" in
-        "artix")
-            # install `xlibre` on Artix
-            pkgs+=("xlibre-xserver")
-            ;;
         "rocky")
             # Rocky installs Mate differently
             echo "[INFO]: Installing \`$graphical_environment\` on \`$install_distro\`."
@@ -587,10 +571,6 @@ install_lxqt() {
 
     # Special considerations for LXQt
     case "$install_distro" in
-        "artix")
-            # install `xlibre` on Artix
-            pkgs+=("xlibre-xserver")
-            ;;
         "rocky")
             # No LXQt for Rocky
             return 0
@@ -625,10 +605,6 @@ install_lxde() {
 
     # Special considerations for LXDE
     case "$install_distro" in
-        "artix")
-            # install `xlibre` on Artix
-            pkgs+=("xlibre-xserver")
-            ;;
         "rocky")
             # No LXDE for Rocky
             return 0

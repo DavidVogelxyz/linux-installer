@@ -122,9 +122,6 @@ Some notes about available graphical enviroments:
         - It *should* work -- but, there may be bugs.
         - The table will be updated as more combinations are tested and verified.
 - dwm:
-    - Artix:
-        - Artix dwm installs `xlibre-xserver`, as opposed to `xorg-xserver`:
-            - This was implemented in 2026 January, as part of v0.1.5.
     - Debian:
         - Debian dwm installs fail to start `dwmblocks`, though it compiles successfully:
             - Browsers (Brave) appear to load much slower on Debian dwm, as compared to other dwm hosts (and other Debian graphical environments).
