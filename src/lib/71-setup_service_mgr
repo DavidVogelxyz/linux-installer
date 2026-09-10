@@ -7,7 +7,7 @@ setup_service_mgr() {
         "runit")
             local services=(
                 "NetworkManager"
-                "ntpd"
+                "chrony"
                 "sshd"
             )
 
@@ -30,7 +30,7 @@ setup_service_mgr() {
         "systemd")
             local services=(
                 "NetworkManager"
-                "ntpd"
+                "chrony"
                 "sshd"
             )
 
